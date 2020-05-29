@@ -1,0 +1,1252 @@
+  - alias: Dawn Settings
+    trigger:
+      platform: sun
+      event: sunrise
+      offset: "-00:20:00"
+    action:
+      - service: scene.turn_on
+        entity_id: scene.Dawn
+
+  - alias: Dust Settings
+    trigger:
+      platform: sun
+      event: sunset
+      offset: "+00:15:00"
+    action:
+      - service: scene.turn_on
+        entity_id: scene.Dusk
+
+  ########################################################
+  #
+  #                       Presence
+  #
+  ########################################################
+  
+  - alias: Karlee home from school
+    trigger:
+      platform: zone
+      entity_id: person.karlee
+      zone: zone.home
+      event: enter
+    condition:
+      - condition: time
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+      - condition: time
+        after: '12:00:00'
+        before: '15:00:00'
+      - condition: state
+        entity_id: automation.karlee_arrived_home
+        state: 'off'
+      - condition: state
+        entity_id: automation.garage_door_opened
+        state: 'off'
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+    action:
+    - data:
+        entity_id: camera.front_porch
+        filename: /tmp/fd_snapshot.jpg
+      service: camera.snapshot
+    - data:
+        data:
+          images:
+          - /tmp/fd_snapshot.jpg
+        message: ""
+        title: "Karlee arrived home."
+      service: notify.gmail_text_andy
+    - data:
+        data:
+          images:
+          - /tmp/fd_snapshot.jpg
+        message: ""
+        title: "Karlee arrived home."
+      service: notify.gmail_text_katie
+    - delay: 00:02:00
+    - data:
+        entity_id: lock.back_door
+        condition:
+          - condition: state
+            entity_id: lock.back_door
+            state: "unlock"
+      service: lock.lock
+
+  - alias: Karlee arrived home
+    trigger:
+      platform: zone
+      entity_id: person.karlee
+      zone: zone.home
+      event: enter
+    action:
+    - data:
+        entity_id: camera.front_porch
+        filename: /tmp/fd_snapshot.jpg
+      service: camera.snapshot
+    - data:
+        data:
+          images:
+          - /tmp/fd_snapshot.jpg
+        message: ""
+        title: "Karlee arrived home."
+      service: notify.gmail_text_andy
+    - data:
+        data:
+          images:
+          - /tmp/fd_snapshot.jpg
+        message: ""
+        title: "Karlee arrived home."
+      service: notify.gmail_text_katie
+
+  ########################################################
+  #
+  #                       Garage Door
+  #
+  ########################################################
+
+  - alias: Garage Door Light
+    trigger:
+      platform: state
+      entity_id: group.garage_doors
+      from: closed
+    condition:
+      condition: or  # 'when dark' condition: either after sunset or before sunrise
+      conditions:
+        - condition: sun
+          after: sunset
+          after_offset: "-00:10:00"
+        - condition: sun
+          before: sunrise
+          before_offset: "00:10:00"
+    action:
+    - service: switch.turn_on
+      entity_id: switch.garage_lights
+    - delay: 00:05:00
+    - service: switch.turn_off
+      entity_id: switch.garage_lights
+
+  - alias: Garage door opened
+    trigger:
+      platform: state
+      entity_id: group.garage_doors
+      to: open
+    action:
+    - service: homeassistant.update_entity
+      entity_id: person.andy, person.katie
+    - condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+      - condition: time
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+      - condition: time
+        after: '09:15:00'
+        before: '16:15:00'
+    - data:
+        entity_id: camera.front_porch
+        filename: /tmp/fd_snapshot.jpg
+      service: camera.snapshot
+    - data:
+        data:
+          images:
+          - /tmp/fd_snapshot.jpg
+        message: ""
+        title: "The Garage Door Opened."
+      service: notify.gmail_text_andy
+    # - data:
+    #     data:
+    #       images:
+    #       - /tmp/fd_snapshot.jpg
+    #     message: ""
+    #     title: "Karlee arrived home."
+    #   service: notify.gmail_text_katie
+
+  - alias: Garage Door Left Open While Home Alone
+    trigger:
+      platform: state
+      entity_id: group.garage_doors
+      to: open
+    condition:
+      - condition: state
+        state: open
+        for:
+          minutes: 5
+        entity_id: group.garage_doors
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+    action:
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'The garage door with close in 5 minutes.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+    - delay: 00:05:00
+    - service: cover.close_cover
+      data:
+        entity_id: group.garage_doors
+
+  - alias: Garage Door Left Open At Night
+    trigger:
+      platform: sun
+      event: sunset
+      offset: "+00:11:00"
+    condition:
+      - condition: state
+        state: open
+        entity_id: group.garage_doors
+    action:
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'The garage door is still open.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  ########################################################
+  #
+  #                       Armed Mode
+  #
+  ########################################################
+
+  - alias: Garage Door Opened
+    trigger:
+      platform: state
+      entity_id: group.garage_doors
+      to: open
+    condition:
+      - condition: state
+        entity_id: input_boolean.armed_mode
+        state: 'on'
+    action:
+    - service: notify.emergency
+      data:
+        message: "The garage door opened."
+
+  - alias: Front Door Opened
+    trigger:
+      platform: state
+      entity_id: binary_sensor.front_door
+      to: open
+    condition:
+      - condition: state
+        entity_id: input_boolean.armed_mode
+        state: 'on'
+    action:
+    - service: notify.emergency
+      data:
+        message: "The front door opened."
+
+  ########################################################
+  #
+  #                       Lights
+  #
+  ########################################################
+
+  #Turn the Front Lights at dusk on except in Dec when the xmas lights are on
+  - alias: Turn on Front Light 1
+    trigger:
+      platform: sun
+      event: sunset
+      offset: "+00:12:00"
+    condition:
+      - condition: template
+        value_template: '{{ now().month != 12 }}'
+      - condition: state
+        entity_id: switch.front_lights
+        state: "off"
+    action:
+      - service: switch.turn_on
+        entity_id: switch.front_lights
+
+  #Turn the Front Lights on at dawn if there is school
+  - alias: Turn on Front Light 2
+    trigger:
+      platform: time
+      at: '06:11:00'
+    condition:
+      - condition: template
+        value_template: "{{ not is_state('sensor.twin_oaks_lunch_0', \"\") }}"
+      - condition: sun
+        before: sunrise
+        before_offset: "-00:30:00"
+      - condition: state
+        entity_id: switch.front_lights
+        state: "off"
+    action:
+      - service: switch.turn_on
+        entity_id: switch.front_lights
+
+    #Turn the Front Lights off at 11:30 if everyone is home
+  - alias: Turn off Front Light 1
+    trigger:
+      platform: time
+      at: '23:30:00'
+    condition:
+      - condition: state
+        entity_id: switch.front_lights
+        state: "on"
+      - condition: state
+        entity_id: person.andy
+        state: 'home'
+      - condition: state
+        entity_id: person.katie
+        state: 'home'
+      - condition: state
+        entity_id: person.karlee
+        state: 'home'
+      - condition: state
+        entity_id: person.cam
+        state: 'home'
+    action:
+      - service: switch.turn_off
+        entity_id: switch.front_lights
+
+    #Turn the Counter Lights on for getting ready for work/school
+  - alias: Turn on Counter Lights
+    trigger:
+      platform: time
+      at: '06:10:00'
+    condition:
+      - condition: time
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+      - condition: state
+        entity_id: switch.counter_lights
+        state: "off"
+    action:
+      service: switch.turn_on
+      entity_id: switch.counter_lights
+
+  #Christmas tree
+  - alias: Turn on Christmas Tree if school
+    trigger:
+      platform: time
+      at: '06:12:00'
+    condition:
+      - condition: template
+        value_template: "{{ not is_state('sensor.twin_oaks_lunch_0', \"\") and not is_state('sensor.twin_oaks_lunch_0', 'No School') }}"
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: person.andy
+          state: 'home'
+        - condition: state
+          entity_id: person.katie
+          state: 'home'
+        - condition: state
+          entity_id: person.karlee
+          state: 'home'
+        - condition: state
+          entity_id: person.cam
+          state: 'home'
+      - condition: state
+        entity_id: switch.christmas_tree
+        state: "off"
+    action:
+      service: switch.turn_on
+      entity_id: switch.christmas_tree
+
+  - alias: Turn on Christmas Tree if no school
+    trigger:
+      platform: time
+      at: '08:00:00'
+    condition:
+      - condition: template
+        value_template: "{{ is_state('sensor.twin_oaks_lunch_0', \"\") or is_state('sensor.twin_oaks_lunch_0', 'No School') }}"
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: person.andy
+          state: 'home'
+        - condition: state
+          entity_id: person.katie
+          state: 'home'
+        - condition: state
+          entity_id: person.karlee
+          state: 'home'
+        - condition: state
+          entity_id: person.cam
+          state: 'home'
+      - condition: state
+        entity_id: switch.christmas_tree
+        state: "off"
+    action:
+      service: switch.turn_on
+      entity_id: switch.christmas_tree
+
+  - alias: Turn off Christmas Tree if school
+    trigger:
+      platform: time
+      at: '22:20:00'
+    condition:
+      - condition: template
+        value_template: "{{ not is_state('sensor.twin_oaks_lunch_0', \"\") and not is_state('sensor.twin_oaks_lunch_0', 'No School') }}"
+      - condition: state
+        entity_id: switch.christmas_tree
+        state: "on"
+    action:
+      service: switch.turn_off
+      entity_id: switch.christmas_tree
+
+  - alias: Turn on Christmas Tree if no school
+    trigger:
+      platform: time
+      at: '23:20:00'
+    condition:
+      - condition: template
+        value_template: "{{ is_state('sensor.twin_oaks_lunch_0', \"\") or is_state('sensor.twin_oaks_lunch_0', 'No School') }}"
+      - condition: state
+        entity_id: switch.christmas_tree
+        state: "on"
+    action:
+      service: switch.turn_off
+      entity_id: switch.christmas_tree
+
+  #Turn the Counter Lights off at 9:15 if everyone is away
+  - alias: Turn off Counter Lights
+    trigger:
+      platform: time
+      at: '09:15:00'
+    condition:
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: switch.counter_lights
+        state: "on"
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.karlee.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.cam.state != 'home' }}"
+    action:
+    - service: switch.turn_off
+      entity_id: switch.counter_lights
+    - condition: state
+      entity_id: switch.christmas_tree
+      state: 'on'
+    - service: switch.turn_off
+      entity_id: switch.christmas_tree
+
+      
+  #Turn the Front Entry Light when someone is home
+  - alias: Turn on Foyer Light 1
+    trigger:
+      platform: sun
+      event: sunset
+      offset: "+00:13:00"
+    condition:
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: light.foyer
+        state: "off"
+      - condition: time
+        before: '20:00:00'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: person.andy
+          state: 'home'
+        - condition: state
+          entity_id: person.katie
+          state: 'home'
+        - condition: state
+          entity_id: person.karlee
+          state: 'home'
+        - condition: state
+          entity_id: person.cam
+          state: 'home'
+    action:
+      - service: light.turn_on
+        data:
+          entity_id: light.foyer
+          brightness: 65
+      - condition: state
+        entity_id: switch.christmas_tree
+        state: 'off'
+      - service: switch.turn_on
+        entity_id: switch.christmas_tree
+
+  #Turn the Front Entry Light when someone is NOT home
+  - alias: Turn on Foyer Light 2
+    trigger:
+      platform: sun
+      event: sunset
+      offset: "+00:14:00"
+    condition:
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: light.foyer
+        state: "off"
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.karlee.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.cam.state != 'home' }}"
+    action:
+      - service: light.turn_on
+        data:
+          entity_id: light.foyer
+          brightness: 210
+
+  #Turn the Front Entry Lights off at 9:00 if someone is home
+  - alias: Turn off Foyer Light 1
+    trigger:
+      platform: time
+      at: '21:00:00'
+    condition:
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: light.foyer
+        state: "on"
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: person.andy
+          state: 'home'
+        - condition: state
+          entity_id: person.katie
+          state: 'home'
+        - condition: state
+          entity_id: person.karlee
+          state: 'home'
+        - condition: state
+          entity_id: person.cam
+          state: 'home'
+    action:
+      service: light.turn_off
+      entity_id: light.foyer
+
+  ########################################################
+  #
+  #                       Locks
+  #
+  ########################################################
+
+  - alias: Lock Doors for the Night
+    trigger:
+      platform: time
+      at: '23:59:00'
+    condition:
+      - condition: state
+        entity_id: lock.back_door
+        state: "unlocked"
+    action:
+      service: lock.lock
+      entity_id: lock.back_door
+
+  - alias: Lock Door When Home Alone
+    trigger:
+      - platform: zone
+        entity_id: person.andy
+        zone: zone.home
+        event: leave
+      - platform: zone
+        entity_id: person.katie
+        zone: zone.home
+        event: leave
+    condition:
+      - condition: time
+        before: '23:30:00'
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+      - condition: state
+        entity_id: lock.back_door
+        state: "unlocked"
+    action:
+      - delay: 00:00:60
+      - condition: template
+        value_template: "{{ states.person.andy.state != 'home' }}"
+      - condition: template
+        value_template: "{{ states.person.katie.state != 'home' }}"
+      - service: lock.lock
+        entity_id: lock.back_door
+
+  - alias: UnLock Door When Andy or Katie Arrive
+    trigger:
+      - platform: zone
+        entity_id: person.andy
+        zone: zone.home
+        event: enter
+      - platform: zone
+        entity_id: person.katie
+        zone: zone.home
+        event: enter
+    condition:
+      - condition: time
+        before: '23:30:00'
+      - condition: state
+        entity_id: lock.back_door
+        state: "locked"
+    action:
+      service: lock.unlock
+      entity_id: lock.back_door
+
+  - alias: Turn on tree when Andy or Katie Arrive
+    trigger:
+      - platform: zone
+        entity_id: person.andy
+        zone: zone.home
+        event: enter
+      - platform: zone
+        entity_id: person.katie
+        zone: zone.home
+        event: enter
+    condition:
+      - condition: time
+        before: '22:15:00'
+      - condition: state
+        entity_id: switch.christmas_tree
+        state: "off"
+    action:
+      service: switch.turn_on
+      entity_id: switch.christmas_tree
+
+  ########################################################
+  #
+  #                       Camera
+  #
+  ########################################################
+
+  # - alias: Front Porch Motion
+  #   trigger:
+  #     - platform: state
+  #       entity_id: binary_sensor.salseccam1_line_crossing
+  #       from: 'off'
+  #       to: 'on'
+  #   action:
+  #   - service: image_processing.scan
+  #     entity_id: image_processing.tensorflow_front_porch
+
+  # - alias: 'TF image processing'
+  #   id: tf_image_processing_notification
+  #   trigger:
+  #     - platform: state
+  #       entity_id:
+  #         - image_processing.tensorflow_front_porch
+  #   condition:
+  #     - condition: template
+  #       value_template: '{{ trigger.to_state.state |int > 0 }}'
+  #   action:
+  #     - service: notify.gmail_text_andy
+  #       data:
+  #         data:
+  #           images:
+  #           - ./tensorflow/images/front_porch_latest.jpg
+  #         message: ""
+  #         title: "Person detected near front porch." 
+  #     - service: scene.create
+  #       data:
+  #         scene_id: before
+  #         snapshot_entities:
+  #         - media_player.kitchen_hub
+  #         - media_player.basement_mini
+  #         - media_player.upstairs_mini
+  #     - service: tts.google_say
+  #       entity_id: group.tts_endpoints
+  #       data:
+  #         message: 'Person detected on the front porch.'
+  #     - service: camera.play_stream
+  #       data:
+  #         entity_id: camera.front_porch
+  #         media_player: media_player.kitchen_hub
+  #     - delay: 00:02:00
+  #     - service: scene.turn_on
+  #       data:
+  #         entity_id: scene.before
+
+
+  ########################################################
+  #
+  #             Temperature
+  #
+  ########################################################
+
+  - alias: Low Temp in Basement
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.ecolink_firefighter_temperature
+        below: '55'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Low Temp detected in the basement."
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Low Temp detected in the basement.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: Low Temp on Main Floor
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.laundry_leak_temperature
+        below: '55'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Low Temp detected in the laundry room."
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Low Temp detected in the laundry room.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  ########################################################
+  #
+  #             Water
+  #
+  ########################################################
+
+  - alias: Water Detected in Basement
+
+    trigger:
+      - platform: state
+        entity_id: sensor.basement_leak_sensor_flood
+        to: '2'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Water detected in the basement."
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Water detected in the basement.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: Water Detected near Fridge
+    trigger:
+      - platform: state
+        entity_id: sensor.fridge_leak_flood
+        to: '2'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Water detected near the fridge."
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Water detected near the fridge.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: Water Detected in Laundry Room
+    trigger:
+      - platform: state
+        entity_id: sensor.laundry_leak_flood
+        to: '2'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Water detected in the laundry room."
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Water detected in the laundry room.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  ########################################################
+  #
+  #             Fire
+  #
+  ########################################################
+
+  - alias: Fire Alarm
+    trigger:
+      - platform: state
+        entity_id: sensor.ecolink_firefighter_smoke
+        from: '0'
+    action:
+    - service: notify.emergency
+      data:
+        message: "The fire alarm is going off!"
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Fire! Fire! Fire!'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: Carbon Dioxide Alarm
+    trigger:
+      - platform: state
+        entity_id: sensor.ecolink_firefighter_carbon_monoxide
+        from: '0'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Carbon Dioxide has been detected. Get out!"
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Carbon Dioxide has been detected. Get out!'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: 'Washer Done'
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.washing_machine_status
+        from: 'on'
+        to: 'off'
+    action:
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'The washing machine is done.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: 'Dryer Done'
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.dryer_status
+        from: 'on'
+        to: 'off'
+    action:
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'The dryer is almost done.'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: 'Water Softener Low'
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.salt_level_percent
+        below: '25'
+    action:
+      - service: notify.gmail_email_andy
+        data:
+          message: "Time to go buy 4 bags of water softener salt."
+          title: "Water softener salt is low."
+
+  - alias: 'Sump Level'
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.sump_level
+        above: '13'
+    action:
+    - service: notify.emergency
+      data:
+        message: "Water is rising in the sump basin!"
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Water is rising in the sump basin!'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+
+  - alias: 'Tire Rotation'
+    trigger:
+      - platform: template
+        value_template: "{{ states('sensor.odometer') |int > states('input_text.tire_rotation')| int}}"
+    action:
+      - service: notify.gmail_email_andy
+        data:
+          message: "Time to rotate the truck tires. The next tire rotation is due at {{ states('input_text.tire_rotation') }} and the odometer is reporting {{ states('sensor.odometer') }}."
+          title: "Tire Rotation Needed."
+
+  - alias: 'Oil Change'
+    trigger:
+      - platform: template
+        value_template: "{{ states('sensor.odometer') |int > states('input_text.oil_change')| int}}"
+    action:
+      - service: notify.gmail_email_andy
+        data:
+          message: "The next oil change is due at {{ states('input_text.oil_change') }} and the odometer is reporting {{ states('sensor.odometer') }}. Time to change the oil in the truck. Pick up 7 liters of OReiley 5W-20 full-synthetic and a WIX 57060XP filter."
+          title: "Oil Change Needed."
+
+  - alias: Front Closet Door On
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.front_closet_door
+        from: 'off'
+        to: 'on'
+    action:
+    - service: light.turn_on
+      entity_id: light.front_closet
+
+  - alias: Front Closet Door Off
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.front_closet_door
+        from: 'on'
+        to: 'off'
+    action:
+    - service: light.turn_off
+      entity_id: light.front_closet
+
+  - alias: Front Closet Light
+    trigger:
+      - platform: state
+        entity_id: light.front_closet
+        from: 'off'
+        to: 'on'
+        for:
+          minutes: 5
+    action:
+    - service: light.turn_off
+      entity_id: light.front_closet
+
+  - alias: 'TOM Lunch'
+    trigger:
+      - platform: time
+        at: '06:15:00'
+    condition:
+    - condition: template
+      value_template: "{{ not is_state('sensor.twin_oaks_lunch_0', \"\") and not is_state('sensor.twin_oaks_lunch_0', 'No School') }}"
+    action:
+    - service: cast.show_lovelace_view
+      data:
+        entity_id: media_player.kitchen_hub
+        view_path: lunch
+    - delay: 00:00:12
+    - service: media_player.turn_off
+      data:
+        entity_id: media_player.kitchen_hub
+    - delay: 00:00:05
+    - service: cast.show_lovelace_view
+      data:
+        entity_id: media_player.kitchen_hub
+        view_path: lunch
+    - delay: 00:10:00
+    - service: media_player.turn_off
+      data:
+        entity_id: media_player.kitchen_hub
+
+  - alias: 'Glendale Lunch'
+    trigger:
+      - platform: time
+        at: '07:55:00'
+    condition:
+    - condition: template
+      value_template: "{{ not is_state('sensor.glendale_lunch_0', \"\") and not is_state('sensor.glendale_lunch_0', 'No School') }}"
+    action:
+    - service: cast.show_lovelace_view
+      data:
+        entity_id: media_player.kitchen_hub
+        view_path: lunch
+    - delay: 00:00:12
+    - service: media_player.turn_off
+      data:
+        entity_id: media_player.kitchen_hub
+    - delay: 00:00:05
+    - service: cast.show_lovelace_view
+      data:
+        entity_id: media_player.kitchen_hub
+        view_path: lunch
+    - delay: 00:10:00
+    - service: media_player.turn_off
+      data:
+        entity_id: media_player.kitchen_hub
+
+  - alias: Update Bedtime
+    trigger:
+      - platform: time
+        at: '06:00'
+      - platform: time
+        at: '08:00'
+      - platform: time
+        at: '22:30'
+      - platform: time
+        at: '23:30'
+      - platform: homeassistant
+        event: start
+    action:
+      service_template: >
+        {% set minutes = ((now().strftime('%H') | int) * 60) + (now().strftime('%M') | int) %}
+        {% if (360 <= minutes < 1410) and (is_state('sensor.dayoftheweek', 'Friday')) %}
+          input_boolean.turn_off
+        {% elif (480 <= minutes < 1410) and (is_state('sensor.dayoftheweek', 'Saturday')) %}
+          input_boolean.turn_off 
+        {% elif (480 <= minutes < 1350) and (is_state('sensor.dayoftheweek', 'Sunday')) %}
+          input_boolean.turn_off 
+        {% elif (360 <= minutes < 1350) and ((is_state('sensor.dayoftheweek', 'Monday')) or (is_state('sensor.dayoftheweek', 'Tuesday')) or (is_state('sensor.dayoftheweek', 'Wednesday')) or (is_state('sensor.dayoftheweek', 'Thursday'))) %}
+          input_boolean.turn_off 
+        {% else %}
+          input_boolean.turn_on
+        {% endif %}
+      entity_id: input_boolean.bedtime
+
+  - alias: Crock-Pot On
+    trigger:
+      platform: template
+      value_template: "{{ states('input_datetime.crock_pot_start_time') == states('sensor.time')+':00' }}"
+    condition:
+      condition: and
+      conditions:
+        - condition: time
+          after: '00:00:00'
+        - condition: time
+          before: '00:00:00'
+    action:
+      - service: switch.turn_on
+        entity_id: switch.crock_pot
+      - service: input_datetime.set_datetime
+        data:
+          entity_id: input_datetime.crock_pot_start_time
+          time: 00:00
+
+  - alias: Dishwasher Done
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.dishwasher_status
+        from: 'on'
+        to: 'off'
+    action:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.unload_dishwasher 
+
+  - alias: Upload Dishwasher Reminder
+    trigger:
+      - platform: time
+        at: '14:30'
+      - platform: time
+        at: '16:15'
+    condition:
+      - condition: state
+        entity_id: input_boolean.unload_dishwasher
+        state: 'on'
+    action:
+    - service: scene.create
+      data:
+        scene_id: before
+        snapshot_entities:
+        - media_player.kitchen_hub
+        - media_player.basement_mini
+        - media_player.upstairs_mini
+    - service: tts.google_say
+      entity_id: group.tts_endpoints
+      data:
+        message: 'Unload the dishwasher or else...'
+    - delay: 00:00:10
+    - service: scene.turn_on
+      data:
+        entity_id: scene.before
+    - service_template: >
+        {% if now().strftime("%H") >= '16' %}
+          input_boolean.turn_off
+        {% endif %}
+      entity_id: input_boolean.unload_dishwasher
+
+  - alias: Karlee Alarm
+    trigger:
+      - platform: time
+        at: '05:48'
+    condition:
+      - condition: template
+        value_template: "{{ not is_state('sensor.twin_oaks_lunch_0', \"\") and not is_state('sensor.twin_oaks_lunch_0', 'No School') }}"
+      - condition: state
+        entity_id: input_boolean.karlee_alarm
+        state: 'on'
+    action:
+      - service: light.turn_on
+        data:
+          entity_id: light.karlee_ball_light
+          rgb_color: [255, 0, 0]
+          white_value: 0
+          brightness: 130
+          transition: 30
+      - delay: 33
+      - service: light.turn_on
+        data:
+          entity_id: light.karlee_ball_light
+          rgb_color: [255, 255, 0]
+          white_value: 0
+          brightness: 170
+          transition: 30
+      - delay: 33
+      - service: light.turn_on
+        data:
+          entity_id: light.karlee_ball_light
+          rgb_color: [255, 255, 255]
+          white_value: 0
+          brightness: 255
+          transition: 30
+      - delay: 33
+      - service: switch.turn_on
+        entity_id: switch.karlee_string_lights
+      - service: light.turn_on
+        data:
+          entity_id: light.karlee_ball_light
+          rgb_color: [255, 255, 255]
+          white_value: 255
+          brightness: 255
+          transition: 30
+      - delay: 120
+      - service: light.turn_off
+        entity_id: light.karlee_ball_light
+      - service: switch.turn_off
+        entity_id: switch.karlee_string_lights
+
+  - alias: Hassio Startup
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - delay: 00:01:00
+      - service: homeassistant.update_entity
+        entity_id: sensor.twin_oaks_lunch_0, sensor.twin_oaks_lunch_1, sensor.twin_oaks_lunch_2, sensor.twin_oaks_lunch_3, sensor.twin_oaks_lunch_4, sensor.twin_oaks_lunch_5, sensor.glendale_lunch_0, sensor.glendale_lunch_1, sensor.glendale_lunch_2, sensor.glendale_lunch_3, sensor.glendale_lunch_4, sensor.glendale_lunch_5, sensor.water_softener_salt_level, binary_sensor.updater 
+
+  - alias: Cooldown Router
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.router_temp
+      above: 75
+    action:
+      - service: switch.turn_on
+        entity_id: switch.router_fan
+      - delay: 00:15:00
+      - service: switch.turn_off
+        entity_id: switch.router_fan
+  - alias:  Router Cooled Down
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.router_temp
+      below: 59
+    action:
+      - service: switch.turn_off
+        entity_id: switch.router_fan

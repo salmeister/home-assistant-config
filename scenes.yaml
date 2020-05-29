@@ -1,0 +1,11 @@
+  - name: Dawn
+    entities:
+      switch.patio_light: off
+      switch.front_lights: off
+      light.foyer: off
+      #switch.salsprinkler_in_standby_mode: off
+
+  - name: Dusk
+    entities:
+      switch.patio_light: on
+      #switch.salsprinkler_in_standby_mode: on

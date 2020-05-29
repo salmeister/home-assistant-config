@@ -1,0 +1,22 @@
+  # "sensor.*":
+  #   hidden: true
+  # "binary_sensor*":
+  #   hidden: true
+  # "sensor.asuswrt*":
+  #   hidden: true
+  # "device_tracker.*_*_*":
+  #   hidden: true
+  # "device_tracker.android*":
+  #   hidden: true
+  # "device_tracker.sal*":
+  #   hidden: true
+  # "device_tracker.google*":
+  #   hidden: true
+  # "device_tracker.chrome*":
+  #   hidden: true
+  # "device_tracker.hass*":
+  #   hidden: true
+  # "device_tracker.lg*":
+  #   hidden: true
+  # "device_tracker.wn*":
+  #   hidden: true

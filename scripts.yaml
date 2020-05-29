@@ -1,0 +1,57 @@
+  front_porch_motion_on:
+    alias: 'Front Porch Motion On'
+    sequence:
+      - service: input_boolean.turn_on
+        entity_id:
+          - input_boolean.front_porch_motion
+
+  front_porch_motion_off:
+    alias: 'Front Porch Motion Off'
+    sequence:
+      - service: input_boolean.turn_off
+        entity_id:
+          - input_boolean.front_porch_motion
+
+  school_lunches:
+    alias: 'School Lunches'
+    sequence:
+      - service: cast.show_lovelace_view
+        data:
+          entity_id: media_player.kitchen_hub
+          view_path: lunch
+
+  bed_time:
+    alias: 'Bed Time'
+    sequence:
+      - service: cover.close_cover
+        data:
+          entity_id: group.garage_doors
+      - service: lock.lock
+        entity_id: lock.back_door
+      - service: switch.turn_off
+        entity_id: 
+          - switch.porch_light
+          - switch.deck_lights
+          - switch.garage_lights
+      - delay: 00:01:00
+      - service: switch.turn_off
+        entity_id: 
+          - light.foyer
+          - switch.counter_lights
+          - switch.cabinet_lights
+          - switch.christmas_tree
+      - delay: 00:15:00
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.bedtime
+
+  # let_dogs_in:
+  #   alias: 'Let Dogs In'
+  #   sequence:
+  #     - service: tts.google_say
+  #       entity_id: group.tts_endpoints
+  #       data:
+  #         message: 'Woof, Woof, Let us in!'
+  #     - delay: 00:00:10
+  #     - service: media_player.turn_off
+  #       data:
+  #         entity_id: group.tts_endpoints

@@ -1,0 +1,174 @@
+substitutions:
+  plug_name: washing_machine
+  friendly_plug_name: "Washing Machine"
+
+esphome:
+  name: ${plug_name}
+  platform: ESP8266
+  board: esp01_1m
+
+wifi:
+  ssid: "SALNET"
+  password: !secret network_psswd
+  manual_ip:
+    static_ip: 192.168.1.80
+    gateway: !secret router_host
+    subnet: 255.255.255.0
+
+logger:
+  baud_rate: 0
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+uart:
+  rx_pin: RX
+  baud_rate: 4800
+
+#output:
+#  - platform: esp8266_pwm
+#    id: wm_blue_led
+#    pin:
+#      number: GPIO13
+#      inverted: True
+
+#light:
+#  - platform: monochromatic
+#    output: wm_blue_led
+#    id: led
+
+#switch:
+#  - platform: gpio
+#    name: "Washing Machine"
+#    id: relay
+#    pin: GPIO12
+#    internal: true
+#    on_turn_on:
+#      - light.turn_on: led
+#    on_turn_off:
+#      - light.turn_off: led
+    
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      inverted: True
+    name: "${plug_name}_button"
+    internal: true
+    on_press:
+      - switch.toggle: relay
+  - platform: template
+    name: "${plug_name} Status"
+    filters:
+      - delayed_on: 240s
+      - delayed_off: 120s
+    lambda: |-
+      if (isnan(id(${plug_name}_wattage).state)) {
+        return {};
+      } else if (id(${plug_name}_wattage).state > 3) {
+        return true;
+      } else {
+        return false;
+      }
+
+
+output:
+  - platform: esp8266_pwm
+    id: b_led
+    pin:
+      number: GPIO13
+      inverted: True
+  - platform: esp8266_pwm
+    id: r_led
+    pin:
+      number: GPIO00
+      inverted: True
+
+light:
+  - platform: monochromatic
+    output: b_led
+    id: blue_led
+    restore_mode: ALWAYS_OFF
+
+switch:
+- platform: gpio
+  internal: true
+  id: relay
+  name: "${plug_name}"
+  pin: GPIO12
+  restore_mode: ALWAYS_ON
+  #on_turn_on:
+  #  - light.turn_on: blue_led
+  #on_turn_off:
+  #  - light.turn_off: blue_led
+    
+sensor:
+  - platform: cse7766
+    current:
+      name: "${plug_name}_amperage"
+      unit_of_measurement: A
+      icon: "mdi:flash-circle"
+      accuracy_decimals: 3
+      filters:
+        # Map from sensor -> measured value
+        - calibrate_linear:
+            - 0.0 -> 0.01
+            - 0.38807 -> 0.33
+            - 0.46836 -> 0.40
+            - 0.55272 -> 0.47
+            - 0.61963 -> 0.53
+            - 0.66229 -> 0.58
+            - 1.03793 -> 1.02
+            - 6.35245 -> 6.82
+            - 8.83848 -> 7.55
+            - 11.06970 -> 10.21
+            - 12.29876 -> 10.40
+        # Make everything below 0.02A appear as just 0A.
+        # Furthermore it corrects for the power usage of the plug.
+        - lambda: if (x < (0.01 + 0.01)) return 0; else return (x - 0.01);
+    voltage:
+      name: "${plug_name}_voltage"
+      unit_of_measurement: V
+      icon: "mdi:flash-circle"
+      accuracy_decimals: 1
+      filters:
+        # Map from sensor -> measured value
+        - calibrate_linear:
+            - 0.0 -> 0.0
+            - 117.18882 -> 117.3
+            - 119.1113 -> 117.4
+            - 120.63399 -> 117.9
+            - 121.08945 -> 119.2
+            - 121.85581 -> 122.4
+            - 122.19083 -> 122.6
+            - 122.53857 -> 122.7
+            - 123.15768 -> 123.3
+            - 123.22925 -> 123.5
+            - 123.45958 -> 123.8
+    power:
+      name: "${plug_name}_wattage"
+      unit_of_measurement: W
+      icon: "mdi:flash-circle"
+      id: "${plug_name}_wattage"
+      accuracy_decimals: 0
+      filters:
+        # Map from sensor -> measured value
+        - calibrate_linear:
+            - 0.0 -> 1.0
+            - 32.34 -> 30.0
+            - 37.48296 -> 34.8
+            - 45.19621 -> 41.2
+            - 47.786 -> 41.9
+            - 75.69748 -> 65.2
+            - 109.37386 -> 93.7
+            - 685.99036 -> 573
+            - 1042 -> 889
+            - 1219.58887 -> 1037
+            - 1263.19421 -> 1066
+            - 1401.69775 -> 1184
+        # Make everything below 1W appear as just 0W.
+        # Furthermore it corrects for the power usage of the plug.
+        - lambda: if (x < (1 + 1)) return 0; else return (x - 1);
+    update_interval: 10s

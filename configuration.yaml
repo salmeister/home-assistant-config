@@ -1,0 +1,339 @@
+homeassistant:
+  # Customization file
+  customize_glob: !include customize_glob.yaml
+  customize: !include customize.yaml
+
+# Enables support for tracking state changes over time
+history:
+
+# View all events in a logbook
+logbook:
+  exclude:
+    entities:
+      - sensor.time
+      - sensor.wyze_cam_1_status
+      - group.garage_doors
+
+# Enables a map showing the location of tracked devices
+map:
+
+# Track the sun
+sun:
+
+# Enables configuration UI
+config:
+
+person:
+
+# Checks for available updates
+# Note: This component will send some information about your system to
+# the developers to assist with development of Home Assistant.
+# For more information, please see:
+# https://home-assistant.io/blog/2016/10/25/explaining-the-updater/
+updater:
+# Optional, allows Home Assistant developers to focus on popular components.
+# include_used_components: true
+
+# Enables the frontend
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+
+system_health:
+
+recorder:
+  db_url: !secret postgres_url
+  purge_keep_days: 30
+
+logger:
+  default: warn
+  logs:
+    homeassistant.components.mqtt: debug
+
+python_script:
+
+# Example configuration.yaml entry
+image_processing:
+  - platform: tensorflow
+    scan_interval: 10000
+    source:
+      - entity_id: camera.front_porch
+    file_out:  "/config/www/tensorflow/front_porch_latest.jpg"
+#    file_out:  "./tensorflow/images/front_porch_{{ as_timestamp(now()) | timestamp_custom('%m%d%Y%H%M%S',true) }}.jpg"
+    model:
+      graph: ./tensorflow/frozen_inference_graph.pb
+      categories:
+        - category: person
+          area:
+            top: 0.15
+            left: 0.35
+        - car
+        - truck
+        - boat
+        - dog
+        - cat
+  - platform: tensorflow
+    scan_interval: 10000
+    source:
+      - entity_id: camera.wyze_cam
+    file_out:  "/config/www/tensorflow/wyze_cam_latest.jpg"
+    model:
+      graph: ./tensorflow/frozen_inference_graph.pb
+      categories:
+        - category: person
+          area:
+            left: 0.45
+
+# Show links to resources in log and frontend
+#introduction:
+
+panel_iframe:
+  grafana:
+    title: Grafana
+    icon: mdi:chart-timeline
+    url: !secret grafana_url
+
+influxdb:
+  host: !secret influxdb_host
+  port: 8086
+  database: homeassistant
+  username: hass
+  password: !secret influxdb_psswd
+  max_retries: 3
+  default_measurement: state
+
+rachio:
+  api_key: !secret rachio_key
+  manual_run_mins: 10
+
+stream:
+
+# Enable Hass.io
+hassio:
+
+http:
+
+# Zwave
+zwave:
+  usb_path: /dev/ttyACM0
+  network_key: !secret zwave_network_key
+
+zone: !include zones.yaml
+
+asuswrt:
+  host: !secret router_host
+  username: admin
+  password: !secret router_psswd
+  sensors:
+    - upload
+    - download
+    - upload_speed
+    - download_speed
+
+device_tracker:
+  - platform: asuswrt
+    new_device_defaults:
+      track_new_devices: false
+
+google_assistant:
+  project_id: hassio-5ca3f
+  service_account: !include service_account.json
+  report_state: true
+  secure_devices_pin: !secret google_assistant_pin
+  exposed_domains:
+    - camera
+    - switch
+    - input_boolean
+    - light
+    - lock
+    - cover
+    - script
+    - fan
+  entity_config:
+    input_boolean.bedtime:
+      expose: false
+    switch.wyze_cam_1_state:
+      expose: false
+    switch.dishwasher:
+      expose: false
+    switch.washing_machine:
+      expose: false
+    light.andy_closet:
+      expose: false
+    light.front_closet:
+      expose: false
+
+# Discover some devices automatically
+#discovery:
+
+# Allows you to issue voice commands from the frontend in enabled browsers
+conversation:
+
+# Weather
+weather:
+  - platform: darksky
+    api_key: !secret darksky_key
+    mode: daily
+
+# Sensors
+sensor: !include sensors.yaml
+
+binary_sensor:
+  - platform: wyzesense
+    device: auto
+    #device: "/dev/hidraw3"
+    
+  - platform: hikvision
+    host: !secret salseccam1_host
+    port: 89
+    ssl: false
+    username: admin
+    password: !secret salseccam1_psswd
+    customize:
+      field_detection:
+        ignored: true
+      video_loss:
+        ignored: true
+      tamper_detection:
+        ignored: true
+      shelter_alarm:
+        ignored: true
+      disk_full:
+        ignored: true
+      disk_error:
+        ignored: true
+      motion:
+        ignored: true
+      net_interface_broken:
+        ignored: true
+      ip_conflict:
+        ignored: true
+      illegal_access:
+        ignored: true
+      video_mismatch:
+        ignored: true
+      bad_video:
+        ignored: true
+      pir_alarm:
+        ignored: true
+      face_detection:
+        ignored: true
+      scene_changeDetection:
+        ignored: true
+
+# Text to speech
+tts:
+  - platform: google_translate
+    service_name: google_say
+
+# Cloud
+cloud:
+
+group: !include groups.yaml
+scene: !include scenes.yaml
+
+shell_command:
+
+# Notify
+notify: !include notify.yaml
+
+# Media Player
+webostv:
+  host: 192.168.1.20
+  name: Bedroom TV
+  turn_on_action:
+    service: persistent_notification.create
+    data:
+      message: "Turn on action"
+  customize:
+    sources:
+      - livetv
+      - hulu
+      - netflix
+      - MLB.TV
+      - Plex
+      
+cast:
+  media_player:
+    - host: 192.168.1.24
+      name: 'Kitchen Hub'
+    - host: 192.168.1.25
+      name: 'Family Room TV'
+    - host: 192.168.1.26
+      name: 'Basement Mini'
+    - host: 192.168.1.27
+      name: 'Basement TV'
+    - host: 192.168.1.28
+      name: 'Upstairs Mini'
+
+# Cameras
+camera:
+  - platform: generic
+    still_image_url: !secret salseccam1_image_url
+    stream_source: !secret salseccam1_rtsp_url
+    verify_ssl: false
+    name: Front Porch
+  - platform: ffmpeg
+    input: !secret salwyzecam1_rtsp_url
+    name: Wyze Cam
+  - platform: generic
+    still_image_url: https://video.dot.state.mn.us/video/image/metro/C609
+    name: "35W and Cliff"
+  - platform: generic
+    still_image_url: https://video.dot.state.mn.us/video/image/metro/C611
+    name: "35W and 98th"
+  - platform: local_file
+    name: "tensorflow_front_porch_scan"
+    file_path: /config/www/tensorflow/front_porch_latest.jpg
+  - platform: local_file
+    name: "tensorflow_wyze_cam_scan"
+    file_path: /config/www/tensorflow/wyze_cam_latest.jpg
+
+cover:
+  - platform: myq
+    username: !secret andy_email
+    password: !secret myq_psswd
+    type: chamberlain
+
+input_boolean:
+  armed_mode:
+    name: Armed Mode
+    icon: mdi:security
+  front_porch_motion:
+    name: Front Porch Motion
+    icon: mdi:motion-sensor
+  bedtime:
+    name: bedtime
+    icon: mdi:hotel
+  unload_dishwasher:
+    name: Unload Dishwasher
+    icon: mdi:dishwasher-alert
+  karlee_alarm:
+    name: Karlee Alarm
+    icon: mdi:alarm
+  notify_fpm_andy:
+    initial: true
+    name: Notify Andy
+    icon: mdi:format-list-checks
+  notify_fpm_katie:
+    initial: false
+    name: Notify Katie
+    icon: mdi:format-list-checks
+
+input_text:
+  ram_oil_change:
+    name: Change Oil
+  ram_tire_rotation:
+    name: Rotate Tires
+  van_oil_change:
+    name: Change Oil
+  van_tire_rotation:
+    name: Rotate Tires
+
+input_datetime:
+  crock_pot_start_time:
+    name: Crock-Pot Start Time
+    has_date: false
+    has_time: true

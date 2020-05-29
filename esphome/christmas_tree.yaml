@@ -1,0 +1,86 @@
+substitutions:
+  plug_name: christmas_tree
+  friendly_plug_name: "christmas_tree"
+
+esphome:
+  name: ${plug_name}
+  platform: ESP8266
+  board: esp8285
+
+wifi:
+  ssid: 'SALNET'
+  password: !secret network_psswd
+  manual_ip:
+    static_ip: 192.168.1.92
+    gateway: !secret router_host
+    subnet: 255.255.255.0
+
+# Enable logging
+logger:
+
+# Enable Web server
+#web_server:
+#  port: 80
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO13
+      inverted: True
+    name: "${plug_name}_button"
+    internal: true
+    on_press:
+      - switch.toggle: relay
+#      - light.toggle: blue_led
+    
+output:
+  - platform: esp8266_pwm
+    id: b_led
+    pin:
+      number: GPIO02
+      inverted: True
+  - platform: esp8266_pwm
+    id: r_led
+    pin:
+      number: GPIO00
+      inverted: True
+
+light:
+  - platform: monochromatic
+    output: b_led
+    id: blue_led
+    restore_mode: ALWAYS_OFF
+  - platform: monochromatic
+    output: r_led
+    id: red_led
+    restore_mode: ALWAYS_OFF
+    
+switch:
+- platform: gpio
+  id: relay
+  name: "${friendly_plug_name}"
+  pin: GPIO15
+  restore_mode: ALWAYS_OFF
+  on_turn_on:
+    - light.turn_on: blue_led
+  on_turn_off:
+    - light.turn_off: blue_led
+#- platform: gpio
+#  name: "${plug_name}_LED_Blue"
+#  pin: GPIO02
+#  inverted: True
+#  restore_mode: ALWAYS_OFF
+#- platform: gpio
+#  name: "${plug_name}_LED_Red"
+#  pin: GPIO00
+#  inverted: True
+#  restore_mode: ALWAYS_OFF

@@ -1,0 +1,162 @@
+substitutions:
+  plug_name: nas
+  friendly_plug_name: "NAS"
+
+esphome:
+  name: ${plug_name}
+  platform: ESP8266
+  board: esp8285
+
+wifi:
+  ssid: 'SALNET'
+  password: !secret network_psswd
+  manual_ip:
+    static_ip: 192.168.1.89
+    gateway: !secret router_host
+    subnet: 255.255.255.0
+
+# Enable logging
+logger:
+
+# Enable Web server
+#web_server:
+#  port: 80
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO13
+      inverted: True
+    name: "${plug_name}_button"
+    internal: true
+    on_press:
+      - switch.toggle: relay
+#      - light.toggle: blue_led
+    
+output:
+  - platform: esp8266_pwm
+    id: b_led
+    pin:
+      number: GPIO02
+      inverted: True
+  - platform: esp8266_pwm
+    id: r_led
+    pin:
+      number: GPIO00
+      inverted: True
+
+light:
+  - platform: monochromatic
+    output: b_led
+    id: blue_led
+    restore_mode: ALWAYS_ON
+  - platform: monochromatic
+    output: r_led
+    id: red_led
+    restore_mode: ALWAYS_OFF
+    
+switch:
+- platform: gpio
+  internal: true
+  id: relay
+  name: "${friendly_plug_name}"
+  pin: GPIO04
+  restore_mode: ALWAYS_ON
+  on_turn_on:
+    - light.turn_on: blue_led
+  on_turn_off:
+    - light.turn_off: blue_led
+#- platform: gpio
+#  name: "${plug_name}_LED_Blue"
+#  pin: GPIO02
+#  inverted: True
+#  restore_mode: ALWAYS_OFF
+#- platform: gpio
+#  name: "${plug_name}_LED_Red"
+#  pin: GPIO00
+#  inverted: True
+#  restore_mode: ALWAYS_OFF
+sensor:
+  - platform: hlw8012
+    sel_pin:
+      number: GPIO12
+      inverted: True
+    cf_pin: GPIO05
+    cf1_pin: GPIO14
+    current:
+      name: "${plug_name}_amperage"
+      unit_of_measurement: A
+      icon: "mdi:flash-circle"
+      accuracy_decimals: 3
+      filters:
+        # Map from sensor -> measured value
+        - calibrate_linear:
+            - 0.0 -> 0.02
+            - 0.40267 -> 0.33
+            - 0.47799 -> .39
+            - 0.55186 -> 0.45
+            - 0.64456 -> .53
+            - 0.68801 -> .56
+            - 1.15007 -> 1.09
+            - 4.76250 -> 6.78
+            - 7.41896 -> 7.51
+            - 9.25124 -> 7.67
+            - 9.44968 -> 7.80
+            - 10.06382 -> 8.68
+            - 11.25735 -> 10.65
+            - 12.36541 -> 10.15
+        # Make everything below 0.02A appear as just 0A.
+        # Furthermore it corrects for the power usage of the plug.
+        - lambda: if (x < (0.01 + 0.02)) return 0; else return (x - 0.02);
+    voltage:
+      name: "${plug_name}_voltage"
+      unit_of_measurement: V
+      icon: "mdi:flash-circle"
+      accuracy_decimals: 1
+      filters:
+        # Map from sensor -> measured value
+        - calibrate_linear:
+            - 0.0 -> 0.0
+            - 298.99933 -> 116.2
+            - 299.20364 -> 116.3
+            - 302.51361 -> 117.6
+            - 305.66010 -> 119.0
+            - 313.17902 -> 121.9
+            - 313.87369 -> 122.2
+            - 313.99628 -> 122.4
+            - 314.52753 -> 122.6
+    power:
+      name: "${plug_name}_wattage"
+      unit_of_measurement: W
+      icon: "mdi:flash-circle"
+      id: "${plug_name}_wattage"
+      accuracy_decimals: 0
+      filters:
+        # Map from sensor -> measured value
+        - calibrate_linear:
+            - 0.0 -> 0.9
+            - 161.36035 -> 29.7
+            - 185.15065 -> 34.1
+            - 220.31892 -> 40.5
+            - 233.76562 -> 40.9
+            - 375.47311 -> 65.0
+            - 559.58936 -> 96.1
+            - 3335.81494 -> 564
+            - 5092.16016 -> 874
+            - 5935.16455 -> 1020
+            - 6062.31062 -> 1037
+            - 6598.19043 -> 1135
+        # Make everything below 1W appear as just 0W.
+        # Furthermore it corrects for the power usage of the plug.
+        - lambda: if (x < (1 + 0.9)) return 0; else return (x - 0.9);
+    change_mode_every: 8
+    update_interval: 10s
