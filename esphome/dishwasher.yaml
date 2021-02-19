@@ -10,7 +10,7 @@ wifi:
   ssid: 'SALNET'
   password: !secret network_psswd
   manual_ip:
-    static_ip: 192.168.1.88
+    static_ip: 192.168.1.89
     gateway: !secret router_host
     subnet: 255.255.255.0
 

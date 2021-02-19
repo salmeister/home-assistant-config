@@ -27,8 +27,8 @@ sensor:
     icon: "mdi:cup-water"
     accuracy_decimals: 0
     name: "Sump Level"
-    update_interval: 180s
+    update_interval: 60s
   
     filters:
-      - lambda: return 55-(x*100);
+      - lambda: return 48-(x*100);
       - filter_out: nan

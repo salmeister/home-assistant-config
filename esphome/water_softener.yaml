@@ -23,13 +23,12 @@ sensor:
   - platform: ultrasonic
     trigger_pin: D1
     echo_pin: D2
-    name: "Water Softener Salt Level"
-    update_interval: 24h
     unit_of_measurement: "%"
     icon: "mdi:cup-water"
     accuracy_decimals: 0
+    name: "Water Softener Salt Level"
+    update_interval: 60s
   
     filters:
       - lambda: return ((85-((x*100)-9))/85)*100;
       - filter_out: nan
-  

@@ -1,148 +1,7 @@
-  - platform: history_stats
-    name: Quarantine meter Andy
-    entity_id: person.andy
-    state: "home"
-    type: ratio
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Katie
-    entity_id: person.katie
-    state: "home"
-    type: ratio
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Karlee
-    entity_id: person.karlee
-    state: "home"
-    type: ratio
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Cam
-    entity_id: person.Cam
-    state: "home"
-    type: ratio
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Andy times left
-    entity_id: person.andy
-    state: "home"
-    type: count
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Katie times left
-    entity_id: person.katie
-    state: "home"
-    type: count
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Karlee times left
-    entity_id: person.karlee
-    state: "home"
-    type: count
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: history_stats
-    name: Quarantine meter Cam times left
-    entity_id: person.Cam
-    state: "home"
-    type: count
-    duration:
-      days: 7
-    end: "{{ now() }}"
-
-  - platform: template
-    sensors:
-      hours_outside_per_day_andy:
-        value_template: >
-          {% set d, h, m = state_attr("sensor.quarantine_meter_andy", "value").split() %}
-          {% set d, h, m = d[:-1] | int, h[:-1] | int, m[:-1] | int %}
-          {% set hours_outside = ((7 - d) * 86400 - h * 3600 - m * 60) / 3600 %}
-          {{ (hours_outside / 7) | round(1) }}
-
-  - platform: template
-    sensors:
-      hours_outside_per_day_katie:
-        value_template: >
-          {% set d, h, m = state_attr("sensor.quarantine_meter_katie", "value").split() %}
-          {% set d, h, m = d[:-1] | int, h[:-1] | int, m[:-1] | int %}
-          {% set hours_outside = ((7 - d) * 86400 - h * 3600 - m * 60) / 3600 %}
-          {{ (hours_outside / 7) | round(1) }}
-
-  - platform: template
-    sensors:
-      hours_outside_per_day_karlee:
-        value_template: >
-          {% set d, h, m = state_attr("sensor.quarantine_meter_karlee", "value").split() %}
-          {% set d, h, m = d[:-1] | int, h[:-1] | int, m[:-1] | int %}
-          {% set hours_outside = ((7 - d) * 86400 - h * 3600 - m * 60) / 3600 %}
-          {{ (hours_outside / 7) | round(1) }}
-
-  - platform: template
-    sensors:
-      hours_outside_per_day_cam:
-        value_template: >
-          {% set d, h, m = state_attr("sensor.quarantine_meter_cam", "value").split() %}
-          {% set d, h, m = d[:-1] | int, h[:-1] | int, m[:-1] | int %}
-          {% set hours_outside = ((7 - d) * 86400 - h * 3600 - m * 60) / 3600 %}
-          {{ (hours_outside / 7) | round(1) }}
-
-  - platform: history_stats
-    name: Andy At Home
-    entity_id: person.andy
-    state: 'home'
-    type: time
-    end: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
-    duration:
-      days: 8
-  - platform: history_stats
-    name: Katie At Home
-    entity_id: person.katie
-    state: 'home'
-    type: time
-    end: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
-    duration:
-      days: 8
-  - platform: history_stats
-    name: Andy At Work
-    entity_id: person.andy
-    state: 'Andy Work'
-    type: time
-    end: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
-    duration:
-      days: 8
-  - platform: history_stats
-    name: Katie At Work
-    entity_id: person.katie
-    state: 'Katie Work'
-    type: time
-    end: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
-    duration:
-      days: 8
-
   - platform: template
     sensors:
       main_temp_offset:
-        value_template: '{{states.sensor.laundry_leak_temperature.state | float + 4}}'
+        value_template: '{{states.sensor.laundry_leak_air_temperature.state | float + 4}}'
         unit_of_measurement: °F
         icon_template: mdi:thermometer
         friendly_name: 'Main Temp'
@@ -150,17 +9,10 @@
   - platform: template
     sensors:
       basement_temp_offset:
-        value_template: '{{states.sensor.ecolink_firefighter_temperature.state | float + 4}}'
+        value_template: '{{states.sensor.firefighter_air_temperature.state | float + 4}}'
         unit_of_measurement: °F
         icon_template: mdi:thermometer
         friendly_name: 'Basement Temp'
-
-  - platform: template
-    sensors:
-      front_door_battery:
-        friendly_name: 'Front Door Battery'
-        value_template: '{{ states.binary_sensor.front_door.attributes.battery_level }}'
-        unit_of_measurement: '%'
 
   - platform: template
     sensors:
@@ -171,17 +23,35 @@
 
   - platform: template
     sensors:
-      upper_stairs_pir_battery:
-        friendly_name: 'Upper Stairs PIR Battery'
-        value_template: '{{ states.binary_sensor.top_upper_stairs_pir.attributes.battery_level }}'
+      dog_food_battery:
+        friendly_name: 'Dog Food Battery'
+        value_template: '{{ states.binary_sensor.dog_food.attributes.battery_level }}'
         unit_of_measurement: '%'
+
+  - platform: template
+    sensors:
+      master_bath_pir_battery:
+        friendly_name: 'Master Bath PIR Battery'
+        value_template: '{{ states.binary_sensor.master_bath_pir.attributes.battery_level }}'
+        unit_of_measurement: '%'
+
+  - platform: template
+    sensors:
+      dogs_last_fed_date:
+        friendly_name: 'Dogs Last Fed Date'
+        value_template: '{{ as_timestamp(states.binary_sensor.dog_food.attributes.timestamp) | timestamp_custom("%A %B %d ",true) }}'
+
+  - platform: template
+    sensors:
+      dogs_last_fed_time:
+        friendly_name: 'Dogs Last Fed Time'
+        value_template: '{{ as_timestamp(states.binary_sensor.dog_food.attributes.timestamp) | timestamp_custom("%I:%M %p",true) }}'
 
   - platform: moon
 
   - platform: template
     sensors:
       moon_phases:
-        entity_id: sensor.moon
         friendly_name: 'Moon'
         value_template: '{{ states.sensor.moon.state }}'
         entity_picture_template: >-
@@ -202,61 +72,6 @@
           {% elif is_state('sensor.moon', 'waning_crescent') %}
             /local/moonPhases/NWaningCrescent.jpg
           {% endif %}
-
-  - platform: template
-    sensors:
-      template_back_door_status:
-        value_template: >-
-          {%- if is_state("sensor.back_door_lock_alarm_type", "19") -%}
-            {%- if is_state("sensor.back_door_lock_alarm_level", "0") -%}
-              Unlocked by Master Code
-            {%- elif is_state("sensor.back_door_lock_alarm_level", "1") -%}
-              Unlocked by Andy
-            {%- elif is_state("sensor.back_door_lock_alarm_level", "2") -%}
-              Unlocked by Katie
-            {%- elif is_state("sensor.back_door_lock_alarm_level", "3") -%}
-              Unlocked by Karlee
-            {%- elif is_state("sensor.back_door_lock_alarm_level", "4") -%}
-              Unlocked by Cam
-            {%- elif is_state("sensor.back_door_lock_alarm_level", "5") -%}
-              Unlocked by Maggie
-            {%- else -%}
-              Unlocked by User {{ sensor.back_door_lock_alarm_level }}
-            {%- endif %}
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "27") %}
-            Auto-Relocked
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "21") %}
-            Manually Locked
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "22") %}
-            Manually Unlocked
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "24") %}
-            Locked by Radio
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "25") %}
-            Unlocked by Radio
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "161") %}
-            Tampered!
-          {%- else -%}
-            Unknown Level {{ states.sensor.back_door_lock_alarm_level.state }} Type {{ states.sensor.back_door_lock_alarm_type.state }}
-          {%- endif %}
-        icon_template: >-
-          {%- if is_state("sensor.back_door_lock_alarm_type", "19") -%}
-            mdi:lock-open-outline
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "27") %}
-            mdi:lock-outline
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "21") %}
-            mdi:lock-outline
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "24") %}
-            mdi:lock-outline
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "22") %}
-            mdi:lock-open-outline
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "25") %}
-            mdi:lock-open-outline
-          {%- elif is_state("sensor.back_door_lock_alarm_type", "161") %}
-            mdi:alert
-          {%- else -%}
-            mdi:lock-open
-          {%- endif %}
-        friendly_name: 'Back Door Status'
 
   # - platform: mqtt
   #   name: Odometer
@@ -293,155 +108,168 @@
   - platform: template
     sensors:
       date_html:
-        value_template: '{{as_timestamp(now()) | timestamp_custom("%m/%d/%Y",true) | replace("/","%2F")}}'
-        entity_id: sensor.date
+        value_template: "{{ as_timestamp(states('sensor.date')) | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
   - platform: template
     sensors:
       date_plus_one_html:
-        value_template: '{{(as_timestamp(now())+ (86400)) | timestamp_custom("%m/%d/%Y",true) | replace("/","%2F")}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 86400) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
   - platform: template
     sensors:
       date_plus_two_html:
-        value_template: '{{(as_timestamp(now())+ (172800)) | timestamp_custom("%m/%d/%Y",true) | replace("/","%2F")}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 172800) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
   - platform: template
     sensors:
       date_plus_three_html:
-        value_template: '{{(as_timestamp(now())+ (259200)) | timestamp_custom("%m/%d/%Y",true) | replace("/","%2F")}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 259200) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
   - platform: template
     sensors:
       date_plus_four_html:
-        value_template: '{{(as_timestamp(now())+ (345600)) | timestamp_custom("%m/%d/%Y",true) | replace("/","%2F")}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 345600) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
   - platform: template
     sensors:
       date_plus_five_html:
-        value_template: '{{(as_timestamp(now())+ (432000)) | timestamp_custom("%m/%d/%Y",true) | replace("/","%2F")}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
 
   - platform: template
     sensors:
       my_date:
-        value_template: '{{as_timestamp(now()) | timestamp_custom("%m/%d/%Y",true)}}'
-        entity_id: sensor.date
+        value_template: "{{ as_timestamp(states('sensor.date')) | timestamp_custom('%m/%d/%Y',true)}}"
   - platform: template
     sensors:
       date_plus_one:
-        value_template: '{{(as_timestamp(now())+ (86400)) | timestamp_custom("%m/%d/%Y",true)}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 86400) | int | timestamp_custom('%m/%d/%Y',true)}}"
   - platform: template
     sensors:
       date_plus_two:
-        value_template: '{{(as_timestamp(now())+ (172800)) | timestamp_custom("%m/%d/%Y",true)}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 172800) | int | timestamp_custom('%m/%d/%Y',true)}}"
   - platform: template
     sensors:
       date_plus_three:
-        value_template: '{{(as_timestamp(now())+ (259200)) | timestamp_custom("%m/%d/%Y",true)}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 259200) | int | timestamp_custom('%m/%d/%Y',true)}}"
   - platform: template
     sensors:
       date_plus_four:
-        value_template: '{{(as_timestamp(now())+ (345600)) | timestamp_custom("%m/%d/%Y",true)}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 345600) | int | timestamp_custom('%m/%d/%Y',true)}}"
   - platform: template
     sensors:
       date_plus_five:
-        value_template: '{{(as_timestamp(now())+ (432000)) | timestamp_custom("%m/%d/%Y",true)}}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%m/%d/%Y',true)}}"
 
   - platform: template
     sensors:
       dayoftheweek:
-        value_template: "{{ ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][now().weekday()] }}"
-        entity_id: sensor.date
+        value_template: "{{ as_timestamp(states('sensor.date')) | timestamp_custom('%A',true)}}"
   - platform: template
     sensors:
       dayoftheweek_plus_one:
-        value_template: '{{ (as_timestamp(now())+ (86400)) | timestamp_custom("%A",true) }}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 86400) | int | timestamp_custom('%A',true)}}"
   - platform: template
     sensors:
       dayoftheweek_plus_two:
-        value_template: '{{ (as_timestamp(now())+ (172800)) | timestamp_custom("%A",true) }}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 172800) | int | timestamp_custom('%A',true)}}"
   - platform: template
     sensors:
       dayoftheweek_plus_three:
-        value_template: '{{ (as_timestamp(now())+ (259200)) | timestamp_custom("%A",true) }}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 259200) | int | timestamp_custom('%A',true)}}"
   - platform: template
     sensors:
       dayoftheweek_plus_four:
-        value_template: '{{ (as_timestamp(now())+ (345600)) | timestamp_custom("%A",true) }}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 345600) | int | timestamp_custom('%A',true)}}"
   - platform: template
     sensors:
       dayoftheweek_plus_five:
-        value_template: '{{ (as_timestamp(now())+ (432000)) | timestamp_custom("%A",true) }}'
-        entity_id: sensor.date
+        value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%A',true)}}"
 
   - platform: command_line
     name: Glendale Lunch 0
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Glendale Lunch 1
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Glendale Lunch 2
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Glendale Lunch 3
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Glendale Lunch 4
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Glendale Lunch 5
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
 
   - platform: command_line
     name: Twin Oaks Lunch 0
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 1
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 2
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 3
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 4
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 5
-    command: curl "'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(\", or \")'"
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    scan_interval: 20000
+    command_timeout: 45
+
+  - platform: command_line
+    name: PLHS Lunch 0
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    scan_interval: 20000
+    command_timeout: 45
+  - platform: command_line
+    name: PLHS Lunch 1
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    scan_interval: 20000
+    command_timeout: 45
+  - platform: command_line
+    name: PLHS Lunch 2
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    scan_interval: 20000
+    command_timeout: 45
+  - platform: command_line
+    name: PLHS Lunch 3
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    scan_interval: 20000
+    command_timeout: 45
+  - platform: command_line
+    name: PLHS Lunch 4
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    scan_interval: 20000
+    command_timeout: 45
+  - platform: command_line
+    name: PLHS Lunch 5
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
 

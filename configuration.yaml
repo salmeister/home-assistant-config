@@ -13,6 +13,9 @@ logbook:
       - sensor.time
       - sensor.wyze_cam_1_status
       - group.garage_doors
+      - binary_sensor.master_bath_pir
+      - sensor.router_connected
+      - sensor.router_temp
 
 # Enables a map showing the location of tracked devices
 map:
@@ -54,24 +57,20 @@ logger:
 
 python_script:
 
-# Example configuration.yaml entry
 image_processing:
   - platform: tensorflow
     scan_interval: 10000
     source:
       - entity_id: camera.front_porch
     file_out:  "/config/www/tensorflow/front_porch_latest.jpg"
-#    file_out:  "./tensorflow/images/front_porch_{{ as_timestamp(now()) | timestamp_custom('%m%d%Y%H%M%S',true) }}.jpg"
+#   file_out:  "./tensorflow/images/front_porch_{{ as_timestamp(now()) | timestamp_custom('%m%d%Y%H%M%S',true) }}.jpg"
     model:
-      graph: ./tensorflow/frozen_inference_graph.pb
+      graph: ./tensorflow/models/efficientdet_d5_coco17_tpu-32
       categories:
         - category: person
           area:
-            top: 0.15
+            top: 0.05
             left: 0.35
-        - car
-        - truck
-        - boat
         - dog
         - cat
   - platform: tensorflow
@@ -80,7 +79,7 @@ image_processing:
       - entity_id: camera.wyze_cam
     file_out:  "/config/www/tensorflow/wyze_cam_latest.jpg"
     model:
-      graph: ./tensorflow/frozen_inference_graph.pb
+      graph: ./tensorflow/models/efficientdet_d5_coco17_tpu-32
       categories:
         - category: person
           area:
@@ -104,21 +103,12 @@ influxdb:
   max_retries: 3
   default_measurement: state
 
-rachio:
-  api_key: !secret rachio_key
-  manual_run_mins: 10
-
 stream:
 
 # Enable Hass.io
 hassio:
 
 http:
-
-# Zwave
-zwave:
-  usb_path: /dev/ttyACM0
-  network_key: !secret zwave_network_key
 
 zone: !include zones.yaml
 
@@ -223,6 +213,17 @@ binary_sensor:
       scene_changeDetection:
         ignored: true
 
+  - platform: workday
+    name: workday
+    country: US
+    workdays: [mon, tue, wed, thu, fri]
+    excludes: [sat, sun, holiday]
+  - platform: workday
+    name: Workday Evening
+    country: US
+    workdays: [sun, mon, tue, wed, thu]
+    excludes: [sat, fri]
+
 # Text to speech
 tts:
   - platform: google_translate
@@ -255,25 +256,28 @@ webostv:
       - MLB.TV
       - Plex
       
-cast:
-  media_player:
-    - host: 192.168.1.24
-      name: 'Kitchen Hub'
-    - host: 192.168.1.25
-      name: 'Family Room TV'
-    - host: 192.168.1.26
-      name: 'Basement Mini'
-    - host: 192.168.1.27
-      name: 'Basement TV'
-    - host: 192.168.1.28
-      name: 'Upstairs Mini'
+# cast:
+#   media_player:
+#     - host: 192.168.1.24
+#       name: 'Kitchen Hub'
+#     - host: 192.168.1.25
+#       name: 'Family Room TV'
+#     - host: 192.168.1.26
+#       name: 'Basement Mini'
+#     - host: 192.168.1.27
+#       name: 'Basement TV'
+#     - host: 192.168.1.28
+#       name: 'Upstairs Mini'
 
 # Cameras
 camera:
-  - platform: generic
-    still_image_url: !secret salseccam1_image_url
-    stream_source: !secret salseccam1_rtsp_url
-    verify_ssl: false
+  #- platform: generic
+  #  still_image_url: !secret salseccam1_image_url
+  #  stream_source: !secret salseccam1_rtsp_url
+  #  verify_ssl: false
+  #  name: Front Porch
+  - platform: ffmpeg
+    input: !secret salseccam1_rtsp_url
     name: Front Porch
   - platform: ffmpeg
     input: !secret salwyzecam1_rtsp_url
@@ -291,12 +295,6 @@ camera:
     name: "tensorflow_wyze_cam_scan"
     file_path: /config/www/tensorflow/wyze_cam_latest.jpg
 
-cover:
-  - platform: myq
-    username: !secret andy_email
-    password: !secret myq_psswd
-    type: chamberlain
-
 input_boolean:
   armed_mode:
     name: Armed Mode
@@ -306,9 +304,10 @@ input_boolean:
     icon: mdi:motion-sensor
   bedtime:
     name: bedtime
-    icon: mdi:hotel
+    icon: mdi:bed
   unload_dishwasher:
     name: Unload Dishwasher
+    initial: false
     icon: mdi:dishwasher-alert
   karlee_alarm:
     name: Karlee Alarm
@@ -335,5 +334,9 @@ input_text:
 input_datetime:
   crock_pot_start_time:
     name: Crock-Pot Start Time
+    has_date: false
+    has_time: true
+  karlee_alarm_start_time:
+    name: Karlee Alarm Time
     has_date: false
     has_time: true
