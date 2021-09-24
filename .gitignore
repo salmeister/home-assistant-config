@@ -17,6 +17,7 @@ deps
 custom_components/
 www/
 image/
+_trash/
 
 # Specific file ignores
 home-assistant.log
