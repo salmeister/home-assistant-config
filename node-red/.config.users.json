@@ -8,6 +8,16 @@
                 "view-node-status": true,
                 "view-node-show-label": true,
                 "view-show-tips": true
+            },
+            "sidebar": {
+                "order": [
+                    "debug",
+                    "info",
+                    "help",
+                    "config",
+                    "context",
+                    "dashboard"
+                ]
             }
         },
         "menu-menu-item-palette": true,

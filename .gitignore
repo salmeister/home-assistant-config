@@ -14,16 +14,15 @@ __pycache__
 .cloud
 .storage
 deps
+custom_components/
+www/
+image/
 
 # Specific file ignores
+home-assistant.log
+home-assistant.log.*
+.HA_VERSION
 node-red/flows_cred.json
-custom_components/hacs
-www/tensorflow/*.jpg
-www/Andy.jpg
-www/Katie.jpg
-www/Karlee.jpg
-www/Cam.jpg
-www/Maggie.jpg
 .config_entries.json
 .homekit.state
 .ios.conf
