@@ -2,7 +2,13 @@ homeassistant:
   # Customization file
   customize_glob: !include customize_glob.yaml
   customize: !include customize.yaml
+  allowlist_external_dirs:
+    - /config/www/snapshots/
+  media_dirs:
+    local: /config/www/snapshots/
 
+media_source:
+  
 # Enables support for tracking state changes over time
 history:
 
@@ -58,32 +64,28 @@ logger:
 python_script:
 
 image_processing:
-  - platform: tensorflow
-    scan_interval: 10000
+  - platform: deepstack_object
+    ip_address: !secret local_ip
+    port: 5080
+    api_key: !secret deepstack_key
+    save_file_folder: /config/www/snapshots/
+    save_file_format: png
+    save_timestamped_file: True
+    always_save_latest_file: True
+    scale: 0.75
+    roi_x_min: 0.35
+    #roi_x_max: 0.8
+    roi_y_min: 0.05
+    #roi_y_max: 0.8
+    targets:
+      - target: person
+        confidence: 60
+      - target: dog
+        confidence: 60
+      - target: cat
+        confidence: 60
     source:
       - entity_id: camera.front_porch
-    file_out:  "/config/www/tensorflow/front_porch_latest.jpg"
-#   file_out:  "./tensorflow/images/front_porch_{{ as_timestamp(now()) | timestamp_custom('%m%d%Y%H%M%S',true) }}.jpg"
-    model:
-      graph: ./tensorflow/models/efficientdet_d5_coco17_tpu-32
-      categories:
-        - category: person
-          area:
-            top: 0.05
-            left: 0.35
-        - dog
-        - cat
-  - platform: tensorflow
-    scan_interval: 10000
-    source:
-      - entity_id: camera.wyze_cam
-    file_out:  "/config/www/tensorflow/wyze_cam_latest.jpg"
-    model:
-      graph: ./tensorflow/models/efficientdet_d5_coco17_tpu-32
-      categories:
-        - category: person
-          area:
-            left: 0.45
 
 # Show links to resources in log and frontend
 #introduction:
@@ -95,7 +97,7 @@ panel_iframe:
     url: !secret grafana_url
 
 influxdb:
-  host: !secret influxdb_host
+  host: !secret local_ip
   port: 8086
   database: homeassistant
   username: hass
@@ -109,23 +111,11 @@ stream:
 hassio:
 
 http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.20.0.2
 
 zone: !include zones.yaml
-
-asuswrt:
-  host: !secret router_host
-  username: admin
-  password: !secret router_psswd
-  sensors:
-    - upload
-    - download
-    - upload_speed
-    - download_speed
-
-device_tracker:
-  - platform: asuswrt
-    new_device_defaults:
-      track_new_devices: false
 
 google_assistant:
   project_id: hassio-5ca3f
@@ -288,16 +278,22 @@ camera:
   - platform: generic
     still_image_url: https://video.dot.state.mn.us/video/image/metro/C611
     name: "35W and 98th"
+  - platform: generic
+    still_image_url: https://video.dot.state.mn.us/video/image/metro/C317
+    name: "169 and 13"
+  - platform: generic
+    still_image_url: https://video.dot.state.mn.us/video/image/metro/C3211
+    name: "169 and 494"
   - platform: local_file
-    name: "tensorflow_front_porch_scan"
-    file_path: /config/www/tensorflow/front_porch_latest.jpg
-  - platform: local_file
-    name: "tensorflow_wyze_cam_scan"
-    file_path: /config/www/tensorflow/wyze_cam_latest.jpg
+    file_path: /config/www/snapshots/deepstack_object_front_porch_latest.png
+    name: deepstack_latest_front_porch
 
 input_boolean:
-  armed_mode:
-    name: Armed Mode
+  full_armed_mode:
+    name: Full Armed Mode
+    icon: mdi:security
+  external_armed_mode:
+    name: External Armed Mode
     icon: mdi:security
   front_porch_motion:
     name: Front Porch Motion
@@ -320,16 +316,6 @@ input_boolean:
     initial: false
     name: Notify Katie
     icon: mdi:format-list-checks
-
-input_text:
-  ram_oil_change:
-    name: Change Oil
-  ram_tire_rotation:
-    name: Rotate Tires
-  van_oil_change:
-    name: Change Oil
-  van_tire_rotation:
-    name: Rotate Tires
 
 input_datetime:
   crock_pot_start_time:

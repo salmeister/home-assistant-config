@@ -1,0 +1,45 @@
+substitutions:
+  name: dryer_current
+  display_name: "Dryer Current"
+  ipPrefix:  !secret ip_prefix
+  id: "83"
+
+<<: !include base.yaml
+
+esphome:
+  name: ${name}
+  platform: ESP8266
+  board: d1_mini_lite
+
+sensor:
+  - platform: ct_clamp
+    sensor: adc_sensor
+    name: ${display_name}
+    unit_of_measurement: "A"
+    icon: "mdi:flash-circle"
+    id: dryer_current
+    update_interval: 60s
+    filters:
+      - filter_out: nan
+      - calibrate_linear:
+          - 0.0 -> 0.0
+          - 0.058 -> 7.00
+              
+  - platform: adc
+    pin: A0
+    id: adc_sensor
+
+binary_sensor:
+  - platform: template
+    name: "${display_name} Status"
+    filters:
+      - delayed_on: 240s
+      - delayed_off: 240s
+    lambda: |-
+      if (isnan(id(dryer_current).state)) {
+        return {};
+      } else if (id(dryer_current).state > 3) {
+        return true;
+      } else {
+        return false;
+      }

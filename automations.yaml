@@ -16,87 +16,6 @@
   - service: scene.turn_on
     entity_id: scene.Dusk
   id: 34d19e4e28744d10bf2eeba67c8c9652
-- alias: Karlee home from school
-  trigger:
-    platform: zone
-    entity_id: person.karlee
-    zone: zone.home
-    event: enter
-  condition:
-  - condition: time
-    weekday:
-    - mon
-    - tue
-    - wed
-    - thu
-    - fri
-  - condition: time
-    after: '12:00:00'
-    before: '15:00:00'
-  - condition: state
-    entity_id: automation.karlee_arrived_home
-    state: 'off'
-  - condition: state
-    entity_id: automation.garage_door_opened
-    state: 'off'
-  - condition: template
-    value_template: '{{ states.person.andy.state != ''home'' }}'
-  - condition: template
-    value_template: '{{ states.person.katie.state != ''home'' }}'
-  action:
-  - data:
-      entity_id: camera.front_porch
-      filename: /tmp/fd_snapshot.jpg
-    service: camera.snapshot
-  - data:
-      data:
-        images:
-        - /tmp/fd_snapshot.jpg
-      message: ''
-      title: Karlee arrived home.
-    service: notify.gmail_text_andy
-  - data:
-      data:
-        images:
-        - /tmp/fd_snapshot.jpg
-      message: ''
-      title: Karlee arrived home.
-    service: notify.gmail_text_katie
-  - delay: 00:02:00
-  - data:
-      entity_id: lock.back_door
-      condition:
-      - condition: state
-        entity_id: lock.back_door
-        state: unlock
-    service: lock.lock
-  id: 07083dff1f09444c83666f0cffddbbb2
-- alias: Karlee arrived home
-  trigger:
-    platform: zone
-    entity_id: person.karlee
-    zone: zone.home
-    event: enter
-  action:
-  - data:
-      entity_id: camera.front_porch
-      filename: /tmp/fd_snapshot.jpg
-    service: camera.snapshot
-  - data:
-      data:
-        images:
-        - /tmp/fd_snapshot.jpg
-      message: ''
-      title: Karlee arrived home.
-    service: notify.gmail_text_andy
-  - data:
-      data:
-        images:
-        - /tmp/fd_snapshot.jpg
-      message: ''
-      title: Karlee arrived home.
-    service: notify.gmail_text_katie
-  id: 46097c1ad34140b0ad2cb3ad55314901
 - alias: Garage Door Light
   trigger:
     platform: state
@@ -142,17 +61,13 @@
     - condition: time
       after: 09:15:00
       before: '16:15:00'
-  - data:
-      entity_id: camera.front_porch
-      filename: /tmp/fd_snapshot.jpg
-    service: camera.snapshot
-  - data:
+  - service: notify.mobile_app_salmob1
+    data:
+      message: The Garage Door Opened.
       data:
-        images:
-        - /tmp/fd_snapshot.jpg
-      message: ''
-      title: The Garage Door Opened.
-    service: notify.gmail_text_andy
+        ttl: 0
+        priority: high
+        image: /api/camera_proxy/camera.front_porch
   id: b903ec6aacd748959d03f2b1d38f2e2d
 - alias: Garage Door Left Open While Home Alone
   trigger:
@@ -216,40 +131,37 @@
     data:
       entity_id: scene.before
   id: 2bbf188e41aa436fa1ae87e95b341e21
-- alias: Armed Mode Turned On
+- id: 7e480896731a4aa6b8ca8832e7548130
+  alias: Garage Door Opened When Armed
   trigger:
   - platform: state
-    entity_id: input_boolean.armed_mode
-    from: 'off'
-    to: 'on'
-  action:
-  - service: script.turn_on
-    entity_id: script.arm_mode
-  id: 09dcf1729c5b402d91119d58aafaddfe
-- alias: Armed Mode Turned Off
-  trigger:
-  - platform: state
-    entity_id: input_boolean.armed_mode
-    from: 'on'
-    to: 'off'
-  action:
-  - service: script.turn_off
-    entity_id: script.arm_mode
-  id: 97849ec028fb4d83b666f7d61d10777c
-- alias: Garage Door Opened
-  trigger:
-    platform: state
     entity_id: group.garage_doors
     to: open
   condition:
   - condition: state
-    entity_id: input_boolean.armed_mode
+    entity_id: input_boolean.full_armed_mode
     state: 'on'
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: input_boolean.external_armed_mode
+      state: 'on'
   action:
-  - service: notify.emergency
+  - service: notify.mobile_app_salmob1
     data:
-      message: The garage door opened.
-  id: 7e480896731a4aa6b8ca8832e7548130
+      message: The Garage Door Opened.
+      data:
+        ttl: 0
+        priority: high
+        image: /api/camera_proxy/camera.front_porch
+  - service: notify.mobile_app_salmob2
+    data:
+      message: The Garage Door Opened.
+      data:
+        ttl: 0
+        priority: high
+        image: /api/camera_proxy/camera.front_porch
+  mode: single
 - alias: Front Light On At Dusk
   trigger:
     platform: sun
@@ -354,16 +266,27 @@
   - service: switch.turn_on
     entity_id: switch.seasonal_plug_2
   id: 5f606b03f76c42beba2335905719c40e
-- alias: Foyer Light On
+- alias: Foyer Light On - Home
+  trigger:
+    platform: sun
+    event: sunset
+    offset: +00:13:00
+  action:
+  - condition: and
+    conditions:
+    - condition: time
+      before: '21:00'
+  - service: light.turn_on
+    data:
+      entity_id: light.foyer
+      brightness: 45
+  id: facf0ac6c44940109b5b2ed101375837
+- alias: Foyer Light On - Not Home
   trigger:
     platform: sun
     event: sunset
     offset: +00:14:00
   action:
-  - service: light.turn_on
-    data:
-      entity_id: light.foyer
-      brightness: 45
   - condition: and
     conditions:
     - condition: template
@@ -378,7 +301,7 @@
     data:
       entity_id: light.foyer
       brightness: 210
-  id: facf0ac6c44940109b5b2ed101375837
+  id: facf0ac6c44940109b5b2ed101375835
 - alias: Foyer Light Dim
   trigger:
     platform: time
@@ -440,6 +363,23 @@
     service: lock.lock
     entity_id: lock.back_door
   id: 91730d5823e84ba3a06a6f15bebcbac1
+- alias: Unlock Door in AM
+  trigger:
+    platform: time
+    at: '06:25:00'
+  condition:
+    condition: and
+    conditions:
+    - condition: state
+      entity_id: lock.back_door
+      state: unlocked
+    - condition: state
+      entity_id: binary_sensor.workday
+      state: 'on'
+  action:
+    service: lock.unlock
+    entity_id: lock.back_door
+  id: 91630d5823e84ba3a07a7f15bebcbac1
 - alias: Lock Door When Home Alone
   trigger:
   - platform: zone
@@ -761,33 +701,6 @@
     data:
       entity_id: scene.before
   id: e7f95523f1054b7488368f9d2928dbb4
-- alias: Tire Rotation
-  trigger:
-  - platform: template
-    value_template: '{{ states(''sensor.odometer'') |int > states(''input_text.tire_rotation'')|
-      int}}'
-  action:
-  - service: notify.gmail_email_andy
-    data:
-      message: Time to rotate the truck tires. The next tire rotation is due at {{
-        states('input_text.tire_rotation') }} and the odometer is reporting {{ states('sensor.odometer')
-        }}.
-      title: Tire Rotation Needed.
-  id: 10b0750e36ad4095b2b83663c4d43022
-- alias: Oil Change
-  trigger:
-  - platform: template
-    value_template: '{{ states(''sensor.odometer'') |int > states(''input_text.oil_change'')|
-      int}}'
-  action:
-  - service: notify.gmail_email_andy
-    data:
-      message: The next oil change is due at {{ states('input_text.oil_change') }}
-        and the odometer is reporting {{ states('sensor.odometer') }}. Time to change
-        the oil in the truck. Pick up 7 liters of OReiley 5W-20 full-synthetic and
-        a WIX 57060XP filter.
-      title: Oil Change Needed.
-  id: 089e55235e614ec8abd93177e62af4a4
 - alias: Front Closet Door On
   trigger:
   - platform: state
@@ -945,25 +858,7 @@
     entity_id: sensor.plhs_lunch_0, sensor.plhs_lunch_1, sensor.plhs_lunch_2, sensor.plhs_lunch_3,
       sensor.plhs_lunch_4, sensor.plhs_lunch_5, sensor.twin_oaks_lunch_0, sensor.twin_oaks_lunch_1,
       sensor.twin_oaks_lunch_2, sensor.twin_oaks_lunch_3, sensor.twin_oaks_lunch_4,
-      sensor.twin_oaks_lunch_5, sensor.glendale_lunch_0, sensor.glendale_lunch_1,
-      sensor.glendale_lunch_2, sensor.glendale_lunch_3, sensor.glendale_lunch_4, sensor.glendale_lunch_5,
-      sensor.water_softener_salt_level, binary_sensor.updater
-  - service: mqtt.publish
-    data:
-      topic: "OpenZWave/1/command/enablepoll/"
-      payload: "{\"ValueIDKey\":172572688,\"Intensity\":1}"
-  - service: mqtt.publish
-    data:
-      topic: "OpenZWave/1/command/enablepoll/"
-      payload: "{\"ValueIDKey\":340344848,\"Intensity\":1}"
-  - service: mqtt.publish
-    data:
-      topic: "OpenZWave/1/command/enablepoll/"
-      payload: "{\"ValueIDKey\":206127120,\"Intensity\":1}"
-  - service: mqtt.publish
-    data:
-      topic: "OpenZWave/1/command/enablepoll/"
-      payload: "{\"ValueIDKey\":189349904,\"Intensity\":1}"
+      sensor.twin_oaks_lunch_5
   id: f9cc911c1d7c4d64b949869284942c52
 - alias: Cooldown Router
   trigger:
@@ -1038,7 +933,7 @@
   - type: battery_level
     platform: device
     device_id: 239e51ad72054821af27a25a1aa1c73a
-    entity_id: sensor.battery_level
+    entity_id: sensor.salmob1_battery_level
     domain: sensor
     above: 99
   condition: []
@@ -1055,7 +950,7 @@
   - type: battery_level
     platform: device
     device_id: 239e51ad72054821af27a25a1aa1c73a
-    entity_id: sensor.battery_level
+    entity_id: sensor.salmob1_battery_level
     domain: sensor
     below: 45
     for:
@@ -1107,9 +1002,9 @@
   description: ''
   trigger:
   - platform: time
-    at: '14:30'
+    at: '14:35'
   - platform: time
-    at: '16:30'
+    at: '16:15'
   condition:
   - condition: state
     entity_id: input_boolean.unload_dishwasher
@@ -1135,13 +1030,15 @@
     to: 'on'
   condition: []
   action:
+  - service: input_boolean.turn_on
+    entity_id: input_boolean.external_armed_mode
   - service: light.turn_off
     data: {}
     entity_id: light.foyer
   - service: switch.turn_off
     data:
       entity_id:
-      - switch.porch_light
+      - switch.porch_door_light
       - switch.deck_lights
       - switch.garage_lights
       - switch.seasonal_plug_2
@@ -1152,3 +1049,166 @@
       - cover.garage_door
       - cover.third_stall
   mode: single
+- id: '1616783648058'
+  alias: BedTime Turned Off
+  description: ''
+  trigger:
+  - platform: state
+    entity_id: input_boolean.bedtime
+    to: 'off'
+  condition: []
+  action:
+  - service: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.external_armed_mode
+  mode: single
+- id: '1631977961432'
+  alias: Deck Light Double Tap
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 001
+      value: "KeyPressed2x"
+      node_id: 52
+  action:
+  - service: switch.toggle
+    entity_id: switch.deck_lights
+- id: '1731966971432'
+  alias: North Family Room Light Toggle
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 001
+      value: "KeyPressed2x"
+      node_id: 51
+  action:
+    - service: light.toggle
+      entity_id: light.north_family_room_light
+    - repeat:
+        while:
+          - condition: state
+            state: unavailable
+            entity_id: light.north_family_room_light
+        sequence:
+          - delay: '00:00:01'
+          - service: light.toggle
+            entity_id: light.north_family_room_light
+- id: '1731966971342'
+  alias: South Family Room Light Toggle
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 002
+      value: "KeyPressed2x"
+      node_id: 51
+  action:
+    - service: light.toggle
+      entity_id: light.south_family_room_light
+    - repeat:
+        while:
+          - condition: state
+            state: unavailable
+            entity_id: light.south_family_room_light
+        sequence:
+          - delay: '00:00:01'
+          - service: light.toggle
+            entity_id: light.south_family_room_light
+
+- id: '1732866971342'
+  alias: Family Room Light Dim North
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 002
+      value: "KeyHeldDown"
+      node_id: 51
+  condition:
+    - condition: state
+      entity_id: light.north_family_room_light
+      state: 'on'
+  action:
+    - service: light.turn_on
+      entity_id: light.north_family_room_light
+      data_template:
+        brightness: '{{states.light.north_family_room_light.attributes.brightness|int - 25}}'
+
+- id: '1832866971342'
+  alias: Family Room Light Bright North
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 001
+      value: "KeyHeldDown"
+      node_id: 51
+  condition:
+    - condition: state
+      entity_id: light.north_family_room_light
+      state: 'on'
+  action:
+    - service: light.turn_on
+      entity_id: light.north_family_room_light
+      data_template:
+        brightness: '{{states.light.north_family_room_light.attributes.brightness|int + 25}}'
+
+- id: '1732866971343'
+  alias: Family Room Light Dim South
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 002
+      value: "KeyHeldDown"
+      node_id: 51
+  condition:
+    - condition: state
+      entity_id: light.south_family_room_light
+      state: 'on'
+  action:
+    - service: light.turn_on
+      entity_id: light.south_family_room_light
+      data_template:
+        brightness: '{{states.light.south_family_room_light.attributes.brightness|int - 25}}'
+
+- id: '1832866971343'
+  alias: Family Room Light Bright South
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 001
+      value: "KeyHeldDown"
+      node_id: 51
+  condition:
+    - condition: state
+      entity_id: light.south_family_room_light
+      state: 'on'
+  action:
+    - service: light.turn_on
+      entity_id: light.south_family_room_light
+      data_template:
+        brightness: '{{states.light.south_family_room_light.attributes.brightness|int + 25}}'
+- id: '1632877862432'
+  alias: Piano Room Lamp
+  description: ''
+  trigger:
+    platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      label: Scene 001
+      value: "KeyPressed"
+      node_id: 56
+  action:
+  - service: light.toggle
+    entity_id: light.piano_room_lamp

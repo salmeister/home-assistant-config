@@ -1,7 +1,7 @@
   - platform: template
     sensors:
       main_temp_offset:
-        value_template: '{{states.sensor.laundry_leak_air_temperature.state | float + 4}}'
+        value_template: "{{ (states('sensor.laundry_leak_air_temperature') | float + 3) | round(1) }}"
         unit_of_measurement: °F
         icon_template: mdi:thermometer
         friendly_name: 'Main Temp'
@@ -9,7 +9,7 @@
   - platform: template
     sensors:
       basement_temp_offset:
-        value_template: '{{states.sensor.firefighter_air_temperature.state | float + 4}}'
+        value_template: "{{ (states('sensor.basement_leak_air_temperature') | float + 3) | round(1) }}"
         unit_of_measurement: °F
         icon_template: mdi:thermometer
         friendly_name: 'Basement Temp'
@@ -179,37 +179,6 @@
     sensors:
       dayoftheweek_plus_five:
         value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%A',true)}}"
-
-  - platform: command_line
-    name: Glendale Lunch 0
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Glendale Lunch 1
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Glendale Lunch 2
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Glendale Lunch 3
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Glendale Lunch 4
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Glendale Lunch 5
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=2775ee59-91ca-4888-a390-faa49cde23df&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
 
   - platform: command_line
     name: Twin Oaks Lunch 0

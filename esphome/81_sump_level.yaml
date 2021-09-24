@@ -1,0 +1,27 @@
+substitutions:
+  name: sump_level
+  display_name: "Sump Level"
+  ipPrefix:  !secret ip_prefix
+  id: "81"
+
+<<: !include base.yaml
+
+esphome:
+  name: ${name}
+  platform: ESP8266
+  board: d1_mini_lite
+
+
+sensor:
+  - platform: ultrasonic
+    trigger_pin: D1
+    echo_pin: D2
+    unit_of_measurement: "cm"
+    icon: "mdi:cup-water"
+    accuracy_decimals: 0
+    name: ${display_name}
+    update_interval: 60s
+  
+    filters:
+      - lambda: return 48-(x*100);
+      - filter_out: nan

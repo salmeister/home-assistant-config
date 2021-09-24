@@ -1,0 +1,57 @@
+substitutions:
+  name: front_closet_light
+  display_name: "Front Closet"
+  ipPrefix: !secret ip_prefix
+  id: "84"
+
+<<: !include base.yaml
+
+esphome:
+  name: ${name}
+  platform: ESP8266
+  board: esp01_1m
+  esp8266_restore_from_flash: true
+  includes:
+    - copychan.h
+
+my9231:
+ data_pin: GPIO13  
+ clock_pin: GPIO15  
+ num_channels: 6
+ num_chips: 2 
+ 
+output:
+  - platform: my9231
+    id: output_blue
+    channel: 3
+  - platform: my9231
+    id: output_red
+    channel: 5
+  - platform: my9231
+    id: output_green
+    channel: 4
+  - platform: my9231
+    id: output_cw1
+    channel: 1
+  - platform: my9231
+    id: output_cw2
+    channel: 2
+  - platform: custom
+    type: float
+    lambda: |-
+      auto *copy = new CopyOutput();
+      copy->channel_a = id(output_cw1);
+      copy->channel_b = id(output_cw2);
+      return {copy}; 
+    outputs:
+    - id: cw
+
+light:
+  - platform: rgbw
+    name: "Front Closet"
+    default_transition_length: 0s
+    red: output_red
+    green: output_green
+    blue: output_blue
+    white: cw
+    restore_mode: RESTORE_DEFAULT_OFF
