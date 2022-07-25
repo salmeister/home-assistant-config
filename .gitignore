@@ -18,6 +18,9 @@ custom_components/
 www/
 image/
 _trash/
+.cache/
+.local/
+backups/
 
 # Specific file ignores
 home-assistant.log
