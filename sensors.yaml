@@ -1,7 +1,138 @@
+  - platform: systemmonitor
+    resources:
+      - type: last_boot
+  - platform: history_stats
+    name: "replay_foyer_light"
+    entity_id: light.foyer
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_counter_lights"
+    entity_id: switch.counter_lights
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_cabinet_lights"
+    entity_id: switch.cabinet_lights
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_table_light"
+    entity_id: switch.table_light
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_island_lights"
+    entity_id: switch.island_lights
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_front_lights"
+    entity_id: switch.front_lights
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_porch_door_light"
+    entity_id: switch.porch_door_light
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_family_room_lights"
+    entity_id: switch.family_room_lights
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_porch_light"
+    entity_id: light.porch
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_garage_lights"
+    entity_id: switch.garage_lights
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: template
+    sensors:
+      next_alarm:
+        friendly_name: 'Next Alarm'
+        value_template: >-
+            {% if is_state('device_tracker.salmob1', 'home') %}
+              {% if is_state('device_tracker.salmob2', 'home') %}
+                {{ [states('sensor.salmob1_next_alarm'), states('sensor.salmob2_next_alarm')] | min }}
+              {% else %}
+                {{ states('sensor.salmob1_next_alarm') }}
+              {% endif %}
+            {% elif is_state('device_tracker.salmob2', 'home') %}
+                {{ states('sensor.salmob2_next_alarm') }}
+            {% else %}
+              'No one home'
+            {% endif %}
+        attribute_templates:
+          alarm_time: >-
+            {{ as_timestamp(states('sensor.next_alarm')) | timestamp_custom('%H:%M') }}
+          minutes_left: >-
+            {% set dummy = states("sensor.time") %}
+            {{((states('sensor.next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int}}
+          text_time_left: >-
+            {% set time = state_attr('sensor.next_alarm','minutes_left') %}
+            {% set hours = ((time | int /  60) | string).split('.')[0] %}
+            {% set minutes = time | int % 60 %}
+            {{hours}} hours {{minutes}} minutes 
+          text_whose_alarm: >-
+            {% if states('sensor.salmob1_next_alarm') == states('sensor.salmob2_next_alarm') %}
+              Same alarm
+            {% elif ((states('sensor.next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int == ((states('sensor.salmob1_next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int %}
+              Andy's Phone
+            {% elif ((states('sensor.next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int == ((states('sensor.salmob2_next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int %}
+              Katie's Phone
+            {% else %}
+              ERROR
+            {% endif %}
+          next_alarm_localtime: >-
+            {{ as_timestamp(states('sensor.next_alarm')) | timestamp_custom('%A %H:%M') }}
+        
+  - platform: template
+    sensors:
+      outdoor_temp:
+        value_template: '{{ states.weather.kfcm_daynight.attributes.temperature }}'
+        unit_of_measurement: °F
+        icon_template: mdi:thermometer
+        friendly_name: 'Outdoor Temp'
+
   - platform: template
     sensors:
       main_temp_offset:
-        value_template: "{{ (states('sensor.laundry_leak_air_temperature') | float + 3) | round(1) }}"
+        value_template: "{{ (states('sensor.laundry_water_leak_air_temperature') | float + 3) | round(1) }}"
         unit_of_measurement: °F
         icon_template: mdi:thermometer
         friendly_name: 'Main Temp'
@@ -91,15 +222,6 @@
   #   state_topic: ram/state
   #   value_template: '{{ value_json.MPG }}'
 
-  - platform: epsonworkforce
-    host: 192.168.1.6
-    monitored_conditions:
-    - black
-    - yellow
-    - magenta
-    - cyan
-    - clean
-
   - platform: time_date
     display_options:
       - 'date'
@@ -182,81 +304,62 @@
 
   - platform: command_line
     name: Twin Oaks Lunch 0
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 1
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 2
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 3
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 4
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: Twin Oaks Lunch 5
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
 
   - platform: command_line
     name: PLHS Lunch 0
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: PLHS Lunch 1
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: PLHS Lunch 2
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: PLHS Lunch 3
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: PLHS Lunch 4
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
   - platform: command_line
     name: PLHS Lunch 5
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=Main%20Line&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
     scan_interval: 20000
     command_timeout: 45
-
-  - platform: snmp
-    host: !secret router_host
-    baseoid: 1.3.6.1.2.1.25.1.8.3.1.1.4.116.101.109.112
-    name: router_temp
-    accept_errors: true
-    default_value: 0
-    value_template: '{{value | float  | round (0) }}'
-    version: 2c
-    scan_interval: 35
-  - platform: snmp
-    host: !secret router_host
-    baseoid: 1.3.6.1.2.1.25.1.10.3.1.1.9.99.111.110.110.101.99.116.101.100
-    name: router_connected
-    accept_errors: true
-    default_value: 0
-    value_template: '{{value | float  | round (0) }}'
-    version: 2c
-    scan_interval: 35

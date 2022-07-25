@@ -1,9 +1,41 @@
-  - name: Dawn
-    entities:
-      switch.patio_light: "off"
-      switch.front_lights: "off"
-      light.foyer: "off"
-
-  - name: Dusk
-    entities:
-      switch.patio_light: "on"
+- name: Dawn
+  entities:
+    switch.patio_light: 'off'
+    switch.front_lights: 'off'
+    switch.porch_door_light: 'off'
+    switch.deck_lights: 'off'
+    light.foyer: 'off'
+  id: aad33734aeea468794854ea85da45c04
+- name: Dusk
+  entities:
+    switch.patio_light: 'on'
+    switch.piano_room_counter_lights: 'on'
+    switch.christmas_tree: 'on'
+    switch.seasonal_plug_2: 'on'
+  id: 2a998ab0c78a4174adc310ca5d3d5fb9
+- id: '1632764053923'
+  name: Kitchen Closed
+  entities:
+    switch.island_lights:
+      friendly_name: Island Lights
+      state: 'off'
+    switch.table_light:
+      friendly_name: Table Light
+      state: 'off'
+    switch.counter_lights:
+      friendly_name: Counter Lights
+      state: 'on'
+    switch.cabinet_lights:
+      friendly_name: Cabinet Lights
+      state: 'on'
+- id: '1640806836325'
+  name: Sun Up
+  entities:
+    switch.fish_tank_heater:
+      friendly_name: Fish Tank Heater
+      state: 'on'
+    switch.fish_tank_light:
+      friendly_name: Fish Tank Light
+      state: 'on'
+    light.porch:
+      state: 'off'

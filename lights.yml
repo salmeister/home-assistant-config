@@ -1,0 +1,77 @@
+  - platform: group
+    name: Fireplace Lights
+    entities:
+      - light.fireplace_left
+      - light.fireplace_right
+
+  - platform: group
+    name: Bar Lower Lights
+    entities:
+      - light.bar_le
+      - light.bar_lw
+
+  - platform: group
+    name: Bar Upper Lights
+    entities:
+      - light.bar_ue
+      - light.bar_uw
+
+  - platform: group
+    name: Bar Lights
+    entities:
+      - light.bar_upper_lights
+      - light.bar_lower_lights
+
+  - platform: group
+    name: Basement Main Upper Lights
+    entities:
+      - light.basement_main_unw
+      - light.basement_main_une
+      - light.basement_main_ume
+      - light.basement_main_umw
+      - light.basement_main_usw
+      - light.basement_main_use
+
+  - platform: group
+    name: Basement Main Lower Lights
+    entities:
+      - light.basement_main_ln
+      - light.basement_main_lm
+      - light.basement_main_ls
+
+  - platform: group
+    name: Basement Main Lights
+    entities:
+      - light.basement_main_upper_lights
+      - light.basement_main_lower_lights
+
+  - platform: group
+    name: Basement TV Couch Lights
+    entities:
+      - light.basement_tv_unw
+      - light.basement_tv_usw
+  
+  - platform: group
+    name: Basement TV Upper Non Couch Lights
+    entities:
+      - light.basement_tv_um
+      - light.basement_tv_une
+      - light.basement_tv_use
+
+  - platform: group
+    name: Basement TV Upper Lights
+    entities:
+      - light.basement_tv_couch_lights
+      - light.basement_tv_upper_non_couch_lights
+
+  - platform: group
+    name: Basement TV Lower Lights
+    entities:
+      - light.basement_tv_ln
+      - light.basement_tv_ls
+
+  - platform: group
+    name: Basement TV Lights
+    entities:
+      - light.basement_tv_upper_lights
+      - light.basement_tv_lower_lights

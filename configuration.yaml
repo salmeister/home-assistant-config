@@ -7,21 +7,31 @@ homeassistant:
   media_dirs:
     local: /config/www/snapshots/
 
+default_config:
+
 media_source:
-  
+
 # Enables support for tracking state changes over time
 history:
 
 # View all events in a logbook
 logbook:
   exclude:
+    domains:
+      - media_player
+      - device_tracker
     entities:
       - sensor.time
-      - sensor.wyze_cam_1_status
       - group.garage_doors
       - binary_sensor.master_bath_pir
-      - sensor.router_connected
-      - sensor.router_temp
+      - switch.master_night_light
+      - binary_sensor.up_bath_pir_occupancy
+      - switch.up_bath_night_light
+    entity_globs:
+      - sensor.dayoftheweek*
+      - sensor.*_date
+      - sensor.date*
+      - sensor.*_geocoded_location
 
 # Enables a map showing the location of tracked devices
 map:
@@ -39,15 +49,14 @@ person:
 # the developers to assist with development of Home Assistant.
 # For more information, please see:
 # https://home-assistant.io/blog/2016/10/25/explaining-the-updater/
-updater:
 # Optional, allows Home Assistant developers to focus on popular components.
 # include_used_components: true
 
 # Enables the frontend
 frontend:
-  themes: !include_dir_merge_named themes
 
 automation: !include automations.yaml
+
 script: !include scripts.yaml
 
 system_health:
@@ -63,29 +72,39 @@ logger:
 
 python_script:
 
-image_processing:
-  - platform: deepstack_object
-    ip_address: !secret local_ip
-    port: 5080
-    api_key: !secret deepstack_key
-    save_file_folder: /config/www/snapshots/
-    save_file_format: png
-    save_timestamped_file: True
-    always_save_latest_file: True
-    scale: 0.75
-    roi_x_min: 0.35
-    #roi_x_max: 0.8
-    roi_y_min: 0.05
-    #roi_y_max: 0.8
-    targets:
-      - target: person
-        confidence: 60
-      - target: dog
-        confidence: 60
-      - target: cat
-        confidence: 60
-    source:
-      - entity_id: camera.front_porch
+# image_processing:
+#   - platform: deepstack_face
+#     ip_address: !secret local_ip
+#     port: 5080
+#     api_key: !secret deepstack_key
+#     timeout: 5
+#     detect_only: false
+#     save_file_folder: /config/www/snapshots/
+#     show_boxes: True
+#     source:
+#       - entity_id: camera.garage
+#   - platform: deepstack_object
+#     ip_address: !secret local_ip
+#     port: 5080
+#     api_key: !secret deepstack_key
+#     save_file_folder: /config/www/snapshots/
+#     save_file_format: png
+#     save_timestamped_file: True
+#     always_save_latest_file: True
+#     scale: 0.75
+#     roi_x_min: 0.35
+#     #roi_x_max: 0.8
+#     roi_y_min: 0.05
+#     #roi_y_max: 0.8
+#     targets:
+#       - target: person
+#         confidence: 60
+#       - target: dog
+#         confidence: 60
+#       - target: cat
+#         confidence: 60
+#     source:
+#       - entity_id: camera.front_porch
 
 # Show links to resources in log and frontend
 #introduction:
@@ -95,7 +114,15 @@ panel_iframe:
     title: Grafana
     icon: mdi:chart-timeline
     url: !secret grafana_url
-
+  esphome:
+    title: ESPHome
+    icon: mdi:chip
+    url: !secret esphome_url
+  vscode:
+    title: VSCode
+    icon: mdi:microsoft-visual-studio-code
+    url: !secret vscode_url
+ 
 influxdb:
   host: !secret local_ip
   port: 8086
@@ -107,13 +134,10 @@ influxdb:
 
 stream:
 
-# Enable Hass.io
-hassio:
-
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 172.20.0.2
+    - 192.168.176.0/24
 
 zone: !include zones.yaml
 
@@ -140,9 +164,53 @@ google_assistant:
       expose: false
     switch.washing_machine:
       expose: false
-    light.andy_closet:
-      expose: false
     light.front_closet:
+      expose: false
+    switch.master_night_light:
+      expose: false
+    input_boolean.karlee_alarm:
+      expose: false
+    switch.1_front_street:
+      expose: false
+    switch.2_front_house:
+      expose: false
+    switch.3_side_neighbor:
+      expose: false
+    switch.4_back_house:
+      expose: false
+    switch.5_back_middle:
+      expose: false
+    switch.6_back_fence:
+      expose: false
+    switch.7_side_driveway:
+      expose: false
+    switch.adguard_filtering:
+      expose: false
+    switch.adguard_parental_control:
+      expose: false
+    switch.adguard_protection:
+      expose: false
+    switch.adguard_safe_browsing:
+      expose: false
+    switch.adguard_safe_search:
+      expose: false
+    switch.andy_phone_charger:
+      expose: false
+    switch.front_yard_schedule:
+      expose: false
+    switch.front_yard_seed_schedule:
+      expose: false
+    switch.maintain_new_seed_schedule:
+      expose: false
+    switch.new_seed_schedule_2:
+      expose: false
+    input_boolean.notify_fpm_andy:
+      expose: false
+    input_boolean.notify_fpm_katie:
+      expose: false
+    switch.salsprinkler_in_standby_mode:
+      expose: false
+    switch.salsprinkler_rain_delay:
       expose: false
 
 # Discover some devices automatically
@@ -151,57 +219,48 @@ google_assistant:
 # Allows you to issue voice commands from the frontend in enabled browsers
 conversation:
 
-# Weather
-weather:
-  - platform: darksky
-    api_key: !secret darksky_key
-    mode: daily
-
-# Sensors
-sensor: !include sensors.yaml
-
 binary_sensor:
   - platform: wyzesense
     device: auto
     #device: "/dev/hidraw3"
-    
-  - platform: hikvision
-    host: !secret salseccam1_host
-    port: 89
-    ssl: false
-    username: admin
-    password: !secret salseccam1_psswd
-    customize:
-      field_detection:
-        ignored: true
-      video_loss:
-        ignored: true
-      tamper_detection:
-        ignored: true
-      shelter_alarm:
-        ignored: true
-      disk_full:
-        ignored: true
-      disk_error:
-        ignored: true
-      motion:
-        ignored: true
-      net_interface_broken:
-        ignored: true
-      ip_conflict:
-        ignored: true
-      illegal_access:
-        ignored: true
-      video_mismatch:
-        ignored: true
-      bad_video:
-        ignored: true
-      pir_alarm:
-        ignored: true
-      face_detection:
-        ignored: true
-      scene_changeDetection:
-        ignored: true
+
+  # - platform: hikvision
+  #   host: !secret salseccam1_host
+  #   port: 89
+  #   ssl: false
+  #   username: admin
+  #   password: !secret salseccam1_psswd
+  #   customize:
+  #     field_detection:
+  #       ignored: true
+  #     video_loss:
+  #       ignored: true
+  #     tamper_detection:
+  #       ignored: true
+  #     shelter_alarm:
+  #       ignored: true
+  #     disk_full:
+  #       ignored: true
+  #     disk_error:
+  #       ignored: true
+  #     motion:
+  #       ignored: true
+  #     net_interface_broken:
+  #       ignored: true
+  #     ip_conflict:
+  #       ignored: true
+  #     illegal_access:
+  #       ignored: true
+  #     video_mismatch:
+  #       ignored: true
+  #     bad_video:
+  #       ignored: true
+  #     pir_alarm:
+  #       ignored: true
+  #     face_detection:
+  #       ignored: true
+  #     scene_changeDetection:
+  #       ignored: true
 
   - platform: workday
     name: workday
@@ -214,6 +273,31 @@ binary_sensor:
     workdays: [sun, mon, tue, wed, thu]
     excludes: [sat, fri]
 
+  - platform: template
+    sensors:
+      schoolday:
+        friendly_name: "School Day"
+        value_template: >-
+          {% if not is_state('sensor.twin_oaks_lunch_0', none) %}
+            {% if not is_state('sensor.twin_oaks_lunch_0', '') %}
+              {% if not is_state('sensor.twin_oaks_lunch_0', 'No School') %}
+              on
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+  - platform: template
+    sensors:
+      family_presence:
+        friendly_name: Family Presence
+        icon_template: >-
+          {% if is_state('binary_sensor.family_presence','on') %}
+            hass:home-account
+          {% else %}
+            hass:home-outline
+          {% endif %}
+        value_template: "{{ is_state('person.andy','home') or  is_state('person.katie','home') or is_state('person.karlee','home') or is_state('person.cam','home') or is_state('person.maggie','home') }}"
+
 # Text to speech
 tts:
   - platform: google_translate
@@ -222,71 +306,66 @@ tts:
 # Cloud
 cloud:
 
-group: !include groups.yaml
+sensor: !include sensors.yaml
 scene: !include scenes.yaml
+light: !include lights.yml
+media_player:
+  - platform: group
+    name: TTS Endpoints
+    entities:
+      - media_player.kitchen_hub
+      - media_player.basement_speaker
+      - media_player.upstairs_speaker
+cover:
+  - platform: group
+    name: Garage Doors
+    entities:
+      - cover.garage_door
+      - cover.third_stall
+
+group:
+  zwave_battery_level_group:
+    name: Zwave Battery Level Group
+    entities:
+      - sensor.back_door_lock_battery_level
+      - sensor.porch_door_battery_level
+      - sensor.front_door_battery_level
+      - sensor.fridge_leak_battery_level
+      - sensor.kitchen_water_leak_battery_level
+      - sensor.laundry_water_leak_battery_level
+      - sensor.master_bath_pir_battery
+      - sensor.up_bath_pir_battery
+      - sensor.dog_food_battery
+      - sensor.front_closet_door_battery
 
 shell_command:
 
 # Notify
 notify: !include notify.yaml
 
-# Media Player
-webostv:
-  host: 192.168.1.20
-  name: Bedroom TV
-  turn_on_action:
-    service: persistent_notification.create
-    data:
-      message: "Turn on action"
-  customize:
-    sources:
-      - livetv
-      - hulu
-      - netflix
-      - MLB.TV
-      - Plex
-      
-# cast:
-#   media_player:
-#     - host: 192.168.1.24
-#       name: 'Kitchen Hub'
-#     - host: 192.168.1.25
-#       name: 'Family Room TV'
-#     - host: 192.168.1.26
-#       name: 'Basement Mini'
-#     - host: 192.168.1.27
-#       name: 'Basement TV'
-#     - host: 192.168.1.28
-#       name: 'Upstairs Mini'
-
 # Cameras
-camera:
-  #- platform: generic
-  #  still_image_url: !secret salseccam1_image_url
-  #  stream_source: !secret salseccam1_rtsp_url
-  #  verify_ssl: false
-  #  name: Front Porch
-  - platform: ffmpeg
-    input: !secret salseccam1_rtsp_url
-    name: Front Porch
-  - platform: ffmpeg
-    input: !secret salwyzecam1_rtsp_url
-    name: Wyze Cam
-  - platform: generic
-    still_image_url: https://video.dot.state.mn.us/video/image/metro/C609
-    name: "35W and Cliff"
-  - platform: generic
-    still_image_url: https://video.dot.state.mn.us/video/image/metro/C611
-    name: "35W and 98th"
-  - platform: generic
-    still_image_url: https://video.dot.state.mn.us/video/image/metro/C317
-    name: "169 and 13"
-  - platform: generic
-    still_image_url: https://video.dot.state.mn.us/video/image/metro/C3211
-    name: "169 and 494"
-  - platform: local_file
-    file_path: /config/www/snapshots/deepstack_object_front_porch_latest.png
-    name: deepstack_latest_front_porch
+# camera:
+#   - platform: generic
+#     still_image_url: https://video.dot.state.mn.us/video/image/metro/C609
+#     name: "35W and Cliff"
+#   - platform: generic
+#     still_image_url: https://video.dot.state.mn.us/video/image/metro/C611
+#     name: "35W and 98th"
+#   - platform: generic
+#     still_image_url: https://video.dot.state.mn.us/video/image/metro/C317
+#     name: "169 and 13"
+#   - platform: generic
+#     still_image_url: https://video.dot.state.mn.us/video/image/metro/C3211
+#     name: "169 and 494"
+
+# amcrest:
+#   - host: !secret front_porch_host
+#     username: !secret front_porch_user
+#     password: !secret front_porch_psswd
+#     name: amcrest_front_porch
+#     resolution: low
+#     binary_sensors:
+#       - crossline_detected
 
 input_boolean:
   full_armed_mode:
@@ -295,9 +374,9 @@ input_boolean:
   external_armed_mode:
     name: External Armed Mode
     icon: mdi:security
-  front_porch_motion:
-    name: Front Porch Motion
-    icon: mdi:motion-sensor
+  vacation_mode:
+    name: Vacation Mode
+    icon: mdi:beach
   bedtime:
     name: bedtime
     icon: mdi:bed
@@ -316,7 +395,9 @@ input_boolean:
     initial: false
     name: Notify Katie
     icon: mdi:format-list-checks
-
+  andy_vitamins:
+    initial: false
+    name: Andy Vitamins
 input_datetime:
   crock_pot_start_time:
     name: Crock-Pot Start Time

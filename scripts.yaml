@@ -1,49 +1,78 @@
-  front_porch_motion_on:
-    alias: 'Front Porch Motion On'
-    sequence:
-      - service: input_boolean.turn_on
-        entity_id:
-          - input_boolean.front_porch_motion
-
-  front_porch_motion_off:
-    alias: 'Front Porch Motion Off'
-    sequence:
-      - service: input_boolean.turn_off
-        entity_id:
-          - input_boolean.front_porch_motion
-
-  school_lunches:
-    alias: 'School Lunches'
-    sequence:
-      - service: cast.show_lovelace_view
-        data:
-          entity_id: media_player.kitchen_hub
-          view_path: lunch
-
-  bed_time:
-    alias: 'Bed Time'
-    sequence:
-      - service: lock.lock
-        entity_id: lock.back_door
-      - delay: 00:01:00
-      - service: switch.turn_off
-        entity_id: 
-          - switch.counter_lights
-          - switch.cabinet_lights
-          - switch.christmas_tree
-          - switch.seasonal_plug_2
-      - delay: 00:15:00
-      - service: input_boolean.turn_on
-        entity_id: input_boolean.bedtime
-
-  dog_last_fed:
-    alias: 'Dogs Last Fed'
-    sequence:
-      - service: tts.google_say
-        entity_id: media_player.kitchen_hub
-        data_template:
-          message: "The dogs were last fed on {{ states('sensor.dogs_last_fed_date') }} at  {{ states('sensor.dogs_last_fed_time') }}"
-      - delay: 00:00:10
-      - service: media_player.turn_off
-        data:
-          entity_id: media_player.kitchen_hub
+kitchen_closed:
+  alias: Kitchen Closed
+  sequence:
+  - service: scene.turn_on
+    entity_id:
+    - scene.kitchen_closed
+school_lunches:
+  alias: School Lunches
+  sequence:
+  - service: cast.show_lovelace_view
+    data:
+      entity_id: media_player.kitchen_hub
+      view_path: lunch
+bed_time:
+  alias: Bed Time
+  sequence:
+  - service: lock.lock
+    data: {}
+    target:
+      entity_id:
+      - lock.back_door
+      - lock.front_door
+      - lock.porch_door
+  - service: cover.close_cover
+    data:
+      entity_id:
+      - cover.garage_door
+      - cover.third_stall
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id:
+      - switch.fireplace
+      - switch.table_light
+      - switch.island_lights
+      - switch.family_room_lights
+      - switch.piano_room_light
+      - switch.piano_room_counter_lights
+      - switch.piano_room_interior_cabinet
+      - switch.porch_door_light
+      - switch.deck_lights
+      - switch.garage_lights
+      - switch.porch_fan
+      - switch.seasonal_plug_2
+      - switch.christmas_tree
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id:
+      - light.porch
+      - light.foyer
+  - delay: 00:02:00
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id:
+      - switch.counter_lights
+      - switch.cabinet_lights
+  - delay: 00:15:00
+  - service: homeassistant.update_entity
+    entity_id: sensor.next_alarm
+  - service: input_boolean.turn_on
+    entity_id: input_boolean.external_armed_mode
+  - service: input_boolean.turn_on
+    entity_id: input_boolean.bedtime
+  mode: single
+dog_last_fed:
+  alias: Dogs Last Fed
+  sequence:
+  - service: tts.google_say
+    entity_id: media_player.kitchen_hub
+    data_template:
+      message: The dogs were last fed on {{ states('sensor.dogs_last_fed_date') }}
+        at  {{ states('sensor.dogs_last_fed_time') }}
+  - delay: 00:00:10
+  - service: media_player.turn_off
+    data:
+      entity_id: media_player.kitchen_hub

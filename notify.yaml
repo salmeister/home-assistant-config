@@ -1,3 +1,18 @@
+- name: all_mobile_devices
+  platform: group
+  services:
+    - service: mobile_app_salmob1
+    - service: mobile_app_salmob2
+    - service: mobile_app_salmob3
+    - service: mobile_app_salmob4
+    - service: mobile_app_salmob5
+
+- name: parent_mobile_devices
+  platform: group
+  services:
+    - service: mobile_app_salmob1
+    - service: mobile_app_salmob2
+
 - name: gmail_email_andy
   platform: smtp
   server: smtp.gmail.com

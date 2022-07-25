@@ -1,0 +1,56 @@
+blueprint:
+  name: Contact Sensor Toggle Lights
+  description: Toggle lights on based on contact sensor state
+  domain: automation
+  input:
+    contact_sensor:
+      name: Contact Sensor
+      description: This sensor will be sychronized with the light.
+      selector:
+        entity:
+          domain: binary_sensor
+          multiple: false
+    target_lights:
+      name: Lights
+      description: The lights to keep in sync.
+      selector:
+        target:
+          entity:
+            domain: light
+    time_out_seconds:
+      name: Timeout Seconds
+      description: The number of seconds to keep the light on
+      selector:
+        number:
+          min: 1.0
+          max: 3600.0
+          step: 1.0
+          mode: slider
+  source_url: https://gist.github.com/aesalmela/74e9e44414831776c38d6518a1d307f4
+variables:
+  timeout: !input time_out_seconds
+trigger:
+- platform: state
+  entity_id: !input contact_sensor
+- platform: state
+  entity_id:
+  - !input contact_sensor
+  to: 'on'
+  for:
+    hours: 0
+    minutes: 0
+    seconds: !input time_out_seconds
+action:
+- choose:
+  - conditions:
+    - condition: template
+      value_template: '{{ (now() - trigger.to_state.last_changed).total_seconds()
+        > timeout }}'
+    sequence:
+    - service: light.turn_off
+      data: {}
+      target: !input target_lights
+  default:
+  - service: "{% if trigger.to_state.state == \"on\" %}\n  light.turn_on\n{% else
+      %}\n  light.turn_off\n{% endif %}\n"
+    target: !input target_lights
