@@ -34,7 +34,7 @@ bed_time:
       - switch.table_light
       - switch.island_lights
       - switch.family_room_lights
-      - switch.piano_room_light
+      - switch.piano_room_lights
       - switch.piano_room_counter_lights
       - switch.piano_room_interior_cabinet
       - switch.porch_door_light
@@ -43,6 +43,7 @@ bed_time:
       - switch.porch_fan
       - switch.seasonal_plug_2
       - switch.christmas_tree
+      - switch.maggie_holiday_lights
   - service: light.turn_off
     data: {}
     target:
@@ -76,3 +77,404 @@ dog_last_fed:
   - service: media_player.turn_off
     data:
       entity_id: media_player.kitchen_hub
+turn_off_basement_lights:
+  alias: Turn Off Basement Lights
+  sequence:
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id:
+      - light.basement_hall
+      - light.basement_tv_lights
+      - light.basement_main_lights
+      - light.bar_lights
+      - light.basement_peninsula
+  - delay:
+      hours: 0
+      minutes: 2
+      seconds: 0
+      milliseconds: 0
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.basement_stairs
+  mode: single
+basement_lights_to_warm_modify_active_lights:
+  alias: 'Basement Lights To Warm: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      target_lights: light.all_basement_downlights
+      color_temp: 370
+      color_name: White
+  mode: single
+basement_lights_to_cool_modify_active_lights:
+  alias: 'Basement Lights To Cool: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_temp: 215
+      target_lights: light.all_basement_downlights
+  mode: single
+basement_tv_lights_to_dim_modify_active_lights:
+  alias: 'Basement TV Lights To Dim: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      brightness: 25
+      target_lights: light.basement_tv_lights
+      brightness_pct: 10
+  mode: single
+basement_tv_lights_to_bright_modify_active_lights:
+  alias: 'Basement TV Lights To Bright: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      brightness: 255
+      target_lights: light.basement_tv_lights
+      brightness_pct: 100
+  mode: single
+basement_tv_step_up_brightness_modify_active_lights:
+  alias: 'Basement TV Step Up Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      target_lights: light.basement_tv_lights
+      brightness_step: 10
+  mode: single
+basement_tv_step_down_brightness_modify_active_lights:
+  alias: 'Basement TV Step Down Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      target_lights: light.basement_tv_lights
+      brightness_step: -10
+  mode: single
+basement_lights_to_red_modify_active_lights:
+  alias: 'Basement Lights To Red: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: Red
+      target_lights: light.all_basement_downlights
+  mode: single
+basement_lights_to_green_modify_active_lights:
+  alias: 'Basement Lights To Green: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: Green
+      target_lights: light.all_basement_downlights
+  mode: single
+basement_lights_to_blue_modify_active_lights:
+  alias: 'Basement Lights To Blue: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: Blue
+      target_lights: light.all_basement_downlights
+  mode: single
+basement_hall_to_bright_modify_active_lights:
+  alias: 'Basement Hall To Bright: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      brightness_pct: 100
+      target_lights: light.basement_hall
+  mode: single
+basement_hall_to_dim_modify_active_lights:
+  alias: 'Basement Hall To Dim: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_hall
+      brightness_pct: 10
+  mode: single
+basement_hall_step_up_brightness_modify_active_lights:
+  alias: 'Basement Hall Step Up Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_hall
+      brightness_step: 10
+  mode: single
+basement_hall_step_down_brightness_modify_active_lights:
+  alias: 'Basement Hall Step Down Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_hall
+      brightness_step: -10
+  mode: single
+bar_lights_to_bright_modify_active_lights:
+  alias: 'Bar Lights to Bright: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.bar_lights
+      brightness_pct: 100
+  mode: single
+bar_lights_to_dim_modify_active_lights:
+  alias: 'Bar Lights to Dim: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.bar_lights
+      brightness_pct: 10
+  mode: single
+bar_lights_step_up_brightness_modify_active_lights:
+  alias: 'Bar Lights Step Up Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.bar_lights
+      brightness_step: 10
+  mode: single
+bar_lights_step_down_brightness_modify_active_lights:
+  alias: 'Bar Lights Step Down Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.bar_lights
+      brightness_step: -10
+  mode: single
+basement_to_bright_modify_active_lights:
+  alias: 'Basement To Bright: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      brightness_pct: 100
+      target_lights: light.all_basement_downlights
+  mode: single
+basement_to_dim_modify_active_lights:
+  alias: 'Basement To Dim: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.all_basement_downlights
+      brightness_pct: 10
+  mode: single
+basement_step_up_brightness_modify_active_lights:
+  alias: 'Basement Step Up Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.all_basement_downlights
+      brightness_step: 10
+  mode: single
+basement_step_down_brightness_modify_active_lights:
+  alias: 'Basement Step Down Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.all_basement_downlights
+      brightness_step: -10
+  mode: single
+basement_main_to_bright_modify_active_lights:
+  alias: 'Basement Main To Bright: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_main_lights
+      brightness_pct: 100
+  mode: single
+basement_main_to_dim_modify_active_lights:
+  alias: 'Basement Main to Dim: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_main_lights
+      brightness_pct: 10
+  mode: single
+basement_main_step_up_brightness_modify_active_lights:
+  alias: 'Basement Main Step Up Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_main_lights
+      brightness_step: 10
+  mode: single
+basement_main_step_up_brightness_modify_active_lights_2:
+  alias: 'Basement Main Step Down Brightness: Modify Active Lights'
+  use_blueprint:
+    path: salmeister/modify_active_lights.yaml
+    input:
+      color_name: NA
+      target_lights: light.basement_main_lights
+      brightness_step: -10
+  mode: single
+basement_color_loop:
+  alias: 'Basement: Color Loop'
+  use_blueprint:
+    path: mdolnik/color_loop.yaml
+    input:
+      light: light.all_basement_downlights
+      transition:
+        hours: 0
+        minutes: 0
+        seconds: 30
+      color_1:
+      - 255
+      - 0
+      - 0
+      max_color_distance: 60
+      color_2:
+      - 1
+      - 9
+      - 249
+      color_3:
+      - 0
+      - 255
+      - 51
+      color_4:
+      - 236
+      - 240
+      - 5
+      color_5:
+      - 231
+      - 2
+      - 247
+      color_6:
+      - 8
+      - 219
+      - 247
+      color_7:
+      - 253
+      - 138
+      - 8
+      color_8:
+      - 128
+      - 126
+      - 129
+      color_9:
+      - 4
+      - 246
+      - 121
+      color_10:
+      - 3
+      - 1
+      - 111
+      color_11:
+      - 85
+      - 2
+      - 2
+      color_12:
+      - 11
+      - 66
+      - 0
+  mode: single
+
+basement_zwave_to_physical:
+  mode: single
+  sequence:
+    - service: light.turn_on
+      data: {}
+      target:
+        entity_id:
+        - light.all_basement_downlights
+        - light.basement_bedroom_closet
+        - light.basement_stairs_closet
+    - service: zwave_js.set_config_parameter
+      target:
+        entity_id:
+        - switch.basement_bar_area_lights
+        - switch.basement_hall_light
+        - switch.basement_main_lights
+        - switch.basement_tv_side_lights
+      data:
+        parameter: 12
+        value: 1
+    - service: zwave_js.set_config_parameter
+      target:
+        entity_id:
+        - switch.basement_tv_room_lights
+      data:
+        parameter: 19
+        value: 1
+    - service: automation.turn_off
+      data: {}
+      target:
+        entity_id:
+        - automation.bar_lights_zooz_zen76_control_smart_light_configuration
+        - automation.bar_peninsula_zooz_zen76_control_smart_light_configuration
+        - automation.basement_main_zooz_zen76_control_smart_light_configuration
+        - automation.basement_tv_room_zooz_zen76_control_smart_light_configuration
+        - automation.basement_hall_zooz_zen76_control_smart_light_configuration
+        - automation.basement_stairs_zen32_z_wave_js
+        - automation.basement_tv_room_lights
+        - automation.basement_bedroom_closet_contact_sensor_toggle_lights
+        - automation.basement_stairs_contact_sensor_toggle_lights
+    - service: switch.turn_off
+      data: {}
+      target:
+        entity_id:
+        - switch.basement_bar_area_lights
+        - switch.basement_hall_light
+        - switch.basement_main_lights
+        - switch.basement_tv_side_lights
+        - switch.basement_tv_room_lights
+
+basement_zwave_to_virtual:
+  mode: single
+  sequence:
+    - service: switch.turn_on
+      data: {}
+      target:
+        entity_id:
+        - switch.basement_bar_area_lights
+        - switch.basement_hall_light
+        - switch.basement_main_lights
+        - switch.basement_tv_side_lights
+        - switch.basement_tv_room_lights
+    - service: automation.turn_on
+      data: {}
+      target:
+        entity_id:
+        - automation.bar_lights_zooz_zen76_control_smart_light_configuration
+        - automation.bar_peninsula_zooz_zen76_control_smart_light_configuration
+        - automation.basement_main_zooz_zen76_control_smart_light_configuration
+        - automation.basement_tv_room_zooz_zen76_control_smart_light_configuration
+        - automation.basement_hall_zooz_zen76_control_smart_light_configuration
+        - automation.basement_stairs_zen32_z_wave_js
+        - automation.basement_tv_room_lights
+        - automation.basement_bedroom_closet_contact_sensor_toggle_lights
+        - automation.basement_stairs_contact_sensor_toggle_lights
+    - service: zwave_js.set_config_parameter
+      target:
+        entity_id:
+        - switch.basement_bar_area_lights
+        - switch.basement_hall_light
+        - switch.basement_main_lights
+        - switch.basement_tv_side_lights
+      data:
+        parameter: 12
+        value: 0
+    - service: zwave_js.set_config_parameter
+      target:
+        entity_id:
+        - switch.basement_tv_room_lights
+      data:
+        parameter: 19
+        value: 0
+    - service: light.turn_off
+      data: {}
+      target:
+        entity_id:
+        - light.all_basement_downlights
+        - light.basement_bedroom_closet
+        - light.basement_stairs_closet

@@ -12,6 +12,7 @@
     switch.piano_room_counter_lights: 'on'
     switch.christmas_tree: 'on'
     switch.seasonal_plug_2: 'on'
+    switch.maggie_holiday_lights: 'on'
   id: 2a998ab0c78a4174adc310ca5d3d5fb9
 - id: '1632764053923'
   name: Kitchen Closed
@@ -39,3 +40,135 @@
       state: 'on'
     light.porch:
       state: 'off'
+- id: '1659712908313'
+  name: Vikings Colors
+  entities:
+    light.basement_hall:
+        color_name: darkgoldenrod
+        state: 'on'
+    light.basement_tv_ln:
+      color_name: purple
+      state: 'on'
+    light.basement_tv_ls:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_tv_une:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_tv_use:
+      color_name: purple
+      state: 'on'
+    light.basement_tv_um:
+      color_name: purple
+      state: 'on'
+    light.basement_tv_unw:
+      color_name: purple
+      state: 'on'
+    light.basement_tv_usw:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_main_unw:
+      color_name: purple
+      state: 'on'
+    light.basement_main_une:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_main_umw:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_main_ume:
+      color_name: purple
+      state: 'on'
+    light.basement_main_usw:
+      color_name: purple
+      state: 'on'
+    light.basement_main_use:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_main_ln:
+      color_name: purple
+      state: 'on'
+    light.basement_main_lm:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.basement_main_ls:
+      color_name: purple
+      state: 'on'
+    light.bar_le:
+      color_name: darkgoldenrod
+      state: 'on'
+    light.bar_lw:
+      color_name: purple
+      state: 'on'
+    light.bar_ue:
+      color_name: purple
+      state: 'on'
+    light.bar_uw:
+      color_name: darkgoldenrod
+      state: 'on'
+- id: '1659712908214'
+  name: Twins Colors
+  entities:
+    light.basement_hall:
+      color_name: navy
+      state: 'on'
+    light.basement_tv_ln:
+      color_name: red
+      state: 'on'
+    light.basement_tv_ls:
+      color_name: navy
+      state: 'on'
+    light.basement_tv_une:
+      color_name: navy
+      state: 'on'
+    light.basement_tv_use:
+      color_name: red
+      state: 'on'
+    light.basement_tv_um:
+      color_name: red
+      state: 'on'
+    light.basement_tv_unw:
+      color_name: red
+      state: 'on'
+    light.basement_tv_usw:
+      color_name: navy
+      state: 'on'
+    light.basement_main_unw:
+      color_name: red
+      state: 'on'
+    light.basement_main_une:
+      color_name: navy
+      state: 'on'
+    light.basement_main_umw:
+      color_name: navy
+      state: 'on'
+    light.basement_main_ume:
+      color_name: red
+      state: 'on'
+    light.basement_main_usw:
+      color_name: red
+      state: 'on'
+    light.basement_main_use:
+      color_name: navy
+      state: 'on'
+    light.basement_main_ln:
+      color_name: red
+      state: 'on'
+    light.basement_main_lm:
+      color_name: navy
+      state: 'on'
+    light.basement_main_ls:
+      color_name: red
+      state: 'on'
+    light.bar_le:
+      color_name: navy
+      state: 'on'
+    light.bar_lw:
+      color_name: red
+      state: 'on'
+    light.bar_ue:
+      color_name: red
+      state: 'on'
+    light.bar_uw:
+      color_name: navy
+      state: 'on'

@@ -1,0 +1,279 @@
+blueprint:
+  name: Zooz Zen76 Control Smart Light Configuration
+  description: Turn on scene control then configure the switch using this automation
+  domain: automation
+  input:
+    node_id:
+      name: Node ID
+      description: The node ID of the zwave switch
+      selector:
+        number:
+          min: 1.0
+          max: 999.0
+          mode: slider
+          step: 1.0
+    target_light:
+      name: Target Light
+      description: The target light to control for the 1x presses
+      selector:
+        entity:
+          domain: light
+          multiple: false
+    on_1x:
+      name: Press On (1x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    already_on_already_bright_1x:
+      name: Press On (1x) And Already On And Already Bright
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    already_on_not_bright_1x:
+      name: Press On (1x) And Already On And Not Bright
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    on_2x:
+      name: Press On (2x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    on_3x:
+      name: Press On (3x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    on_4x:
+      name: Press On (4x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    on_5x:
+      name: Press On (5x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    on_held:
+      name: Press On (held)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_1x:
+      name: Press Off (1x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_2x:
+      name: Press Off (2x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_3x:
+      name: Press Off (3x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_4x:
+      name: Press Off (4x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_5x:
+      name: Press Off (5x)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_held:
+      name: Press Off (held)
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    on_released:
+      name: Release On
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+    off_released:
+      name: Release Off
+      description: Action to run on button press.
+      default: []
+      selector:
+        action: {}
+  source_url: https://gist.github.com/salmeister/7c12bce9bfa181062f6508179e48140f
+mode: single
+max_exceeded: silent
+trigger:
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyPressed
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyPressed
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyPressed2x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyPressed2x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyPressed3x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyPressed3x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyPressed4x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyPressed4x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyPressed5x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyPressed5x
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyHeld
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyHeld
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 001
+    value: KeyReleased
+    node_id: !input 'node_id'
+- platform: event
+  event_type: zwave_js_value_notification
+  event_data:
+    label: Scene 002
+    value: KeyReleased
+    node_id: !input 'node_id'
+action:
+- variables:
+    target_light: !input 'target_light'
+    scene_label: '{{ trigger.event.data.label }}'
+    scene_value: '{{ trigger.event.data.value }}'
+- choose:
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyPressed''
+      }}'
+    sequence:
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: !input 'target_light'
+          state: 'on'
+        sequence:
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: '{{ state_attr(target_light,''brightness'') | int <
+                255 }}'
+            sequence: !input 'already_on_not_bright_1x'
+          - conditions:
+            - condition: template
+              value_template: '{{ state_attr(target_light,''brightness'') | int ==
+                255 }}'
+            sequence: !input 'already_on_already_bright_1x'
+      - conditions:
+        - condition: state
+          entity_id: !input 'target_light'
+          state: 'off'
+        sequence: !input 'on_1x'
+  - conditions: '{{ scene_label == ''Scene 002'' and scene_value == ''KeyPressed''
+      }}'
+    sequence:
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: !input 'target_light'
+          state: 'on'
+        sequence: !input 'off_1x'
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyPressed2x''
+      }}'
+    sequence: !input 'on_2x'
+  - conditions: '{{ scene_label == ''Scene 002'' and scene_value == ''KeyPressed2x''
+      }}'
+    sequence: !input 'off_2x'
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyPressed3x''
+      }}'
+    sequence: !input 'on_3x'
+  - conditions: '{{ scene_label == ''Scene 002'' and scene_value == ''KeyPressed3x''
+      }}'
+    sequence: !input 'off_3x'
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyPressed4x''
+      }}'
+    sequence: !input 'on_4x'
+  - conditions: '{{ scene_label == ''Scene 002'' and sscene_value == ''KeyPressed4x''
+      }}'
+    sequence: !input 'off_4x'
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyPressed5x''
+      }}'
+    sequence: !input 'on_5x'
+  - conditions: '{{ scene_label == ''Scene 002'' and scene_value == ''KeyPressed5x''
+      }}'
+    sequence: !input 'off_5x'
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyHeld'' }}'
+    sequence: !input 'on_held'
+  - conditions: '{{ scene_label == ''Scene 002'' and scene_value == ''KeyHeld'' }}'
+    sequence: !input 'off_held'
+  - conditions: '{{ scene_label == ''Scene 001'' and scene_value == ''KeyReleased''
+      }}'
+    sequence: !input 'on_released'
+  - conditions: '{{ scene_label == ''Scene 002'' and scene_value == ''KeyReleased''
+      }}'
+    sequence: !input 'off_released'

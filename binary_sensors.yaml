@@ -1,0 +1,40 @@
+  - platform: wyzesense
+    device: auto
+    #device: "/dev/hidraw3"
+
+  - platform: workday
+    name: workday
+    country: US
+    workdays: [mon, tue, wed, thu, fri]
+    excludes: [sat, sun, holiday]
+    
+  - platform: workday
+    name: Workday Evening
+    country: US
+    workdays: [sun, mon, tue, wed, thu]
+    excludes: [sat, fri]
+
+  - platform: template
+    sensors:
+      schoolday:
+        friendly_name: "School Day"
+        value_template: >-
+          {% if not is_state('sensor.twin_oaks_lunch_0', none) %}
+            {% if not is_state('sensor.twin_oaks_lunch_0', '') %}
+              {% if not is_state('sensor.twin_oaks_lunch_0', 'No School') %}
+              on
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+  - platform: template
+    sensors:
+      family_presence:
+        friendly_name: Family Presence
+        icon_template: >-
+          {% if is_state('binary_sensor.family_presence','on') %}
+            hass:home-account
+          {% else %}
+            hass:home-outline
+          {% endif %}
+        value_template: "{{ is_state('person.andy','home') or  is_state('person.katie','home') or is_state('person.karlee','home') or is_state('person.cam','home') or is_state('person.maggie','home') }}"

@@ -1,0 +1,30 @@
+full_armed_mode:
+    name: Full Armed Mode
+    icon: mdi:security
+external_armed_mode:
+  name: External Armed Mode
+  icon: mdi:security
+vacation_mode:
+  name: Vacation Mode
+  icon: mdi:beach
+bedtime:
+  name: bedtime
+  icon: mdi:bed
+unload_dishwasher:
+  name: Unload Dishwasher
+  initial: false
+  icon: mdi:dishwasher-alert
+karlee_alarm:
+  name: Karlee Alarm
+  icon: mdi:alarm
+notify_fpm_andy:
+  initial: true
+  name: Notify Andy
+  icon: mdi:format-list-checks
+notify_fpm_katie:
+  initial: false
+  name: Notify Katie
+  icon: mdi:format-list-checks
+andy_vitamins:
+  initial: false
+  name: Andy Vitamins

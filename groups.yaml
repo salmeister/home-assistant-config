@@ -1,0 +1,13 @@
+  zwave_battery_level_group:
+    name: Zwave Battery Level Group
+    entities:
+      - sensor.back_door_lock_battery_level
+      - sensor.porch_door_battery_level
+      - sensor.front_door_battery_level
+      - sensor.fridge_leak_battery_level
+      - sensor.kitchen_water_leak_battery_level
+      - sensor.laundry_water_leak_battery_level
+      - sensor.master_bath_pir_battery
+      - sensor.up_bath_pir_battery
+      - sensor.dog_food_battery
+      - sensor.front_closet_door_battery

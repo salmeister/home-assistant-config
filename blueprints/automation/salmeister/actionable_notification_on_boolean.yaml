@@ -107,7 +107,7 @@ blueprint:
       default: []
       selector:
         action: {}
-  source_url: https://gist.github.com/aesalmela/c5b75392a511affcbe271a0021533b5c
+  source_url: https://gist.github.com/salmeister/c5b75392a511affcbe271a0021533b5c
 mode: restart
 max_exceeded: silent
 variables:

@@ -1,3 +1,13 @@
+  - platform: next_holiday
+    min_future_holidays: 3
+    sources: 
+     - country: "USA"
+       state: "MN"
+       exclude:
+         - "Washington's Birthday"
+         - "Juneteenth National Independence Day"
+         - "Juneteenth National Independence Day (Observed)"
+         - "Columbus Day"
   - platform: systemmonitor
     resources:
       - type: last_boot
@@ -132,6 +142,7 @@
   - platform: template
     sensors:
       main_temp_offset:
+        unique_id: 7a29f6a5b8844900888636146c183183
         value_template: "{{ (states('sensor.laundry_water_leak_air_temperature') | float + 3) | round(1) }}"
         unit_of_measurement: °F
         icon_template: mdi:thermometer
@@ -139,15 +150,8 @@
 
   - platform: template
     sensors:
-      basement_temp_offset:
-        value_template: "{{ (states('sensor.basement_leak_air_temperature') | float + 3) | round(1) }}"
-        unit_of_measurement: °F
-        icon_template: mdi:thermometer
-        friendly_name: 'Basement Temp'
-
-  - platform: template
-    sensors:
       front_closet_door_battery:
+        unique_id: 5eed52cac6984f51be772efec1170a35
         friendly_name: 'Closet Door Battery'
         value_template: '{{ states.binary_sensor.front_closet_door.attributes.battery_level }}'
         unit_of_measurement: '%'
@@ -155,6 +159,7 @@
   - platform: template
     sensors:
       dog_food_battery:
+        unique_id: 574b208dd20a44628fd02d593a538703
         friendly_name: 'Dog Food Battery'
         value_template: '{{ states.binary_sensor.dog_food.attributes.battery_level }}'
         unit_of_measurement: '%'
@@ -162,6 +167,7 @@
   - platform: template
     sensors:
       master_bath_pir_battery:
+        unique_id: b65222a8e6e642eba8c02c930338ff26
         friendly_name: 'Master Bath PIR Battery'
         value_template: '{{ states.binary_sensor.master_bath_pir.attributes.battery_level }}'
         unit_of_measurement: '%'
@@ -169,16 +175,16 @@
   - platform: template
     sensors:
       dogs_last_fed_date:
+        unique_id: 810fdc6002ce49dd940880bd36e7deee
         friendly_name: 'Dogs Last Fed Date'
         value_template: '{{ as_timestamp(states.binary_sensor.dog_food.attributes.timestamp) | timestamp_custom("%A %B %d ",true) }}'
 
   - platform: template
     sensors:
       dogs_last_fed_time:
+        unique_id: bac7843a94f144519910070d24bd0cc3
         friendly_name: 'Dogs Last Fed Time'
         value_template: '{{ as_timestamp(states.binary_sensor.dog_food.attributes.timestamp) | timestamp_custom("%I:%M %p",true) }}'
-
-  - platform: moon
 
   - platform: template
     sensors:

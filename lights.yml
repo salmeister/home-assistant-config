@@ -1,29 +1,34 @@
   - platform: group
     name: Fireplace Lights
+    unique_id: dfcd1513a581498691f3b6a9873f38a1
     entities:
       - light.fireplace_left
       - light.fireplace_right
 
   - platform: group
     name: Bar Lower Lights
+    unique_id: d892c0ddba614723a4450fec0ad1b1e7
     entities:
       - light.bar_le
       - light.bar_lw
 
   - platform: group
     name: Bar Upper Lights
+    unique_id: 04234704a5f4457db1ee8a0cd4cd5ec7
     entities:
       - light.bar_ue
       - light.bar_uw
 
   - platform: group
     name: Bar Lights
+    unique_id: e700f488d1494a86bb7db7892c621ab3
     entities:
       - light.bar_upper_lights
       - light.bar_lower_lights
 
   - platform: group
     name: Basement Main Upper Lights
+    unique_id: 4cc63ada4d7d4985b2d2ff8dfb087cf2
     entities:
       - light.basement_main_unw
       - light.basement_main_une
@@ -34,6 +39,7 @@
 
   - platform: group
     name: Basement Main Lower Lights
+    unique_id: 6e69dbdfb34f4c3993e09393cdd19a68
     entities:
       - light.basement_main_ln
       - light.basement_main_lm
@@ -41,18 +47,21 @@
 
   - platform: group
     name: Basement Main Lights
+    unique_id: ab547bf58fb348f7873d60efd0457cde
     entities:
       - light.basement_main_upper_lights
       - light.basement_main_lower_lights
 
   - platform: group
     name: Basement TV Couch Lights
+    unique_id: 89ae63a482304ba78cdde6b2a4ed68f2
     entities:
       - light.basement_tv_unw
       - light.basement_tv_usw
   
   - platform: group
     name: Basement TV Upper Non Couch Lights
+    unique_id: 66919f560c37406ca6fb9c233ebae191
     entities:
       - light.basement_tv_um
       - light.basement_tv_une
@@ -60,18 +69,30 @@
 
   - platform: group
     name: Basement TV Upper Lights
+    unique_id: 33cf5da0fea84d12b9b43dac277c8ce0
     entities:
       - light.basement_tv_couch_lights
       - light.basement_tv_upper_non_couch_lights
 
   - platform: group
     name: Basement TV Lower Lights
+    unique_id: afcf77ab7e66468ab02ecebfeb10e86f
     entities:
       - light.basement_tv_ln
       - light.basement_tv_ls
 
   - platform: group
     name: Basement TV Lights
+    unique_id: f370e38389fd4eaf957c935f1cb45bb9
     entities:
       - light.basement_tv_upper_lights
       - light.basement_tv_lower_lights
+
+  - platform: group
+    name: All Basement Downlights
+    unique_id: 033f78aa5965463185dc9cb9673af781
+    entities:
+      - light.basement_tv_lights
+      - light.basement_main_lights
+      - light.bar_lights
+      - light.basement_hall

@@ -1,0 +1,400 @@
+blueprint:
+  name: Color Loop
+  description: '# Color Loop
+
+    ### Version: `0.1.1` (2022-06-19)
+
+    Loops through predetermined colors for a chosen light.
+
+    This will continue indefinitely until the either the light is turned off or the
+    script is manually disabled.
+
+    ## READ THIS FIRST
+
+    **Before using this blueprint, be warned that it can put a real heavy load on
+    Home Assistant and its database if configured to change colors at a quick pace.
+    While these color changes do not show up in the History or the Logbook, they are
+    still logged in the database unless manually configured to not do so. [If Home
+    Assistant is running on an SD card on a Raspberry Pi, large amounts of DB changes
+    can technically cause damage over time](https://www.reddit.com/r/homeassistant/comments/jvwtv1/friendly_reminder_dont_use_a_sd_card_on_a_pi/).
+    Refer to the next sections regarding solutions to mitigate this issue. If you
+    do not understand these issues, this blueprint should probably be avoided.**
+
+
+    ### Solution 1: Exclude lights from recorder:
+
+    With that out of the way need a solution for the database spam, one solution that
+    works at the moment is to literally prevent the light(s) from getting logged for
+    *anything*. The following configuration could be added and populated with the
+    chosen lights and the entity ID of this script.
+
+    <code> <!-- Code Blocks in markdown seem to be broken, the following is a work-around
+    --> recorder:
+
+    &nbsp;&nbsp;exclude:
+
+    &nbsp;&nbsp;&nbsp;&nbsp;entities:
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\# Exclude any logging of the chosen light.
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- light.my_light
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\# Exclude any logging of this color loop
+    script.
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- script.my_light_color_loop
+
+    &nbsp;&nbsp;&nbsp;&nbsp;event_types:
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\# Do not record ANY service calls
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- call_service </code>
+
+    If a light group is used in this blueprint, you should add all individual light
+    entities to the exclusion above as well as the group ID.
+
+    Refer to [Recorder Exclude Docs](https://www.home-assistant.io/integrations/recorder#exclude)
+
+    ### Solution 2: Increase Commit Interval:
+
+    Another solution is to increase the commit interval. By default the DB is written
+    to once a second. Increasing this value will prevent the Database from being spammed
+    with frequent requests.
+
+    This will allow the lights to still be logged, but depending on how often this
+    light is configured to change colors, this can end up significantly increasing
+    the size of the DB.
+
+    <code> <!-- Code Blocks in markdown seem to be broken, the following is a work-around
+    --> recorder:
+
+    &nbsp;&nbsp;\# Write to the DB every 15 seconds instead of once a second.
+
+    &nbsp;&nbsp;commit_interval: 15 </code>
+
+    Refer to [Recorder Commit Interval Docs](https://www.home-assistant.io/integrations/recorder#commit_interval)
+
+    ### Future solution:
+
+    A feature request has been added to see if there is a better way to do this without
+    needing to *always* exclude logging: [Allow an ability to call a service without
+    any logging/recording](https://community.home-assistant.io/t/allow-an-ability-to-call-a-service-without-any-logging-recording/428693)
+
+    # Configuration:
+
+    ## Light:
+
+    For the Light, choose the light entity to loop through the colors chosen below.
+
+    This script will continuously loop through colors until the script it manually
+    stopped or the light is turned off.
+
+    A group entity consisting of multiple lights can also be used. This has a caveat
+    where the script does not always get disabled when turning the individual lights
+    off. To stop the color loop for groups, either manually stop the script or turn
+    the whole light group off.
+
+    ***Note: Some lights do not support gradual transition between colors. In these
+    cases, the light will instantly change to the next color after the transition
+    time instead of gradually changing. Refer to the `Max Color Distance` section
+    below for a means to resolve this.***
+
+    ## Colors:
+
+    Set the colors to loop through.
+
+    Any colors set to black (R:0 G:0 B:0) will be omitted from the loop.
+
+    *Note: There is no current way to re-order the chosen colors, you must change
+    or remove (set to black) colors to change the order.*
+
+    *Note: Since RGB colors do not translate well to colored lights (the current brightness
+    of the light does not get changed by this script) the color previews may not look
+    accurate to the final result.*
+
+    ## Transition Time:
+
+    Choose the time it takes to cycle through each color.
+
+    ## Max Color Distance:
+
+    Determines how many colors in between the chosen colors should be transitioned
+    to.
+
+    This prevents issues where the color fades to white in between colors by dynamically
+    picking colors in between the chosen colors.
+
+    This value basically means the minimum amount of degrees of the color wheel should
+    result in an in-between color to be added.
+
+
+    For Example: Red and Cyan are on the opposite side of the color wheel (180 degrees
+    apart):
+
+    - Choosing `180` will cause the color transition going straight across resulting
+    in a fade to white in between the colors.
+
+    - Choosing `90` will have a new color added every 90 degrees, so in this case
+    a new transitional color will be added at Purple.
+
+    - Choosing `60` will have a new color added every 60 degrees, so in this case
+    two transitional colors will be added at Blue and Pink.
+
+    - Choosing `30` will have a new color added every 30 degrees, so in this case
+    three transitional colors will be added at Red/Pink, Purple, and Blue.
+
+    - Choosing `1` will have a new color added every 1 degrees, so in this case the
+    light will be set to a new color for EVERY color along the way.
+
+
+    If using a light which does not support color transitions, this can be set to
+    a very low number (eg 1-10) in order to fake the color transition by updating
+    the colors gradually along the way.
+
+    In summary, for performance reasons, keep this value as high as possible and lower
+    it as needed to avoid the color going brighter in between the chosen colors.
+
+    ## Max Changes Per Second:
+
+    With the combination of `Transition Time` and `Max Color Distance` both being
+    set to a low value, this could end up resulting in WAY too many calls to the light
+    to update its color (up to 180 calls per second). In order to avoid overloading
+    Home Assistant, this value can be used in order to set a maximum limit of how
+    many calls per second to change the light during transition can be made.
+
+    For performance reasons, this should be as low as possible, but with lights which
+    do not support color transitions, this can be increased in order to have smoother
+    color transitions. '
+  domain: script
+  input:
+    light:
+      name: Light
+      selector:
+        entity:
+          domain:
+          - light
+          - group
+          multiple: false
+    transition:
+      name: Transition Time
+      selector:
+        duration: {}
+      default:
+        hours: 0
+        minutes: 0
+        seconds: 15
+    max_color_distance:
+      name: Max Color Distance
+      default: 60
+      selector:
+        number:
+          min: 1.0
+          max: 180.0
+          step: 1.0
+          mode: slider
+    max_changes_per_second:
+      name: Max Changes Per Second
+      default: 1
+      selector:
+        number:
+          min: 1.0
+          max: 5.0
+          step: 1.0
+          mode: slider
+    color_1:
+      name: Color 1
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_2:
+      name: Color 2
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_3:
+      name: Color 3
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_4:
+      name: Color 4
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_5:
+      name: Color 5
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_6:
+      name: Color 6
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_7:
+      name: Color 7
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_8:
+      name: Color 8
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_9:
+      name: Color 9
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_10:
+      name: Color 10
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_11:
+      name: Color 11
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+    color_12:
+      name: Color 12
+      description: Set to black to omit this color
+      default:
+      - 0
+      - 0
+      - 0
+      selector:
+        color_rgb: {}
+  source_url: https://gist.github.com/mdolnik/7147b5df4b08f7979afad02a5dd137a2
+mode: restart
+sequence:
+- alias: Set up main variables
+  variables:
+    transition: !input 'transition'
+    transition_seconds: '{{ ((transition.hours)*60*60) +  ((transition.minutes)*60)
+      + transition.seconds }}'
+    max_color_distance: !input 'max_color_distance'
+    max_changes_per_second: !input 'max_changes_per_second'
+    color_rgbs:
+    - !input 'color_1'
+    - !input 'color_2'
+    - !input 'color_3'
+    - !input 'color_4'
+    - !input 'color_5'
+    - !input 'color_6'
+    - !input 'color_7'
+    - !input 'color_8'
+    - !input 'color_9'
+    - !input 'color_10'
+    - !input 'color_11'
+    - !input 'color_12'
+    color_hsv_list: "{%- set data = namespace(entries=[]) -%} {%- for color_rgb in\
+      \ color_rgbs -%}\n  {%- if color_rgb != [0,0,0] -%}\n    {%- set r = (color_rgb[0]/255)\
+      \ -%}\n    {%- set g = (color_rgb[1]/255) -%}\n    {%- set b = (color_rgb[2]/255)\
+      \ -%}\n    {%- set maxRGB = max(r,g,b) -%}\n    {%- set minRGB = min(r,g,b)\
+      \ -%}\n    {%- set chroma = maxRGB - minRGB -%}\n    {%- if chroma == 0 -%}\n\
+      \      {%- set h = 0 -%}\n      {%- set s = 0 -%}\n      {%- set v = maxRGB\
+      \ -%}\n    {%- else -%}\n      {%- if r == minRGB -%}\n        {%- set h = 3-((g-b)/chroma)\
+      \ -%}\n      {%- elif b == minRGB -%}\n        {%- set h = 1-((r-g)/chroma)\
+      \ -%}\n      {%- else -%}\n        {%- set h = 5-((b-r)/chroma) -%}\n      {%-\
+      \ endif -%}\n      {%- set h = 60 * h -%}\n      {%- set s = chroma / maxRGB\
+      \ -%}\n      {%- set v = maxRGB -%}\n    {%- endif -%}\n    {%- set h = h|round(2)|string\
+      \ -%}\n    {%- set s = s|round(2)|string -%}\n    {%- set v = v|round(2)|string\
+      \ -%}\n    {%- set comma_sep = h + \"|\" + s + \"|\" + v -%}\n    {%- set data.entries\
+      \ = data.entries + [comma_sep] -%}\n  {%- endif -%}\n{%- endfor -%} {{ data.entries\
+      \ | join(\",\") }}"
+    color_count: '{{ color_hsv_list.split(",")|length }}'
+- alias: Change Color
+  repeat:
+    while:
+    - condition: state
+      entity_id: !input 'light'
+      state: 'on'
+    sequence:
+    - variables:
+        i_total: '{{ repeat.index }}'
+        i_cur: '{{ (i_total - 1) % color_count }}'
+        i_next: '{{ i_total % color_count }}'
+        hsv_cur: '{{ color_hsv_list.split(",")[i_cur] }}'
+        hue_cur: '{{ hsv_cur.split("|")[0] }}'
+        sat_cur: '{{ (hsv_cur.split("|")[1])|float * 100 }}'
+        hsv_next: '{{ color_hsv_list.split(",")[i_next] }}'
+        hue_next: '{{ hsv_next.split("|")[0] }}'
+        sat_next: '{{ (hsv_next.split("|")[1])|float * 100 }}'
+        color_distance: '{{ ((hue_next - hue_cur + 540) % 360) - 180 }}'
+        color_distance_abs: '{{ color_distance|abs }}'
+        iterations_desired: "{% if color_distance_abs < max_color_distance %}\n  {{\
+          \ 1 }}\n{% else %}\n  {{ (color_distance_abs / max_color_distance)|round(0,\
+          \ 'floor') }}\n{% endif %}"
+        fade_iterations: '{{ min(iterations_desired, (max_changes_per_second * transition_seconds))
+          }}'
+        hue_step: '{{ (color_distance / fade_iterations) }}'
+        sat_step: '{{ ((sat_next - sat_cur) / fade_iterations) }}'
+    - alias: Fade to Next Color
+      repeat:
+        count: '{{ fade_iterations }}'
+        sequence:
+        - condition: state
+          entity_id: !input 'light'
+          state: 'on'
+        - variables:
+            t_total: '{{ repeat.index }}'
+            t_cur: '{{ (t_total - 1) % fade_iterations }}'
+            transition_fade: '{{ transition_seconds / fade_iterations }}'
+            transition_hue_calc: '{{ hue_cur + (hue_step * t_cur)|round(2) }}'
+            transition_hue: "{% if transition_hue_calc > 360 %}\n  {{ transition_hue_calc\
+              \ - 360 }}\n{% elif transition_hue_calc < 0 %}\n  {{ transition_hue_calc\
+              \ + 360 }}\n{% else %}\n  {{ transition_hue_calc }}\n{% endif %}"
+            transition_sat: '{{ min(max((sat_cur + (sat_step * t_cur))|round(2), 0),
+              100) }}'
+        - service: light.turn_on
+          target:
+            entity_id: !input 'light'
+          data:
+            hs_color: '{{ [transition_hue, transition_sat] }}'
+            transition: '{{ transition_fade }}'
+        - delay: '{{ transition_fade }}'

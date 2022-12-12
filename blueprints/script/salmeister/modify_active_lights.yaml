@@ -1,0 +1,107 @@
+blueprint:
+  name: Modify Active Lights
+  description: Modify Light Properties
+  domain: script
+  input:
+    target_lights:
+      name: Lights
+      description: The lights to keep in sync
+      selector:
+        entity:
+          domain: light
+          multiple: false
+    color_temp:
+      default: 0
+      selector:
+        color_temp:
+          max_mireds: 370
+    color_name:
+      default: White
+      selector:
+        select:
+          options:
+          - Black
+          - White
+          - Red
+          - Lime
+          - Blue
+          - Yellow
+          - Aqua
+          - Fuchsia
+          - Silver
+          - Gray
+          - Maroon
+          - Olive
+          - Green
+          - Purple
+          - Teal
+          - Navy
+          multiple: false
+          custom_value: false
+    brightness_pct:
+      name: Brightness Percentage
+      description: The percentage of brightness
+      default: 0
+      selector:
+        number:
+          min: 0.0
+          max: 100.0
+          mode: slider
+          step: 1.0
+    brightness_step:
+      name: Brightness Step Percentage
+      description: The percentage of brightness to increase or decrease by
+      default: 0
+      selector:
+        number:
+          min: -99.0
+          max: 100.0
+          mode: slider
+          step: 1.0
+  source_url: https://gist.github.com/salmeister/642317d9fb3ffe9aa179fb26cc67d3ce
+variables:
+  color_name: !input 'color_name'
+  color_temp: !input 'color_temp'
+  brightness_pct: !input 'brightness_pct'
+  brightness_step: !input 'brightness_step'
+  target_lights: !input 'target_lights'
+  lights: '{{ expand(target_lights) | selectattr(''state'', ''eq'', ''on'') | map(attribute=''entity_id'')
+    | list }}'
+sequence:
+- choose:
+  - conditions:
+    - condition: template
+      value_template: '{{ brightness_pct != 0 }}'
+    sequence:
+    - service: light.turn_on
+      target:
+        entity_id: '{{ lights }}'
+      data:
+        brightness_pct: '{{ brightness_pct }}'
+  - conditions:
+    - condition: template
+      value_template: '{{ brightness_step != 0 }}'
+    sequence:
+    - service: light.turn_on
+      target:
+        entity_id: '{{ lights }}'
+      data:
+        brightness_step_pct: '{{ brightness_step }}'
+  - conditions:
+    - condition: template
+      value_template: '{{ color_name != ''White'' }}'
+    sequence:
+    - service: light.turn_on
+      target:
+        entity_id: '{{ lights }}'
+      data:
+        color_name: '{{ color_name }}'
+  - conditions:
+    - condition: template
+      value_template: '{{ color_temp > 154 }}'
+    sequence:
+    - service: light.turn_on
+      target:
+        entity_id: '{{ lights }}'
+      data:
+        color_temp: '{{ color_temp }}'

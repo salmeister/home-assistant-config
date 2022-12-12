@@ -25,10 +25,11 @@
   - service: scene.turn_on
     entity_id: scene.Dusk
   id: 34d19e4e28744d10bf2eeba67c8c9652
-- alias: Garage door opened
+- id: b903ec6aacd748959d03f2b1d38f2e2d
+  alias: Garage door opened
   trigger:
-    platform: state
-    entity_id: group.garage_doors
+  - platform: state
+    entity_id: cover.garage_doors
     to: open
   condition:
   - condition: and
@@ -42,7 +43,11 @@
 
         '
   action:
-  - delay: 00:00:10
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 0
+      milliseconds: 25
   - choose:
     - conditions:
       - condition: state
@@ -68,18 +73,17 @@
             ttl: 0
             priority: high
             image: /api/camera_proxy/camera.garage
-  id: b903ec6aacd748959d03f2b1d38f2e2d
 - alias: Garage Door Left Open While Home Alone
   trigger:
     platform: state
-    entity_id: group.garage_doors
+    entity_id: cover.garage_doors
     to: open
   condition:
   - condition: state
     state: open
     for:
       minutes: 5
-    entity_id: group.garage_doors
+    entity_id: cover.garage_doors
   - condition: and
     conditions:
     - condition: template
@@ -99,7 +103,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: The garage door with close in 5 minutes.
   - delay: 00:00:10
@@ -109,7 +113,7 @@
   - delay: 00:05:00
   - service: cover.close_cover
     data:
-      entity_id: group.garage_doors
+      entity_id: cover.garage_doors
   id: af0c4a0821ad44af8e99ac7e98e28964
 - alias: Garage Door Left Open At Night
   trigger:
@@ -119,7 +123,7 @@
   condition:
   - condition: state
     state: open
-    entity_id: group.garage_doors
+    entity_id: cover.garage_doors
   action:
   - service: scene.create
     data:
@@ -129,7 +133,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: The garage door is still open.
   - delay: 00:00:10
@@ -141,19 +145,18 @@
   alias: Garage Door Opened When Armed
   trigger:
   - platform: state
-    entity_id: group.garage_doors
+    entity_id: cover.garage_doors
     to: open
   condition:
   - condition: state
-    entity_id: input_boolean.full_armed_mode
+    entity_id: input_boolean.external_armed_mode
     state: 'on'
-  - condition: or
-    conditions:
-    - condition: state
-      entity_id: input_boolean.external_armed_mode
-      state: 'on'
   action:
-  - delay: 00:00:10
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
   - choose:
     - conditions:
       - condition: state
@@ -183,7 +186,7 @@
 - alias: Garage Door Light
   trigger:
     platform: state
-    entity_id: group.garage_doors
+    entity_id: cover.garage_doors
     from: closed
   action:
   - service: homeassistant.update_entity
@@ -203,21 +206,35 @@
   - service: switch.turn_off
     entity_id: switch.garage_lights
   id: bf98fd456dff474d8b10fec42e759697
-- alias: Front Light On At Dusk
+- id: 8b54a454511145a9b93de61098a20d2f
+  alias: Front Light On At Dusk
   trigger:
-    platform: sun
+  - platform: sun
     event: sunset
     offset: +00:12:00
   condition:
-  - condition: template
-    value_template: '{{ now().month != 12 }}'
-  - condition: state
-    entity_id: switch.front_lights
-    state: 'off'
+  - condition: not
+    conditions:
+    - condition: or
+      conditions:
+      - condition: state
+        entity_id: sensor.next_holiday
+        state: Christmas Day
+      - condition: state
+        entity_id: sensor.next_holiday
+        state: Christmas Day (Observed)
+      - condition: state
+        entity_id: sensor.next_holiday
+        state: New Year's Day
+      - condition: state
+        entity_id: sensor.next_holiday
+        state: New Year's Day (Observed)
+  - condition: numeric_state
+    entity_id: sensor.outdoor_temp
+    below: 50
   action:
   - service: switch.turn_on
     entity_id: switch.front_lights
-  id: 8b54a454511145a9b93de61098a20d2f
 - alias: Front Light Off if at Home
   trigger:
     platform: time
@@ -319,6 +336,17 @@
   - service: light.turn_off
     entity_id: light.foyer
   id: 9dfa5fa2e8544526bb9345387b1c59a6
+- alias: 10AM Tasks
+  trigger:
+    platform: time
+    at: '10:00:00'
+  action:
+  - service: switch.turn_off
+    entity_id:
+    - switch.christmas_tree
+    - switch.seasonal_plug_2
+    - switch.maggie_holiday_lights
+  id: ec71bd05be574f2a98a5a38f81294228
 - alias: Midnight Tasks
   trigger:
     platform: time
@@ -332,6 +360,7 @@
     - switch.piano_room_counter_lights
     - switch.christmas_tree
     - switch.seasonal_plug_2
+    - switch.maggie_holiday_lights
   - service: lock.lock
     entity_id: lock.back_door, lock.porch_door, lock.front_door
   - condition: and
@@ -443,7 +472,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: Low Temp detected in the basement.
   - delay: 00:00:10
@@ -470,7 +499,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: Low Temp detected in the laundry room.
   - delay: 00:00:10
@@ -486,6 +515,10 @@
     from: 'off'
     to: 'on'
   action:
+  - service: switch.turn_on
+    data: {}
+    target:
+      entity_id: switch.water_valve
   - service: notify.emergency
     data:
       message: Water detected in the basement.
@@ -497,7 +530,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: Water detected in the basement.
   - delay: 00:00:10
@@ -513,6 +546,10 @@
     to: 'on'
     from: 'off'
   action:
+  - service: switch.turn_on
+    data: {}
+    target:
+      entity_id: switch.water_valve
   - service: notify.emergency
     data:
       message: The ice maker is leaking.
@@ -524,7 +561,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: The ice maker is leaking.
   - delay: 00:00:10
@@ -540,6 +577,10 @@
     from: 'off'
     to: 'on'
   action:
+  - service: switch.turn_on
+    data: {}
+    target:
+      entity_id: switch.water_valve
   - service: notify.emergency
     data:
       message: Water detected in the laundry room.
@@ -551,9 +592,10 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: Water detected in the laundry room.
+    enabled: true
   - delay: 00:00:10
   - service: scene.turn_on
     data:
@@ -567,6 +609,10 @@
     from: 'off'
     to: 'on'
   action:
+  - service: switch.turn_on
+    data: {}
+    target:
+      entity_id: switch.water_valve
   - service: notify.emergency
     data:
       message: Water detected under kitchen sink
@@ -580,7 +626,7 @@
   - service: tts.google_say
     data:
       message: Water Detected under Kitchen Sink
-      entity_id: group.tts_endpoints
+      entity_id: media_player.tts_endpoints
   - delay: 00:00:10
   - service: scene.turn_on
     data:
@@ -606,7 +652,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: Fire! Fire! Fire!
   - delay: 00:00:10
@@ -628,7 +674,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: The washing machine is done.
   - delay: 00:00:10
@@ -651,7 +697,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: The dryer is almost done.
   - delay: 00:00:10
@@ -692,7 +738,7 @@
       - media_player.basement_speaker
       - media_player.upstairs_speaker
   - service: tts.google_say
-    entity_id: group.tts_endpoints
+    entity_id: media_player.tts_endpoints
     data:
       message: Water is rising in the sump basin!
   - delay: 00:00:10
@@ -844,44 +890,6 @@
     data:
       entity_id: scene.before
   id: b1181b134261492db210649c6bd52831
-- id: '1603748600126'
-  alias: Andy Phone Charged
-  description: ''
-  trigger:
-  - type: battery_level
-    platform: device
-    device_id: 239e51ad72054821af27a25a1aa1c73a
-    entity_id: sensor.salmob1_battery_level
-    domain: sensor
-    above: 99
-  condition: []
-  action:
-  - type: turn_off
-    device_id: 06114d6717d411eb89d5f1d857a67716
-    entity_id: switch.andy_phone_charger
-    domain: switch
-  mode: single
-- id: '1603748661392'
-  alias: Andy Phone Needs Charging
-  description: ''
-  trigger:
-  - type: battery_level
-    platform: device
-    device_id: 239e51ad72054821af27a25a1aa1c73a
-    entity_id: sensor.salmob1_battery_level
-    domain: sensor
-    below: 45
-    for:
-      hours: 0
-      minutes: 10
-      seconds: 0
-  condition: []
-  action:
-  - type: turn_on
-    device_id: 06114d6717d411eb89d5f1d857a67716
-    entity_id: switch.andy_phone_charger
-    domain: switch
-  mode: single
 - id: '1608167974470'
   alias: Master Bath Night Light On
   description: ''
@@ -962,7 +970,7 @@
       - media_player.upstairs_speaker
   - service: tts.google_say
     data:
-      entity_id: group.tts_endpoints
+      entity_id: media_player.tts_endpoints
       message: Time to unload the dishwasher.
   - delay: 00:00:10
   - service: scene.turn_on
@@ -991,45 +999,6 @@
       entity_id: input_boolean.external_armed_mode
     data: {}
   mode: single
-- id: '1631977961432'
-  alias: Deck Light Double Tap
-  description: ''
-  trigger:
-    platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 001
-      value: KeyPressed2x
-      node_id: 52
-  action:
-  - service: switch.toggle
-    entity_id: switch.deck_lights
-- id: '1632877862341'
-  alias: Piano Room Counter
-  description: ''
-  trigger:
-    platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 002
-      value: KeyPressed
-      node_id: 56
-  action:
-  - service: switch.toggle
-    entity_id: switch.piano_room_counter_lights
-- id: '1632766752341'
-  alias: Piano Room Cabinets
-  description: ''
-  trigger:
-    platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 003
-      value: KeyPressed
-      node_id: 56
-  action:
-  - service: switch.toggle
-    entity_id: switch.piano_room_interior_cabinet
 - id: '1632516039646'
   alias: Liquor Cabinet Opened
   description: ''
@@ -1089,7 +1058,7 @@
   description: ''
   trigger:
   - platform: time
-    at: 06:10:00
+    at: 06:20:00
   condition:
   - condition: and
     conditions:
@@ -1120,13 +1089,20 @@
       - service: switch.turn_on
         target:
           entity_id: switch.front_lights
+        data: {}
       - service: switch.turn_on
         target:
           entity_id: switch.fireplace
-      - delay: 00:45:00
+        data: {}
+      - delay:
+          hours: 1
+          minutes: 10
+          seconds: 0
+          milliseconds: 0
       - service: switch.turn_off
         target:
           entity_id: switch.fireplace
+        data: {}
     - conditions:
       - condition: sun
         before: sunrise
@@ -1135,6 +1111,7 @@
       - service: switch.turn_on
         target:
           entity_id: switch.front_lights
+        data: {}
     - conditions:
       - condition: numeric_state
         entity_id: sensor.outdoor_temp
@@ -1143,10 +1120,16 @@
       - service: switch.turn_on
         target:
           entity_id: switch.fireplace
-      - delay: 00:45:00
+        data: {}
+      - delay:
+          hours: 1
+          minutes: 10
+          seconds: 0
+          milliseconds: 0
       - service: switch.turn_off
         target:
           entity_id: switch.fireplace
+        data: {}
   mode: single
 - id: '1634573031535'
   alias: No One Home
@@ -1164,12 +1147,14 @@
       - switch.fireplace
       - switch.christmas_tree
       - switch.seasonal_plug_2
+      - switch.maggie_holiday_lights
       - switch.counter_lights
       - switch.piano_room_counter_lights
       - switch.island_lights
       - switch.table_light
       - switch.cabinet_lights
       - switch.family_room_lights
+      - switch.garage_lights
   - service: lock.lock
     data: {}
     target:
@@ -1253,55 +1238,26 @@
     target:
       entity_id: switch.counter_lights
     data: {}
-  - condition: state
-    entity_id: input_boolean.vacation_mode
-    state: 'on'
-  - service: input_boolean.turn_off
-    data: {}
-    target:
-      entity_id: input_boolean.vacation_mode
-  mode: single
-- id: '1642782456861'
-  alias: Front Porch Line Crossed
-  description: ''
-  trigger:
-  - platform: state
-    entity_id: binary_sensor.amcrest_front_porch_crossline_detected
-    to: 'on'
-  condition:
-  - condition: state
-    entity_id: input_boolean.front_porch_motion
-    state: 'on'
-  - condition: numeric_state
-    entity_id: sensor.double_take_front_porch
-    attribute: personCount
-    above: '0'
-  action:
   - choose:
     - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_andy
-        state: 'on'
+      - condition: sun
+        after: sunset
       sequence:
-      - service: notify.mobile_app_salmob1
-        data:
-          message: Someone is on the front porch.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.front_porch
+      - service: switch.turn_on
+        data: {}
+        target:
+          device_id:
+          - c3b5ba787f53764c6db5519f336da0ca
+          - f46e37617ab2d0baa1401787991f9c27
     - conditions:
       - condition: state
-        entity_id: input_boolean.notify_fpm_katie
+        entity_id: input_boolean.vacation_mode
         state: 'on'
       sequence:
-      - service: notify.mobile_app_salmob2
-        data:
-          message: Someone is on the front porch.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.front_porch
+      - service: input_boolean.turn_off
+        data: {}
+        target:
+          entity_id: input_boolean.vacation_mode
   mode: single
 - id: '1646231634423'
   alias: Tag Andy Vitamins is scanned
@@ -1334,28 +1290,11 @@
     data:
       message: Don't forget your vitamins today
   mode: single
-- id: '1647627262648'
-  alias: Storage Power
-  description: ''
-  trigger:
-  - platform: state
-    entity_id: switch.storage_room_power
-    for:
-      hours: 0
-      minutes: 2
-      seconds: 0
-    to: unavailable
-  condition: []
-  action:
-  - service: notify.mobile_app_salmob1
-    data:
-      message: Storage room breaker tripped
-  mode: single
 - id: '1657892984595'
   alias: 'Front Closet: Contact Sensor Toggle Lights'
   description: ''
   use_blueprint:
-    path: aesalmela/contact_sensor_toggle_lights.yaml
+    path: salmeister/contact_sensor_toggle_lights.yaml
     input:
       contact_sensor: binary_sensor.front_closet_door
       target_lights:
@@ -1365,7 +1304,7 @@
   alias: 'Basement Stairs Closet: Contact Sensor Toggle Lights'
   description: ''
   use_blueprint:
-    path: aesalmela/contact_sensor_toggle_lights.yaml
+    path: salmeister/contact_sensor_toggle_lights.yaml
     input:
       contact_sensor: binary_sensor.basement_stairs_closet_contact
       target_lights:
@@ -1375,64 +1314,12 @@
   alias: 'Basement Bedroom Closet: Contact Sensor Toggle Lights'
   description: ''
   use_blueprint:
-    path: aesalmela/contact_sensor_toggle_lights.yaml
+    path: salmeister/contact_sensor_toggle_lights.yaml
     input:
       contact_sensor: binary_sensor.basement_bedroom_closet_contact
       target_lights:
         entity_id: light.basement_bedroom_closet
       time_out_seconds: 300
-- id: '1832866971343'
-  alias: Bar East Double Tap On
-  description: ''
-  trigger:
-    platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 001
-      value: KeyPressed2x
-      node_id: 75
-  action:
-  - service: light.turn_on
-    entity_id: light.bar_lower_lights
-- id: '1832866971425'
-  alias: Bar East Double Tap Off
-  description: ''
-  trigger:
-    platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 002
-      value: KeyPressed2x
-      node_id: 75
-  action:
-  - service: light.turn_off
-    entity_id: light.bar_lower_lights
-- id: '1832866972343'
-  alias: Bar West Double Tap On
-  description: ''
-  trigger:
-  - platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 001
-      value: KeyPressed2x
-      node_id: 77
-  action:
-  - service: light.turn_on
-    entity_id: light.bar_upper_lights
-- id: '1832866972425'
-  alias: Bar West Double Tap Off
-  description: ''
-  trigger:
-  - platform: event
-    event_type: zwave_js_value_notification
-    event_data:
-      label: Scene 002
-      value: KeyPressed2x
-      node_id: 77
-  action:
-  - service: light.turn_off
-    entity_id: light.bar_upper_lights
 - id: '1732866971344'
   alias: Refresh Zwave Battery Levels
   description: Poll all battery powered devices to update their battery levels
@@ -1448,14 +1335,6 @@
     data:
       entity_id: group.zwave_battery_level_group
   mode: single
-- id: '1658369214121'
-  alias: 'Basement Hall: Synchronize states'
-  description: ''
-  use_blueprint:
-    path: adchevrier/synchronize-the-on-off-state-of-2-entities.yaml
-    input:
-      entity_1: switch.basement_hall_light
-      entity_2: light.basement_hall
 - id: '1658411588680'
   alias: Low battery level detection & notification for all battery sensors
   description: ''
@@ -1494,43 +1373,50 @@
         target:
           entity_id: light.basement_main_lower_lights
       scene_4:
-      - service: light.turn_off
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.turn_off_basement_lights
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_5: []
+      scene_3:
+      - service: light.turn_on
         data: {}
         target:
           entity_id:
-          - light.basement_main_lights
-          - light.basement_hall
-          - light.basement_tv_lights
-          - light.bar_lights
-      scene_5:
-      - service: light.toggle
+          - light.all_basement_downlights
+          - light.basement_peninsula
+      - service: switch.turn_on
         data: {}
         target:
-          entity_id: light.basement_stairs
-- id: '1658425542262'
-  alias: 'Basement Main Lights: Synchronize states'
-  description: ''
-  use_blueprint:
-    path: adchevrier/synchronize-the-on-off-state-of-2-entities.yaml
-    input:
-      entity_1: switch.basement_main_lights
-      entity_2: light.basement_main_lights
-- id: '1658425594642'
-  alias: 'Bar Area: Synchronize states'
-  description: ''
-  use_blueprint:
-    path: adchevrier/synchronize-the-on-off-state-of-2-entities.yaml
-    input:
-      entity_1: switch.basement_bar_area_lights
-      entity_2: light.bar_lights
-- id: '1658425739312'
-  alias: 'Basement TV Side Lights: Synchronize states'
-  description: ''
-  use_blueprint:
-    path: adchevrier/synchronize-the-on-off-state-of-2-entities.yaml
-    input:
-      entity_1: switch.basement_tv_side_lights
-      entity_2: light.basement_tv_lower_lights
+          entity_id:
+          - switch.basement_stairs
+      scene_32:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_step_up_brightness_modify_active_lights
+      scene_42:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_step_down_brightness_modify_active_lights
+      scene_33:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_to_bright_modify_active_lights
+      scene_43:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_to_dim_modify_active_lights
 - id: '1658436009563'
   alias: Blueprint - Vacation Lighting
   description: ''
@@ -1568,7 +1454,7 @@
     to: 'on'
     for:
       hours: 0
-      minutes: 2
+      minutes: 0
       seconds: 0
   - platform: state
     entity_id:
@@ -1585,10 +1471,6 @@
         data: {}
         target:
           entity_id: input_boolean.full_armed_mode
-      - service: switch.turn_on
-        data: {}
-        target:
-          entity_id: switch.water_valve
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''off'' }}'
@@ -1597,19 +1479,15 @@
         data: {}
         target:
           entity_id: input_boolean.full_armed_mode
-      - service: switch.turn_off
-        data: {}
-        target:
-          entity_id: switch.water_valve
   mode: single
 - id: '1658501349187'
   alias: Front Walk Frigate Notify Andy
   description: ''
   use_blueprint:
-    path: hunterjm/frigate_0.10_notification.yaml
+    path: SgtBatten/frigate_0.11_notification.yaml
     input:
-      camera: front_porch
-      notify_device: cbd9358b3bbec52efaaf111f2cc4e5fb
+      camera: camera.front_porch
+      notify_device: 901b2da2be65ec01867dc4fd65d496ba
       base_url: https://ha.salmeister.com
       zone_filter: true
       zones:
@@ -1617,6 +1495,8 @@
       silence_timer: 30
       critical: true
       labels: {}
+      cooldown: 300
+      update_thumbnail: true
 - id: '1658507839970'
   alias: External Armed Mode
   description: ''
@@ -1703,7 +1583,7 @@
       - service: automation.turn_on
         data: {}
         target:
-          entity_id: automation.front_walk_frigate_notification_0_10_0
+          entity_id: automation.front_walk_frigate_notify_andy
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''off'' }}'
@@ -1711,23 +1591,18 @@
       - service: automation.turn_off
         data: {}
         target:
-          entity_id: automation.front_walk_frigate_notification_0_10_0
+          entity_id: automation.front_walk_frigate_notify_andy
   mode: single
 - id: '1658513504160'
   alias: Front Walk Frigate Notify Katie
   description: ''
   use_blueprint:
-    path: hunterjm/frigate_0.10_notification.yaml
+    path: SgtBatten/frigate_0.11_notification.yaml
     input:
-      camera: front_porch
-      notify_device: b6369a7da4a8472badcac2be9b49f409
-      base_url: https://ha.salmeister.com
-      zone_filter: true
-      zones:
-      - front_walk
-      silence_timer: 30
-      critical: true
-      labels: {}
+      notify_device: 4f10e24d9b3bf24bcdd00adf65f6aa60
+      zones: -front_walk
+      cooldown: 300
+      camera: camera.front_porch
 - id: '1658513596545'
   alias: Notify Katie
   description: ''
@@ -1761,7 +1636,7 @@
           entity_id: automation.front_walk_frigate_notify_katie
   mode: single
 - id: '1658710859468'
-  alias: Basement TV Room Lights
+  alias: 'Basement TV Room: ZEN32 (Z-Wave JS)'
   description: ''
   use_blueprint:
     path: fxlt/zen32-scene-controller-z-wave-js.yaml
@@ -1771,14 +1646,432 @@
       - service: light.toggle
         data: {}
         target:
-          entity_id: light.basement_tv_upper_non_couch_lights
+          entity_id: light.basement_tv_couch_lights
       scene_2:
       - service: light.toggle
         data: {}
         target:
-          entity_id: light.basement_tv_couch_lights
+          entity_id: light.basement_tv_upper_non_couch_lights
       scene_5:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_lights_to_cool_modify_active_lights
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_3:
       - service: light.toggle
         data: {}
         target:
+          entity_id: light.basement_tv_lower_lights
+      scene_4:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_lights_to_red_modify_active_lights
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_52:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_lights_to_warm_modify_active_lights
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_42:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_lights_to_green_modify_active_lights
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_43:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_lights_to_blue_modify_active_lights
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_44:
+      - service: scene.turn_on
+        target:
+          entity_id: scene.vikings_colors
+        metadata: {}
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_45:
+      - service: scene.turn_on
+        target:
+          entity_id: scene.twins_colors
+        metadata: {}
+      - condition: state
+        entity_id: script.basement_color_loop
+        state: 'on'
+      - service: script.turn_off
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+      scene_53:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_color_loop
+- id: '1659569878935'
+  alias: 'Basement TV Room: Zooz Zen76 Control Smart Light Configuration'
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      node_id: 71
+      target_light: light.basement_tv_upper_lights
+      on_1x:
+      - service: light.turn_on
+        data: {}
+        target:
           entity_id: light.basement_tv_upper_lights
+      already_on_already_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_tv_lights_to_dim_modify_active_lights
+      already_on_not_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_tv_lights_to_bright_modify_active_lights
+      on_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_tv_step_up_brightness_modify_active_lights
+      off_1x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.basement_tv_upper_lights
+      off_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_tv_step_down_brightness_modify_active_lights
+- id: '1659644150589'
+  alias: 'Basement Hall: Zooz Zen76 Control Smart Light Configuration'
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      target_light: light.basement_hall
+      on_1x:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.basement_hall
+      already_on_already_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_hall_to_dim_modify_active_lights
+      already_on_not_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_hall_to_bright_modify_active_lights
+      on_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_hall_step_up_brightness_modify_active_lights
+      off_1x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.basement_hall
+      off_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_hall_step_down_brightness_modify_active_lights
+      node_id: 73
+- id: '1659646178142'
+  alias: 'Bar Lights: Zooz Zen76 Control Smart Light Configuration'
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      node_id: 75
+      target_light: light.bar_lights
+      on_1x:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.bar_lights
+      already_on_already_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.bar_lights_to_dim_modify_active_lights
+      already_on_not_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.bar_lights_to_bright_modify_active_lights
+      on_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.bar_lights_step_up_brightness_modify_active_lights
+      on_3x:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.bar_lower_lights
+      off_1x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.bar_lights
+      off_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.bar_lights_step_down_brightness_modify_active_lights
+      off_3x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.bar_lower_lights
+- id: '1659648232563'
+  alias: 'Bar Peninsula: Zooz Zen76 Control Smart Light Configuration'
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      node_id: 77
+      target_light: light.bar_upper_lights
+      on_3x:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.bar_upper_lights
+      off_3x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.bar_upper_lights
+- id: '1659649442998'
+  alias: 'Basement Main: Zooz Zen76 Control Smart Light Configuration'
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      node_id: 68
+      target_light: light.basement_main_lights
+      on_1x:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.basement_main_lights
+      already_on_already_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_main_to_dim_modify_active_lights
+      already_on_not_bright_1x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_main_to_bright_modify_active_lights
+      on_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_main_step_up_brightness_modify_active_lights
+      off_1x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.basement_main_lights
+      off_2x:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_main_step_up_brightness_modify_active_lights_2
+- id: '1659723616359'
+  alias: Turn Off Basement Color Loop
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - light.all_basement_downlights
+    to: 'off'
+  condition:
+  - condition: state
+    entity_id: script.basement_color_loop
+    state: 'on'
+  action:
+  - service: script.turn_off
+    data: {}
+    target:
+      entity_id: script.basement_color_loop
+  mode: single
+- id: '1662580780423'
+  alias: Basement Bedroom Closet Back Online
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - light.basement_bedroom_closet
+    from: unavailable
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+  condition: []
+  action:
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id: light.basement_bedroom_closet
+  mode: single
+- id: '1665776755860'
+  alias: Zooz Porch Light
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      node_id: 52
+      target_light: light.porch
+      on_1x:
+      - service: light.turn_on
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.porch
+      on_2x:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.deck_lights
+      off_2x:
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.deck_lights
+- id: '{{trigger.event.data.id}}'
+  alias: Torrent completed
+  description: Notify and remove torrent upon completion
+  trigger:
+    platform: event
+    event_type: transmission_downloaded_torrent
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      title: Torrent completed!
+      message: '{{trigger.event.data.name}}'
+  - service: transmission.remove_torrent
+    data:
+      name: Transmission
+      id: '{{trigger.event.data.id}}'
+- id: '{{trigger.event.data.id}}'
+  alias: Torrent completed
+  description: Notify and remove torrent upon completion
+  trigger:
+    platform: event
+    event_type: transmission_downloaded_torrent
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      title: Torrent completed!
+      message: '{{trigger.event.data.name}}'
+  - service: transmission.remove_torrent
+    data:
+      name: Transmission
+      id: '{{trigger.event.data.id}}'
+- id: '1670420137860'
+  alias: 'Piano Room: ZEN32 (ZwaveJS)'
+  description: ''
+  use_blueprint:
+    path: fxlt/zen32-scene-controller-z-wave-js.yaml
+    input:
+      zooz_switch: c68efc11ec22fb1c3c879a00d80da8b3
+      scene_1:
+      - service: switch.toggle
+        data: {}
+        target:
+          entity_id: switch.piano_room_counter_lights
+      scene_2:
+      - service: switch.toggle
+        data: {}
+        target:
+          entity_id: switch.piano_room_interior_cabinet
+      scene_4:
+      - condition: time
+        before: 00:00:00
+        after: '21:00:00'
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.bed_time
+      scene_5: []
+      scene_3: []
+      scene_32:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_step_up_brightness_modify_active_lights
+      scene_42:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_step_down_brightness_modify_active_lights
+      scene_33:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_to_bright_modify_active_lights
+      scene_43:
+      - service: script.turn_on
+        data: {}
+        target:
+          entity_id: script.basement_to_dim_modify_active_lights
+- id: '1670854053910'
+  alias: 'SALMOB1 - Charge phone '
+  description: ''
+  use_blueprint:
+    path: apollo1220/phone_charger.yaml
+    input:
+      phone_battery: sensor.salmob1_battery_level
+      phone_charger:
+        entity_id: switch.andy_phone_charger
+      low_battery: 35
+      charged_battery: 100
