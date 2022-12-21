@@ -41,6 +41,7 @@ options.xml
 OZW_Log.txt
 pyozw.sqlite
 secrets.yaml
+secrets.yml
 service_account.json
 webostv.conf
 zones.yaml
@@ -49,7 +50,7 @@ zwscene.xml
 
 # ESPHome ignores
 esphome/secrets.yaml
-esphome/**/
+esphome/secrets.yml
 
 # Ignore add-on files
 aircast.xml

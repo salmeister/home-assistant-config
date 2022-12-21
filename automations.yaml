@@ -336,9 +336,10 @@
   - service: light.turn_off
     entity_id: light.foyer
   id: 9dfa5fa2e8544526bb9345387b1c59a6
-- alias: 10AM Tasks
+- id: ec71bd05be574f2a98a5a38f81294228
+  alias: 10AM Tasks
   trigger:
-    platform: time
+  - platform: time
     at: '10:00:00'
   action:
   - service: switch.turn_off
@@ -346,7 +347,6 @@
     - switch.christmas_tree
     - switch.seasonal_plug_2
     - switch.maggie_holiday_lights
-  id: ec71bd05be574f2a98a5a38f81294228
 - alias: Midnight Tasks
   trigger:
     platform: time
@@ -659,29 +659,18 @@
   - service: scene.turn_on
     data:
       entity_id: scene.before
-- alias: Washer Done
+- id: 936744a235ac43f78bc16cf5cb507e6e
+  alias: Washer Done
   trigger:
   - platform: state
     entity_id: binary_sensor.washing_machine_status
     from: 'on'
     to: 'off'
   action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
   - service: tts.google_say
     entity_id: media_player.tts_endpoints
     data:
       message: The washing machine is done.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
-  id: 936744a235ac43f78bc16cf5cb507e6e
 - alias: Dryer Done
   trigger:
   - platform: state
@@ -770,26 +759,22 @@
       \ \n{% else %}\n  input_boolean.turn_on\n{% endif %}\n"
     entity_id: input_boolean.bedtime
   id: 99d6e8b097a74eb1a12867c415500bcd
-- alias: Crock-Pot On
+- id: c7208b98b0e9474a97ccbe9bd71d8473
+  alias: Crock-Pot On
   trigger:
-    platform: template
-    value_template: '{{ states(''input_datetime.crock_pot_start_time'') == states(''sensor.time'')+'':00''
-      }}'
+  - platform: time
+    at: input_datetime.crock_pot_start_time
   condition:
-    condition: and
-    conditions:
-    - condition: time
-      after: 00:00:05
-    - condition: time
-      before: '23:59:55'
+  - condition: time
+    after: 00:02:00
   action:
   - service: switch.turn_on
     entity_id: switch.crock_pot
   - service: input_datetime.set_datetime
     data:
+      time: 00:00:00
+    target:
       entity_id: input_datetime.crock_pot_start_time
-      time: 00:00
-  id: c7208b98b0e9474a97ccbe9bd71d8473
 - alias: Dishwasher Done
   trigger:
   - platform: state
@@ -1260,20 +1245,26 @@
           entity_id: input_boolean.vacation_mode
   mode: single
 - id: '1646231634423'
-  alias: Tag Andy Vitamins is scanned
+  alias: Tag - Vitamins is scanned
   description: ''
   trigger:
   - platform: event
     event_type: tag_scanned
     event_data:
-      device_id: bc359c80baa81bb2
       tag_id: 6d626df7-626a-4662-9aed-f5f72d547f36
+    context: {}
   condition: []
   action:
-  - service: input_boolean.turn_on
-    data: {}
-    target:
-      entity_id: input_boolean.andy_vitamins
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.event.data.device_id == ''901b2da2be65ec01867dc4fd65d496ba''
+          }}'
+      sequence:
+      - service: input_boolean.turn_on
+        data: {}
+        target:
+          entity_id: input_boolean.andy_vitamins
   mode: single
 - id: '1646232250701'
   alias: Andy Vitamin Reminder
@@ -1497,6 +1488,7 @@
       labels: {}
       cooldown: 300
       update_thumbnail: true
+      alert_once: true
 - id: '1658507839970'
   alias: External Armed Mode
   description: ''
@@ -1600,9 +1592,15 @@
     path: SgtBatten/frigate_0.11_notification.yaml
     input:
       notify_device: 4f10e24d9b3bf24bcdd00adf65f6aa60
-      zones: -front_walk
+      zones:
+      - front_walk
       cooldown: 300
       camera: camera.front_porch
+      color: grey
+      alert_once: true
+      critical: 'true'
+      update_thumbnail: true
+      zone_filter: true
 - id: '1658513596545'
   alias: Notify Katie
   description: ''
@@ -1987,7 +1985,7 @@
         data: {}
         target:
           entity_id: switch.deck_lights
-- id: '{{trigger.event.data.id}}'
+- id: '1665776755472'
   alias: Torrent completed
   description: Notify and remove torrent upon completion
   trigger:
@@ -2074,4 +2072,48 @@
       phone_charger:
         entity_id: switch.andy_phone_charger
       low_battery: 35
-      charged_battery: 100
+      charged_battery: 99
+- id: '1671465390451'
+  alias: Aquarium Cleaned
+  description: ''
+  trigger:
+  - platform: event
+    event_type: tag_scanned
+    event_data:
+      tag_id: 693f1551-739a-4c16-b59c-bf7ad0c970a0
+    context: {}
+  condition: []
+  action:
+  - service: input_datetime.set_datetime
+    data:
+      datetime: '{{ (now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S") }}'
+    target:
+      entity_id: input_datetime.aquarium_next_clean
+  mode: single
+- id: '1671484596220'
+  alias: Aquarium Cleaning Reminder
+  description: ''
+  trigger:
+  - platform: time
+    at: input_datetime.aquarium_next_clean
+  condition: []
+  action:
+  - alias: Send notification
+    repeat:
+      until:
+      - condition: template
+        value_template: '{{ (as_timestamp(now()) - as_timestamp((states.input_datetime.aquarium_next_clean.last_updated))
+          < 7200) }}'
+      sequence:
+      - service: notify.mobile_app_salmob1
+        data:
+          message: The aquarium is due for a monthly cleaning
+      - service: notify.mobile_app_salmob5
+        data:
+          message: The aquarium is due for a monthly cleaning
+      - delay:
+          hours: 24
+          minutes: 0
+          seconds: 0
+          milliseconds: 0
+  mode: single

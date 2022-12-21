@@ -1,6 +1,9 @@
 default_config:
 cloud:
 
+homeassistant:
+  packages: !include_dir_named packages
+
 automation: !include automations.yaml
 binary_sensor: !include binary_sensors.yaml
 group: !include groups.yaml
@@ -13,6 +16,10 @@ scene: !include scenes.yaml
 script: !include scripts.yaml
 sensor: !include sensors.yaml
 zone: !include zones.yaml
+
+spotcast:
+  sp_dc: !secret sp_dc
+  sp_key: !secret sp_key
 
 tts:
   - platform: google_translate
