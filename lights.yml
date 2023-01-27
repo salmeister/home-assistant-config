@@ -1,6 +1,6 @@
   - platform: group
     name: Fireplace Lights
-    unique_id: dfcd1513a581498691f3b6a9873f38a1
+    unique_id: d892c0ddba614723a3560fec0ad1b2e8
     entities:
       - light.fireplace_left
       - light.fireplace_right

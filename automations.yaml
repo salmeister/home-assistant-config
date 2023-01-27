@@ -6,297 +6,26 @@
   action:
   - service: scene.turn_on
     entity_id: scene.Dawn
+  - delay:
+      hours: 0
+      minutes: 25
+      seconds: 0
+      milliseconds: 0
+  - service: switch.turn_on
+    target:
+      entity_id: switch.fish_tank_light
+    data: {}
   id: 339e07474928412f98de9d594163f0ff
-- alias: Sun Up Settings
+- id: 34d19e4e28744d10bf2eeba67c8c9652
+  alias: Dust Settings
   trigger:
-    platform: sun
-    event: sunrise
-    offset: +00:15:00
-  action:
-  - service: scene.turn_on
-    entity_id: scene.Sun_Up
-  id: 339e07474928412f88de8d584163f0ff
-- alias: Dust Settings
-  trigger:
-    platform: sun
+  - platform: sun
     event: sunset
     offset: +00:15:00
   action:
   - service: scene.turn_on
     entity_id: scene.Dusk
-  id: 34d19e4e28744d10bf2eeba67c8c9652
-- id: b903ec6aacd748959d03f2b1d38f2e2d
-  alias: Garage door opened
-  trigger:
-  - platform: state
-    entity_id: cover.garage_doors
-    to: open
-  condition:
-  - condition: and
-    conditions:
-    - condition: template
-      value_template: '{{states(''person.andy'') != ''home''}}
-
-        '
-    - condition: template
-      value_template: '{{states(''person.katie'') != ''home''}}
-
-        '
-  action:
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 0
-      milliseconds: 25
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_andy
-        state: 'on'
-      sequence:
-      - service: notify.mobile_app_salmob1
-        data:
-          message: The Garage Door Opened.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.garage
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_katie
-        state: 'on'
-      sequence:
-      - service: notify.mobile_app_salmob2
-        data:
-          message: The Garage Door Opened.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.garage
-- alias: Garage Door Left Open While Home Alone
-  trigger:
-    platform: state
-    entity_id: cover.garage_doors
-    to: open
-  condition:
-  - condition: state
-    state: open
-    for:
-      minutes: 5
-    entity_id: cover.garage_doors
-  - condition: and
-    conditions:
-    - condition: template
-      value_template: '{{states(''person.andy'') != ''home''}}
-
-        '
-    - condition: template
-      value_template: '{{states(''person.katie'') != ''home''}}
-
-        '
-  action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
-    data:
-      message: The garage door with close in 5 minutes.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
-  - delay: 00:05:00
-  - service: cover.close_cover
-    data:
-      entity_id: cover.garage_doors
-  id: af0c4a0821ad44af8e99ac7e98e28964
-- alias: Garage Door Left Open At Night
-  trigger:
-    platform: sun
-    event: sunset
-    offset: +00:11:00
-  condition:
-  - condition: state
-    state: open
-    entity_id: cover.garage_doors
-  action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
-    data:
-      message: The garage door is still open.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
-  id: 2bbf188e41aa436fa1ae87e95b341e21
-- id: 7e480896731a4aa6b8ca8832e7548130
-  alias: Garage Door Opened When Armed
-  trigger:
-  - platform: state
-    entity_id: cover.garage_doors
-    to: open
-  condition:
-  - condition: state
-    entity_id: input_boolean.external_armed_mode
-    state: 'on'
-  action:
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 3
-      milliseconds: 0
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_andy
-        state: 'on'
-      sequence:
-      - service: notify.mobile_app_salmob1
-        data:
-          message: The Garage Door Opened.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.garage
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_katie
-        state: 'on'
-      sequence:
-      - service: notify.mobile_app_salmob2
-        data:
-          message: The Garage Door Opened.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.garage
-  mode: single
-- alias: Garage Door Light
-  trigger:
-    platform: state
-    entity_id: cover.garage_doors
-    from: closed
-  action:
-  - service: homeassistant.update_entity
-    entity_id: device_tracker.salmob1, device_tracker.salmob2, device_tracker.salmob3,
-      device_tracker.salmob4, device_tracker.salmob5
-  - condition: or
-    conditions:
-    - condition: sun
-      after: sunset
-      after_offset: -00:10:00
-    - condition: sun
-      before: sunrise
-      before_offset: 00:10:00
-  - service: switch.turn_on
-    entity_id: switch.garage_lights
-  - delay: 00:05:00
-  - service: switch.turn_off
-    entity_id: switch.garage_lights
-  id: bf98fd456dff474d8b10fec42e759697
-- id: 8b54a454511145a9b93de61098a20d2f
-  alias: Front Light On At Dusk
-  trigger:
-  - platform: sun
-    event: sunset
-    offset: +00:12:00
-  condition:
-  - condition: not
-    conditions:
-    - condition: or
-      conditions:
-      - condition: state
-        entity_id: sensor.next_holiday
-        state: Christmas Day
-      - condition: state
-        entity_id: sensor.next_holiday
-        state: Christmas Day (Observed)
-      - condition: state
-        entity_id: sensor.next_holiday
-        state: New Year's Day
-      - condition: state
-        entity_id: sensor.next_holiday
-        state: New Year's Day (Observed)
-  - condition: numeric_state
-    entity_id: sensor.outdoor_temp
-    below: 50
-  action:
-  - service: switch.turn_on
-    entity_id: switch.front_lights
-- alias: Front Light Off if at Home
-  trigger:
-    platform: time
-    at: '23:30:00'
-  condition:
-  - condition: state
-    entity_id: switch.front_lights
-    state: 'on'
-  - condition: state
-    entity_id: person.andy
-    state: home
-  - condition: state
-    entity_id: person.katie
-    state: home
-  - condition: state
-    entity_id: person.karlee
-    state: home
-  - condition: state
-    entity_id: person.cam
-    state: home
-  action:
-  - service: switch.turn_off
-    entity_id: switch.front_lights
-  id: a383d40c460b4dc8addc7d1251ff2f67
-- alias: Seasonal Lights On Weekends
-  trigger:
-    platform: time
-    at: 08:00:00
-  condition:
-    condition: state
-    entity_id: binary_sensor.schoolday
-    state: 'off'
-  action:
-  - service: switch.turn_on
-    entity_id:
-    - switch.christmas_tree
-    - switch.seasonal_plug_2
-  id: fc8165e67f0f423b9d6ca5e7f1c1c30e
-- id: fc8165e67f0f423b9d6ca5e7f1c1c40e
-  alias: Standard Weekday Shutdown
-  trigger:
-  - platform: time
-    at: '10:15:00'
-  condition:
-  - condition: state
-    entity_id: binary_sensor.workday_evening
-    state: 'on'
-  action:
-  - service: switch.turn_off
-    data: {}
-    target:
-      entity_id:
-      - switch.piano_room_counter_lights
-      - switch.seasonal_plug_2
-      - switch.christmas_tree
-- id: facf0ac6c44940109b5b2ed101375835
-  alias: Foyer Light On
-  trigger:
-  - platform: sun
-    event: sunset
-    offset: +00:13:00
-  action:
+    alias: Activate Dust Scene
   - choose:
     - conditions:
       - condition: state
@@ -304,6 +33,7 @@
         state: 'on'
       - condition: time
         before: '21:00:00'
+        after: 00:00:00
       sequence:
       - service: light.turn_on
         data:
@@ -318,39 +48,188 @@
         data:
           entity_id: light.foyer
           brightness: 180
-- alias: Nine OClock Tasks
+    alias: Turn on Foyer Light
+  - choose:
+    - conditions:
+      - condition: not
+        conditions:
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: sensor.next_holiday
+            state: Christmas Day
+          - condition: state
+            entity_id: sensor.next_holiday
+            state: Christmas Day (Observed)
+          - condition: state
+            entity_id: sensor.next_holiday
+            state: New Year's Day
+          - condition: state
+            entity_id: sensor.next_holiday
+            state: New Year's Day (Observed)
+      - condition: numeric_state
+        entity_id: sensor.outdoor_temp
+        below: 50
+      sequence:
+      - service: switch.turn_on
+        entity_id: switch.front_lights
+    alias: Turn On Front Lights
+  - choose:
+    - conditions:
+      - condition: state
+        state: open
+        entity_id: cover.garage_doors
+      sequence:
+      - service: notify.google_assistant_sdk
+        data:
+          message: It is getting dark and the garage door is still open.
+          target:
+          - kitchen
+          - basement
+          - entryway
+    alias: Notify Garage Open
+- id: b903ec6aacd748959d03f2b1d38f2e2d
+  alias: Garage Door Opened
   trigger:
-    platform: time
-    at: '21:00:00'
+  - platform: state
+    entity_id:
+    - cover.garage_doors
+    from: closed
+    to: opening
+  - platform: state
+    entity_id:
+    - cover.garage_doors
+    from: closed
+    to: open
+  condition: []
   action:
-  - service: switch.turn_off
-    entity_id: switch.fish_tank_light, switch.fish_tank_heater
+  - parallel:
+    - service: homeassistant.update_entity
+      entity_id: device_tracker.salmob1, device_tracker.salmob2, device_tracker.salmob3,
+        device_tracker.salmob4, device_tracker.salmob5
+    - choose:
+      - conditions:
+        - condition: or
+          conditions:
+          - condition: sun
+            after: sunset
+            after_offset: -00:10:00
+          - condition: sun
+            before: sunrise
+            before_offset: 00:10:00
+        sequence:
+        - service: switch.turn_on
+          entity_id: switch.garage_lights
+        - delay: 00:05:00
+        - service: switch.turn_off
+          entity_id: switch.garage_lights
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: input_boolean.external_armed_mode
+          state: 'on'
+        sequence:
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 3
+            milliseconds: 0
+        - service: script.notify_parents_with_picture
+          data:
+            message: The garage door opened
+            cameraURL: /api/camera_proxy/camera.garage
+      - conditions:
+        - condition: and
+          conditions:
+          - condition: template
+            value_template: '{{states(''person.andy'') != ''home''}}'
+          - condition: template
+            value_template: '{{states(''person.katie'') != ''home''}}'
+        sequence:
+        - service: script.notify_parents_with_picture
+          data:
+            message: The garage door opened
+            cameraURL: /api/camera_proxy/camera.garage
+- alias: Garage Door Left Open While Home Alone
+  trigger:
+    platform: state
+    entity_id: cover.garage_doors
+    to: open
+  condition:
+  - condition: state
+    state: open
+    for:
+      minutes: 5
+    entity_id: cover.garage_doors
   - condition: and
     conditions:
-    - condition: state
-      entity_id: light.foyer
-      state: 'on'
-    - condition: state
-      entity_id: binary_sensor.family_presence
-      state: 'on'
-  - service: light.turn_off
-    entity_id: light.foyer
-  id: 9dfa5fa2e8544526bb9345387b1c59a6
-- id: ec71bd05be574f2a98a5a38f81294228
-  alias: 10AM Tasks
+    - condition: template
+      value_template: '{{states(''person.andy'') != ''home''}}'
+    - condition: template
+      value_template: '{{states(''person.katie'') != ''home''}}'
+  action:
+  - service: notify.google_assistant_sdk
+    data:
+      message: The garage door with close in 5 minutes.
+      target:
+      - kitchen
+      - basement
+      - entryway
+  - delay: 00:05:00
+  - service: cover.close_cover
+    data:
+      entity_id: cover.garage_doors
+  id: af0c4a0821ad44af8e99ac7e98e28964
+- id: fc8165e67f0f423b9d6ca5e7f1c1c40e
+  alias: Early Night Tasks
+  description: ''
   trigger:
   - platform: time
-    at: '10:00:00'
+    at: 09:00:00
   action:
-  - service: switch.turn_off
-    entity_id:
-    - switch.christmas_tree
-    - switch.seasonal_plug_2
-    - switch.maggie_holiday_lights
-- alias: Midnight Tasks
+  - parallel:
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: switch.fish_tank_light
+          state: 'on'
+        sequence:
+        - service: switch.turn_off
+          entity_id: switch.fish_tank_light
+      alias: Turn Off Aquarium
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: binary_sensor.workday_evening
+          state: 'on'
+        sequence:
+        - delay:
+            hours: 1
+            minutes: 15
+            seconds: 0
+            milliseconds: 0
+        - service: switch.turn_off
+          data: {}
+          target:
+            entity_id:
+            - switch.piano_room_counter_lights
+            - switch.holiday_plug_2
+            - switch.holiday_plug_1
+      alias: Workday Shutdown
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: binary_sensor.family_presence
+          state: 'on'
+        sequence:
+        - service: light.turn_off
+          entity_id: light.foyer
+      alias: Turn Off Foyer Light
+- id: 7117193270954e6eb43c8385f30e1601
+  alias: Midnight Tasks
   trigger:
-    platform: time
-    at: '23:59:00'
+  - platform: time
+    at: '23:30:00'
   action:
   - service: input_boolean.turn_off
     entity_id:
@@ -358,11 +237,49 @@
   - service: switch.turn_off
     entity_id:
     - switch.piano_room_counter_lights
-    - switch.christmas_tree
-    - switch.seasonal_plug_2
+    - switch.holiday_plug_1
+    - switch.holiday_plug_2
     - switch.maggie_holiday_lights
   - service: lock.lock
     entity_id: lock.back_door, lock.porch_door, lock.front_door
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: person.andy
+        state: home
+      - condition: state
+        entity_id: person.katie
+        state: home
+      - condition: state
+        entity_id: person.karlee
+        state: home
+      - condition: state
+        entity_id: person.cam
+        state: home
+      sequence:
+      - service: switch.turn_off
+        entity_id: switch.front_lights
+      - condition: state
+        entity_id: media_player.samsung_qn800a_75_tv
+        state: 'off'
+      - condition: state
+        entity_id: media_player.family_room_tv
+        state: 'off'
+      - condition: state
+        entity_id: media_player.porch_tv_cast
+        state: 'off'
+      - condition: template
+        value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.fireplace_lights_switch_motion.last_changed))
+          > 900 }}'
+      - condition: template
+        value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.back_entry_switch_motion.last_changed))
+          > 900 }}'
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.bedtime
+      - service: scene.turn_on
+        target:
+          entity_id: scene.full_shutdown
+        metadata: {}
   - condition: and
     conditions:
     - condition: state
@@ -375,30 +292,6 @@
     data:
       entity_id: light.foyer
       brightness: 50
-  id: 7117193270954e6eb43c8385f30e1601
-- id: 91630d5823e84ba3a07a7f15bebcbac1
-  alias: Unlock Door in AM
-  trigger:
-  - platform: time
-    at: 06:25:00
-  condition:
-  - condition: and
-    conditions:
-    - condition: state
-      entity_id: binary_sensor.workday
-      state: 'on'
-    - condition: or
-      conditions:
-      - condition: zone
-        entity_id: person.andy
-        zone: zone.home
-      - condition: zone
-        entity_id: person.katie
-        zone: zone.home
-  action:
-  - service: lock.unlock
-    entity_id: lock.back_door
-  mode: single
 - alias: Lock Door When Home Alone
   trigger:
   - platform: zone
@@ -432,7 +325,9 @@
   - service: lock.lock
     entity_id: lock.back_door, lock.porch_door, lock.front_door
   id: 97d60c81420a458e9449957382c2548a
-- alias: UnLock Door When Andy or Katie Arrive
+- id: ab204ff9af6f4df2925601db0e9baf29
+  alias: Unlock Door When Andy or Katie Arrive
+  description: ''
   trigger:
   - platform: zone
     entity_id: person.andy
@@ -445,13 +340,13 @@
   condition:
   - condition: time
     before: '23:30:00'
+    after: 00:00:00
   - condition: state
     entity_id: lock.back_door
     state: locked
   action:
-    service: lock.unlock
+  - service: lock.unlock
     entity_id: lock.back_door
-  id: ab204ff9af6f4df2925601db0e9baf29
 - id: 58504e66d5674cabb654d27d638af17b
   alias: Low Temp in Basement
   trigger:
@@ -464,21 +359,13 @@
   - service: notify.emergency
     data:
       message: Low Temp detected in the basement.
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: Low Temp detected in the basement.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   mode: single
 - alias: Low Temp on Main Floor
   trigger:
@@ -491,21 +378,13 @@
   - service: notify.emergency
     data:
       message: Low Temp detected in the laundry room.
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: Low Temp detected in the laundry room.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   id: 74fbfdf16c0543ff98596e8288316912
 - id: 117da4c1812d453d981c186ca07f21ac
   alias: Water Detected in Basement
@@ -522,21 +401,13 @@
   - service: notify.emergency
     data:
       message: Water detected in the basement.
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: Water detected in the basement.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   mode: single
 - id: 8a71726e99574cf09627a8950829a762
   alias: Water Detected near Fridge
@@ -553,21 +424,13 @@
   - service: notify.emergency
     data:
       message: The ice maker is leaking.
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: The ice maker is leaking.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   mode: single
 - id: cd8c5de487e14aaaa3d2e7ad7fc200b8
   alias: Water Detected in Laundry Room
@@ -584,22 +447,14 @@
   - service: notify.emergency
     data:
       message: Water detected in the laundry room.
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: Water detected in the laundry room.
+      target:
+      - kitchen
+      - basement
+      - entryway
     enabled: true
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
   mode: single
 - id: cd8c5de487e14aaaa3d2e7ad7fa200b7
   alias: Water Detected under Kitchen Sink
@@ -616,21 +471,13 @@
   - service: notify.emergency
     data:
       message: Water detected under kitchen sink
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
+  - service: notify.google_assistant_sdk
     data:
       message: Water Detected under Kitchen Sink
-      entity_id: media_player.tts_endpoints
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   mode: single
 - id: 3299820bd1fb4ba898026043614260f4
   alias: Fire Alarm
@@ -644,21 +491,13 @@
   - service: notify.emergency
     data:
       message: The fire alarm is going off!
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: Fire! Fire! Fire!
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
 - id: 936744a235ac43f78bc16cf5cb507e6e
   alias: Washer Done
   trigger:
@@ -667,10 +506,13 @@
     from: 'on'
     to: 'off'
   action:
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
-      message: The washing machine is done.
+      message: The washing machine is done
+      target:
+      - kitchen
+      - basement
+      - entryway
 - alias: Dryer Done
   trigger:
   - platform: state
@@ -678,21 +520,13 @@
     from: 'on'
     to: 'off'
   action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: The dryer is almost done.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   id: 3890066b7c124a3fa5ca1f5d0ffcc782
 - alias: Water Softener Low
   trigger:
@@ -719,32 +553,20 @@
   - service: notify.emergency
     data:
       message: Water is rising in the sump basin!
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.tts_endpoints
+  - service: notify.google_assistant_sdk
     data:
       message: Water is rising in the sump basin!
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   id: e7f95523f1054b7488368f9d2928dbb4
 - alias: Update Bedtime
   trigger:
   - platform: time
-    at: 06:00:00
-  - platform: time
-    at: 08:00:00
+    at: 09:00:00
   - platform: time
     at: '22:30:00'
-  - platform: time
-    at: '23:30:00'
   - platform: homeassistant
     event: start
   action:
@@ -797,141 +619,86 @@
       sensor.twin_oaks_lunch_2, sensor.twin_oaks_lunch_3, sensor.twin_oaks_lunch_4,
       sensor.twin_oaks_lunch_5
   id: f9cc911c1d7c4d64b949869284942c52
-- alias: Morning Dog Food Check
-  trigger:
-    platform: time
-    at: 08:45:00
-  condition:
-  - condition: template
-    value_template: '{% if (as_timestamp(now())-as_timestamp(states.binary_sensor.dog_food.attributes.timestamp))
-      > 10800 %}true{% endif %}'
-  action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.kitchen_hub
-    data:
-      message: The dogs need to be fed.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
-  id: 1da1d24653fb4f67a4aa3bc536fc1ca2
-- alias: Evening Dog Food Check
-  trigger:
-    platform: time
-    at: '19:00:00'
-  condition:
-  - condition: template
-    value_template: '{% if (as_timestamp(now())-as_timestamp(states.binary_sensor.dog_food.attributes.timestamp))
-      > 10800 %}true{% endif %}'
-  action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.kitchen_hub
-    data:
-      message: The dogs need to be fed.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
-  id: 437cbcbe22f840eeb7d4360cbbd3a7c1
 - alias: Dogs Already Fed Check
   trigger:
   - platform: state
-    entity_id: binary_sensor.dog_food
+    entity_id: binary_sensor.dog_food_contact
     from: 'off'
     to: 'on'
   condition:
   - condition: template
-    value_template: '{% set fromSecs = as_timestamp(trigger.from_state.attributes.timestamp)
-      %} {% set nowSecs = as_timestamp(now()) %} {{ (nowSecs - fromSecs) < 10800 and
-      (nowSecs - fromSecs) > 60 }}'
+    value_template: '{{ (now().timestamp() - trigger.from_state.last_changed.timestamp())
+      < 10800 and (now().timestamp() - trigger.from_state.last_changed.timestamp())
+      > 60 }}'
   action:
-  - service: scene.create
-    data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    entity_id: media_player.kitchen_hub
+  - service: notify.google_assistant_sdk
     data:
       message: The dogs may have already been fed.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
   id: b1181b134261492db210649c6bd52831
 - id: '1608167974470'
-  alias: Master Bath Night Light On
+  alias: Main Bath Night Light
   description: ''
   trigger:
   - platform: state
-    entity_id: binary_sensor.master_bath_pir
+    entity_id:
+    - binary_sensor.main_bath_switch_motion
     to: 'on'
-  condition:
-  - condition: state
-    entity_id: input_boolean.bedtime
-    state: 'on'
-  action:
-  - type: turn_on
-    device_id: ac8264c7aa4531771e577e34188e3bf1
-    entity_id: switch.master_night_light
-    domain: switch
-  mode: single
-- id: '1608168046776'
-  alias: Master Bath Night Light Off
-  description: ''
-  trigger:
   - platform: state
-    entity_id: binary_sensor.master_bath_pir
+    entity_id:
+    - binary_sensor.main_bath_switch_motion
     to: 'off'
     from: 'on'
     for: 0:01:00
   condition: []
   action:
-  - type: turn_off
-    device_id: 31e7047e3fee02c9c54bf6bc16e867a9
-    entity_id: switch.master_night_light
-    domain: switch
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''on'' }}'
+      - condition: state
+        entity_id: input_boolean.bedtime
+        state: 'on'
+      sequence:
+      - service: switch.turn_on
+        entity_id: switch.master_night_light
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''off'' }}'
+      sequence:
+      - service: switch.turn_off
+        entity_id: switch.master_night_light
   mode: single
 - id: '1608167975561'
-  alias: Up Bath Night Light On
+  alias: Up Bath Night Light
   description: ''
   trigger:
   - platform: state
-    entity_id: binary_sensor.up_bath_pir_occupancy
+    entity_id:
+    - binary_sensor.up_bath_switch_motion
     to: 'on'
-  action:
-  - service: switch.turn_on
-    entity_id: switch.up_bath_night_light
-  mode: single
-- id: '1608168047667'
-  alias: Up Bath Night Light Off
-  description: ''
-  trigger:
   - platform: state
-    entity_id: binary_sensor.up_bath_pir_occupancy
+    entity_id:
+    - binary_sensor.up_bath_switch_motion
     to: 'off'
     from: 'on'
     for: 0:01:00
   condition: []
   action:
-  - service: switch.turn_off
-    entity_id: switch.up_bath_night_light
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''on'' }}'
+      sequence:
+      - service: switch.turn_on
+        entity_id: switch.up_bath_night_light
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''off'' }}'
+      sequence:
+      - service: switch.turn_off
+        entity_id: switch.up_bath_night_light
   mode: single
 - id: '1608237220910'
   alias: Unload Dishwasher Reminder
@@ -946,21 +713,13 @@
     entity_id: input_boolean.unload_dishwasher
     state: 'on'
   action:
-  - service: scene.create
+  - service: notify.google_assistant_sdk
     data:
-      scene_id: before
-      snapshot_entities:
-      - media_player.kitchen_hub
-      - media_player.basement_speaker
-      - media_player.upstairs_speaker
-  - service: tts.google_say
-    data:
-      entity_id: media_player.tts_endpoints
       message: Time to unload the dishwasher.
-  - delay: 00:00:10
-  - service: scene.turn_on
-    data:
-      entity_id: scene.before
+      target:
+      - kitchen
+      - basement
+      - entryway
   - condition: time
     after: '16:14'
   - service: input_boolean.turn_off
@@ -968,21 +727,51 @@
     entity_id: input_boolean.unload_dishwasher
   mode: single
 - id: '1616783648058'
-  alias: BedTime Turned Off
+  alias: House Wake Up
   description: ''
   trigger:
   - platform: state
     entity_id: input_boolean.bedtime
     to: 'off'
-  condition:
-  - condition: state
-    entity_id: input_boolean.full_armed_mode
-    state: 'off'
   action:
-  - service: input_boolean.turn_off
-    target:
-      entity_id: input_boolean.external_armed_mode
-    data: {}
+  - choose:
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: binary_sensor.family_presence
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.school_day
+          state: 'off'
+      sequence:
+      - service: switch.turn_on
+        entity_id:
+        - switch.holiday_plug_1
+        - switch.holiday_plug_2
+      - condition: template
+        value_template: '{% if (as_timestamp(now())-as_timestamp(states.binary_sensor.dog_food_contact.attributes.timestamp))
+          > 10800 %}true{% endif %}'
+      - delay:
+          hours: 0
+          minutes: 15
+          seconds: 0
+          milliseconds: 0
+      - service: notify.google_assistant_sdk
+        data:
+          message: The dogs need to be fed.
+          target:
+          - kitchen
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.full_armed_mode
+        state: 'off'
+      sequence:
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.external_armed_mode
+        data: {}
   mode: single
 - id: '1632516039646'
   alias: Liquor Cabinet Opened
@@ -1012,38 +801,17 @@
         entity_id: person.katie
         zone: zone.home
   action:
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_andy
-        state: 'on'
-      sequence:
-      - service: notify.mobile_app_salmob1
-        data:
-          message: Liquor cabinet opened.
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.kitchen
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_katie
-        state: 'on'
-      sequence:
-      - service: notify.mobile_app_salmob2
-        data:
-          message: Liquor cabinet opened
-          data:
-            ttl: 0
-            priority: high
-            image: /api/camera_proxy/camera.kitchen
+  - service: script.notify_parents_with_picture
+    data:
+      message: The liquor cabinet opened
+      cameraURL: /api/camera_proxy/camera.kitchen
   mode: single
 - id: '1632516039727'
   alias: School Morning Routine
   description: ''
   trigger:
   - platform: time
-    at: 06:20:00
+    at: 06:00:00
   condition:
   - condition: and
     conditions:
@@ -1051,70 +819,146 @@
       entity_id: binary_sensor.family_presence
       state: 'on'
     - condition: state
-      entity_id: binary_sensor.schoolday
+      entity_id: binary_sensor.school_day
       state: 'on'
   action:
-  - service: switch.turn_on
-    data:
-      entity_id:
-      - switch.counter_lights
-      - switch.christmas_tree
-      - switch.seasonal_plug_2
-      - switch.fish_tank_light
-      - switch.fish_tank_heater
-  - choose:
-    - conditions:
-      - condition: numeric_state
-        entity_id: sensor.outdoor_temp
-        below: 45
-      - condition: sun
-        before: sunrise
-        before_offset: -00:30:00
-      sequence:
-      - service: switch.turn_on
-        target:
-          entity_id: switch.front_lights
-        data: {}
-      - service: switch.turn_on
-        target:
-          entity_id: switch.fireplace
-        data: {}
-      - delay:
-          hours: 1
-          minutes: 10
-          seconds: 0
-          milliseconds: 0
-      - service: switch.turn_off
-        target:
-          entity_id: switch.fireplace
-        data: {}
-    - conditions:
-      - condition: sun
-        before: sunrise
-        before_offset: -00:30:00
-      sequence:
-      - service: switch.turn_on
-        target:
-          entity_id: switch.front_lights
-        data: {}
-    - conditions:
-      - condition: numeric_state
-        entity_id: sensor.outdoor_temp
-        below: 45
-      sequence:
-      - service: switch.turn_on
-        target:
-          entity_id: switch.fireplace
-        data: {}
-      - delay:
-          hours: 1
-          minutes: 10
-          seconds: 0
-          milliseconds: 0
-      - service: switch.turn_off
-        target:
-          entity_id: switch.fireplace
-        data: {}
+  - parallel:
+    - service: input_boolean.turn_off
+      data: {}
+      target:
+        entity_id: input_boolean.bedtime
+      alias: Turn off House Sleep Mode
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: switch.fish_tank_light
+          state: 'off'
+        sequence:
+        - service: switch.turn_on
+          data:
+            entity_id:
+            - switch.fish_tank_light
+            - switch.maggie_holiday_lights
+      alias: Turn On Aquarium
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: lock.back_door
+          state: locked
+        sequence:
+        - wait_for_trigger:
+          - platform: state
+            entity_id:
+            - binary_sensor.back_entry_switch_motion
+            to: 'on'
+        - service: lock.unlock
+          data: {}
+          target:
+            entity_id:
+            - lock.back_door
+      alias: Unlock Back Door
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: switch.island_lights
+          state: 'off'
+        sequence:
+        - delay:
+            hours: 0
+            minutes: 15
+            seconds: 0
+            milliseconds: 0
+        - service: switch.turn_on
+          data:
+            entity_id:
+            - switch.counter_lights
+            - switch.island_lights
+            - switch.holiday_plug_1
+            - switch.holiday_plug_2
+      alias: Turn On Kitchen Lights
+    - choose:
+      - conditions:
+        - condition: and
+          conditions: []
+        sequence:
+        - delay:
+            hours: 0
+            minutes: 30
+            seconds: 0
+            milliseconds: 0
+        - condition: template
+          value_template: '{% if (as_timestamp(now())-as_timestamp(states.binary_sensor.dog_food_contact.attributes.timestamp))
+            > 10800 %}true{% endif %}'
+        - service: notify.google_assistant_sdk
+          data:
+            message: The dogs need to be fed.
+            target:
+            - kitchen
+      alias: Feed the Dogs Reminder
+    - choose:
+      - conditions:
+        - condition: sun
+          before: sunrise
+          before_offset: -00:30:00
+        sequence:
+        - service: switch.turn_on
+          target:
+            entity_id: switch.front_lights
+          data: {}
+        - delay:
+            hours: 0
+            minutes: 30
+            seconds: 0
+            milliseconds: 0
+        - service: switch.turn_on
+          target:
+            entity_id: switch.lower_foyer
+          data: {}
+      alias: Turn on Front Lights
+    - choose:
+      - conditions:
+        - condition: numeric_state
+          entity_id: sensor.outdoor_temp
+          below: 45
+        sequence:
+        - wait_for_trigger:
+          - platform: state
+            entity_id:
+            - binary_sensor.fireplace_lights_switch_motion
+            to: 'on'
+        - service: switch.turn_on
+          data: {}
+          target:
+            entity_id:
+            - switch.fireplace_lights
+            - switch.family_room_lights
+            - switch.fireplace
+        - delay:
+            hours: 1
+            minutes: 10
+            seconds: 0
+            milliseconds: 0
+        - service: switch.turn_off
+          target:
+            entity_id: switch.fireplace
+          data: {}
+      - conditions:
+        - condition: numeric_state
+          entity_id: sensor.outdoor_temp
+          above: 44
+        sequence:
+        - wait_for_trigger:
+          - platform: state
+            entity_id:
+            - binary_sensor.fireplace_lights_switch_motion
+            to: 'on'
+        - service: switch.turn_on
+          data: {}
+          target:
+            entity_id:
+            - switch.fireplace_lights
+            - switch.family_room_lights
+      alias: Turn on Living Room
   mode: single
 - id: '1634573031535'
   alias: No One Home
@@ -1130,16 +974,26 @@
     target:
       entity_id:
       - switch.fireplace
-      - switch.christmas_tree
-      - switch.seasonal_plug_2
+      - switch.holiday_plug_1
+      - switch.holiday_plug_2
       - switch.maggie_holiday_lights
       - switch.counter_lights
-      - switch.piano_room_counter_lights
+      - switch.cabinet_lights
       - switch.island_lights
       - switch.table_light
-      - switch.cabinet_lights
+      - switch.piano_room_interior_cabinet
+      - switch.piano_room_lights
+      - switch.fireplace_lights
       - switch.family_room_lights
       - switch.garage_lights
+      - switch.porch_fan
+      - switch.basement_peninsula_lights
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id:
+      - light.porch
+      - light.all_basement_downlights
   - service: lock.lock
     data: {}
     target:
@@ -1193,57 +1047,16 @@
   alias: Kitchen Full Armed Motion
   description: ''
   use_blueprint:
-    path: hunterjm/frigate_0.10_notification.yaml
+    path: SgtBatten/frigate_0.11_notification.yaml
     input:
       camera: kitchen
       base_url: https://ha.salmeister.com
-      critical: true
+      alert_once: true
+      critical: 'true'
+      update_thumbnail: true
       labels:
       - person
       notify_group: parent_mobile_devices
-- id: '1641839943777'
-  alias: ' Returning to Empty Home'
-  description: When the back door opens and the family presence detection has been
-    updated within the last 2 minutes (a known person entered the house)
-  trigger:
-  - type: opened
-    platform: device
-    device_id: 7308ce609c19e5d5b3c7af4d11378c78
-    entity_id: binary_sensor.back_door_contact
-    domain: binary_sensor
-  condition:
-  - condition: template
-    value_template: '{{ (as_timestamp(now()) - as_timestamp((states.binary_sensor.family_presence.last_updated))
-      < 120) }}'
-  - condition: state
-    entity_id: binary_sensor.family_presence
-    state: 'on'
-  action:
-  - service: switch.turn_on
-    target:
-      entity_id: switch.counter_lights
-    data: {}
-  - choose:
-    - conditions:
-      - condition: sun
-        after: sunset
-      sequence:
-      - service: switch.turn_on
-        data: {}
-        target:
-          device_id:
-          - c3b5ba787f53764c6db5519f336da0ca
-          - f46e37617ab2d0baa1401787991f9c27
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.vacation_mode
-        state: 'on'
-      sequence:
-      - service: input_boolean.turn_off
-        data: {}
-        target:
-          entity_id: input_boolean.vacation_mode
-  mode: single
 - id: '1646231634423'
   alias: Tag - Vitamins is scanned
   description: ''
@@ -1267,19 +1080,31 @@
           entity_id: input_boolean.andy_vitamins
   mode: single
 - id: '1646232250701'
-  alias: Andy Vitamin Reminder
+  alias: Evening Tasks
   description: ''
   trigger:
   - platform: time
     at: '18:00:00'
-  condition:
-  - condition: state
-    entity_id: input_boolean.andy_vitamins
-    state: 'off'
   action:
-  - service: notify.mobile_app_salmob1
-    data:
-      message: Don't forget your vitamins today
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.andy_vitamins
+        state: 'off'
+      sequence:
+      - service: notify.mobile_app_salmob1
+        data:
+          message: Don't forget your vitamins today
+    alias: Vitamin Reminder
+  - delay:
+      hours: 1
+      minutes: 0
+      seconds: 0
+      milliseconds: 0
+  - condition: template
+    value_template: '{% if (as_timestamp(now())-as_timestamp(states.binary_sensor.dog_food_contact.attributes.timestamp))
+      > 10800 %}true{% endif %}'
+    alias: Feed Dog Reminder
   mode: single
 - id: '1657892984595'
   alias: 'Front Closet: Contact Sensor Toggle Lights'
@@ -1287,7 +1112,7 @@
   use_blueprint:
     path: salmeister/contact_sensor_toggle_lights.yaml
     input:
-      contact_sensor: binary_sensor.front_closet_door
+      contact_sensor: binary_sensor.front_closet_contact
       target_lights:
         entity_id: light.front_closet
       time_out_seconds: 300
@@ -1529,28 +1354,32 @@
   alias: Driveway External Armed Motion
   description: ''
   use_blueprint:
-    path: hunterjm/frigate_0.10_notification.yaml
+    path: SgtBatten/frigate_0.11_notification.yaml
     input:
       camera: driveway
       base_url: https://ha.salmeister.com
-      critical: true
       labels:
       - person
       notify_group: parent_mobile_devices
+      alert_once: true
+      critical: 'true'
+      update_thumbnail: true
       zone_filter: true
       zones: south_front_yard
 - id: '1658507916934'
   alias: Front Yard External Armed Motion
   description: ''
   use_blueprint:
-    path: hunterjm/frigate_0.10_notification.yaml
+    path: SgtBatten/frigate_0.11_notification.yaml
     input:
       camera: front_porch
       base_url: https://ha.salmeister.com
-      critical: true
       labels:
       - person
       notify_group: parent_mobile_devices
+      alert_once: true
+      critical: 'true'
+      update_thumbnail: true
       zone_filter: true
       zones: north_front_yard
 - id: '1658513335370'
@@ -1782,44 +1611,6 @@
         data: {}
         target:
           entity_id: script.basement_tv_step_down_brightness_modify_active_lights
-- id: '1659644150589'
-  alias: 'Basement Hall: Zooz Zen76 Control Smart Light Configuration'
-  description: ''
-  use_blueprint:
-    path: salmeister/zooz_zen76_smartlight_config.yaml
-    input:
-      target_light: light.basement_hall
-      on_1x:
-      - service: light.turn_on
-        data: {}
-        target:
-          entity_id: light.basement_hall
-      already_on_already_bright_1x:
-      - service: script.turn_on
-        data: {}
-        target:
-          entity_id: script.basement_hall_to_dim_modify_active_lights
-      already_on_not_bright_1x:
-      - service: script.turn_on
-        data: {}
-        target:
-          entity_id: script.basement_hall_to_bright_modify_active_lights
-      on_2x:
-      - service: script.turn_on
-        data: {}
-        target:
-          entity_id: script.basement_hall_step_up_brightness_modify_active_lights
-      off_1x:
-      - service: light.turn_off
-        data: {}
-        target:
-          entity_id: light.basement_hall
-      off_2x:
-      - service: script.turn_on
-        data: {}
-        target:
-          entity_id: script.basement_hall_step_down_brightness_modify_active_lights
-      node_id: 73
 - id: '1659646178142'
   alias: 'Bar Lights: Zooz Zen76 Control Smart Light Configuration'
   description: ''
@@ -1942,25 +1733,6 @@
     target:
       entity_id: script.basement_color_loop
   mode: single
-- id: '1662580780423'
-  alias: Basement Bedroom Closet Back Online
-  description: ''
-  trigger:
-  - platform: state
-    entity_id:
-    - light.basement_bedroom_closet
-    from: unavailable
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 30
-  condition: []
-  action:
-  - service: light.turn_off
-    data: {}
-    target:
-      entity_id: light.basement_bedroom_closet
-  mode: single
 - id: '1665776755860'
   alias: Zooz Porch Light
   description: ''
@@ -1986,21 +1758,6 @@
         target:
           entity_id: switch.deck_lights
 - id: '1665776755472'
-  alias: Torrent completed
-  description: Notify and remove torrent upon completion
-  trigger:
-    platform: event
-    event_type: transmission_downloaded_torrent
-  action:
-  - service: notify.mobile_app_salmob1
-    data:
-      title: Torrent completed!
-      message: '{{trigger.event.data.name}}'
-  - service: transmission.remove_torrent
-    data:
-      name: Transmission
-      id: '{{trigger.event.data.id}}'
-- id: '{{trigger.event.data.id}}'
   alias: Torrent completed
   description: Notify and remove torrent upon completion
   trigger:
@@ -2116,4 +1873,450 @@
           minutes: 0
           seconds: 0
           milliseconds: 0
+  mode: single
+- id: '1672841233221'
+  alias: 'Link On/Off State of Multiple Devices: Back Entry Light'
+  description: ''
+  use_blueprint:
+    path: dbrand666/link_multiple_devices.yaml
+    input:
+      linked_entities:
+      - light.back_entry
+      - switch.back_entry
+- id: '1673906074263'
+  alias: Laundry Room Motion
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.laundry_motion_occupancy
+    to: 'on'
+  - platform: state
+    entity_id:
+    - binary_sensor.laundry_motion_occupancy
+    to: 'off'
+    from: 'on'
+    for: 0:01:00
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''on'' }}'
+      sequence:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.laundry_room
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''off'' }}'
+      sequence:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.laundry_room
+  mode: single
+- id: '1674508087688'
+  alias: Returning to Empty Home
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.family_presence
+    from: 'off'
+    to: 'on'
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.bedtime
+        state: 'off'
+      sequence:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.counter_lights
+      - condition: sun
+        after: sunset
+        after_offset: -00:20:00
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id:
+          - switch.piano_room_counter_lights
+          - switch.holiday_plug_1
+          - switch.holiday_plug_2
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.vacation_mode
+        state: 'on'
+      sequence:
+      - service: input_boolean.turn_off
+        data: {}
+        target:
+          entity_id: input_boolean.vacation_mode
+  mode: single
+- id: '1674510642434'
+  alias: Interior Motion Detected
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.back_entry_switch_motion
+    to: 'on'
+  - platform: state
+    entity_id:
+    - binary_sensor.fireplace_lights_switch_motion
+    to: 'on'
+  condition:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: input_boolean.full_armed_mode
+      state: 'on'
+    - condition: state
+      entity_id: input_boolean.bedtime
+      state: 'on'
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.full_armed_mode
+        state: 'on'
+      sequence:
+      - service: notify.parent_mobile_devices
+        data:
+          message: '{{ trigger.to_state.name }} detected motion'
+  - choose:
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: input_boolean.bedtime
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.family_presence
+          state: 'on'
+        - condition: time
+          after: 05:00:00
+          before: 00:00:00
+      sequence:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.bedtime
+  mode: single
+- id: '1674514855376'
+  alias: 'Basement Hall: Zooz Zen76 Control Smart Light Configuration'
+  description: ''
+  use_blueprint:
+    path: salmeister/zooz_zen76_smartlight_config.yaml
+    input:
+      node_id: 90
+      target_light: light.basement_hall
+      on_1x:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.basement_hall
+      off_1x:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.basement_hall
+- id: '1674567806494'
+  alias: Andy Phone Usage
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
+    above: 3
+  - platform: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
+    above: 4
+  - platform: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
+    above: 5
+  - platform: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
+    above: 6
+  condition: []
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      title: You have used {{ trigger.above }} hours of screen time today
+      message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
+        }}% of your day
+  mode: single
+- id: '1674571394391'
+  alias: Katie Phone Usage
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
+    above: 3
+  - platform: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
+    above: 4
+  - platform: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
+    above: 5
+  - platform: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
+    above: 6
+  condition: []
+  action:
+  - service: notify.mobile_app_salmob2
+    data:
+      title: You have used {{ trigger.above }} hours of screen time today
+      message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
+        }}% of your day
+  mode: single
+- id: '1674571487939'
+  alias: Cam Phone Usage
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
+    above: 3
+  - platform: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
+    above: 4
+  - platform: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
+    above: 5
+  - platform: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
+    above: 6
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.above < 5 }}'
+      sequence:
+      - service: notify.mobile_app_salmob4
+        data:
+          title: You have used {{ trigger.above }} hours of screen time today
+          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
+            }}% of your day
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.above > 4 }}'
+      sequence:
+      - service: notify.mobile_app_salmob4
+        data:
+          title: You have used {{ trigger.above }} hours of screen time today
+          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
+            }}% of your day
+      - service: notify.mobile_app_salmob1
+        data:
+          message: Cam has used {{ trigger.above }} hours of screen time today
+      - service: notify.mobile_app_salmob2
+        data:
+          message: Cam has used {{ trigger.above }} hours of screen time today
+  mode: single
+- id: '1674571487940'
+  alias: Maggie Phone Usage
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
+    above: 3
+  - platform: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
+    above: 4
+  - platform: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
+    above: 5
+  - platform: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
+    above: 6
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.above < 5 }}'
+      sequence:
+      - service: notify.mobile_app_salmob5
+        data:
+          title: You have used {{ trigger.above }} hours of screen time today
+          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
+            }}% of your day
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.above > 4 }}'
+      sequence:
+      - service: notify.mobile_app_salmob5
+        data:
+          title: You have used {{ trigger.above }} hours of screen time today
+          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
+            }}% of your day
+      - service: notify.mobile_app_salmob1
+        data:
+          message: Maggie has used {{ trigger.above }} hours of screen time today
+      - service: notify.mobile_app_salmob2
+        data:
+          message: Maggie has used {{ trigger.above }} hours of screen time today
+  mode: single
+- id: '1674575682770'
+  alias: Cam School Night Phone Usage
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.salmob4_interactive
+    to: 'on'
+    from: 'off'
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  condition:
+  - condition: state
+    entity_id: binary_sensor.school_night
+    state: 'on'
+  - condition: time
+    after: '22:00:00'
+  - condition: template
+    value_template: '{{(as_timestamp(now()) - as_timestamp(state_attr(this.entity_id,
+      "last_triggered") | default(0)) | int > 3600 )}}'
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      message: Cam is using his phone late on a school night
+  - service: notify.mobile_app_salmob2
+    data:
+      message: Cam is using his phone late on a school night
+  - service: notify.mobile_app_salmob4
+    data:
+      message: It is pretty late to be using your phone on a school night
+  mode: single
+- id: '1674575682777'
+  alias: Maggie School Night Phone Usage
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.salmob5_interactive
+    to: 'on'
+    from: 'off'
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  condition:
+  - condition: state
+    entity_id: binary_sensor.school_night
+    state: 'on'
+  - condition: time
+    after: '22:00:00'
+  - condition: template
+    value_template: '{{(as_timestamp(now()) - as_timestamp(state_attr(this.entity_id,
+      "last_triggered") | default(0)) | int > 3600 )}}'
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      message: Maggie is using her phone late on a school night
+  - service: notify.mobile_app_salmob2
+    data:
+      message: Maggie is using her phone late on a school night
+  - service: notify.mobile_app_salmob5
+    data:
+      message: It is pretty late to be using your phone on a school night
+  mode: single
+- id: '1674846448593'
+  alias: Counter Lights First On
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - switch.counter_lights
+    to: 'on'
+    from: 'off'
+  condition:
+  - condition: state
+    entity_id: input_boolean.bedtime
+    state: 'off'
+  action:
+  - service: input_boolean.turn_off
+    data: {}
+    target:
+      entity_id: input_boolean.bedtime
+  mode: single
+- id: '1674847821608'
+  alias: Mid Morning Tasks
+  description: Catch things at 10:00am
+  trigger:
+  - platform: time
+    at: '10:00:00'
+  condition:
+  - condition: not
+    conditions:
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ ''12-24'' in now().date() | string }}'
+      - condition: template
+        value_template: '{{ ''12-25'' in now().date() | string }}'
+      - condition: template
+        value_template: '{{ ''12-31'' in now().date() | string }}'
+      - condition: template
+        value_template: '{{ ''01-01'' in now().date() | string }}'
+  action:
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id:
+      - switch.holiday_plug_2
+      - switch.holiday_plug_1
+      - switch.maggie_holiday_lights
+  mode: single
+- id: '1674859526763'
+  alias: Middle of the Night Tasks
+  description: Nothing good every happens after 2:00 AM
+  trigger:
+  - platform: time
+    at: 02:00:00
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: person.andy
+        state: home
+      - condition: state
+        entity_id: person.katie
+        state: home
+      - condition: state
+        entity_id: person.karlee
+        state: home
+      - condition: state
+        entity_id: person.cam
+        state: home
+      sequence:
+      - service: switch.turn_off
+        entity_id: switch.front_lights
+      - condition: state
+        entity_id: media_player.samsung_qn800a_75_tv
+        state: 'off'
+      - condition: state
+        entity_id: media_player.family_room_tv
+        state: 'off'
+      - condition: state
+        entity_id: media_player.porch_tv_cast
+        state: 'off'
+      - condition: template
+        value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.fireplace_lights_switch_motion.last_changed))
+          > 900 }}'
+      - condition: template
+        value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.back_entry_switch_motion.last_changed))
+          > 900 }}'
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.bedtime
+      - service: scene.turn_on
+        target:
+          entity_id: scene.full_shutdown
+        metadata: {}
   mode: single

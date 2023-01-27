@@ -1,7 +1,3 @@
-  - platform: wyzesense
-    device: auto
-    #device: "/dev/hidraw3"
-
   - platform: workday
     name: workday
     country: US
@@ -16,12 +12,25 @@
 
   - platform: template
     sensors:
-      schoolday:
+      school_day:
         friendly_name: "School Day"
         value_template: >-
-          {% if not is_state('sensor.twin_oaks_lunch_0', none) %}
-            {% if not is_state('sensor.twin_oaks_lunch_0', '') %}
-              {% if not is_state('sensor.twin_oaks_lunch_0', 'No School') %}
+          {% if not is_state('sensor.plhs_lunch_0', none) %}
+            {% if not is_state('sensor.plhs_lunch_0', '') %}
+              {% if not is_state('sensor.plhs_lunch_0', 'No School') %}
+              on
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+  - platform: template
+    sensors:
+      school_night:
+        friendly_name: "School Night"
+        value_template: >-
+          {% if not is_state('sensor.plhs_lunch_1', none) %}
+            {% if not is_state('sensor.plhs_lunch_1', '') %}
+              {% if not is_state('sensor.plhs_lunch_1', 'No School') %}
               on
               {% endif %}
             {% endif %}

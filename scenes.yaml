@@ -2,17 +2,21 @@
   entities:
     switch.patio_light: 'off'
     switch.front_lights: 'off'
+    switch.lower_foyer: 'off'
     switch.porch_door_light: 'off'
     switch.deck_lights: 'off'
     light.foyer: 'off'
+    light.porch: 'off'
+    switch.fish_tank_heater: 'on'
   id: aad33734aeea468794854ea85da45c04
 - name: Dusk
   entities:
     switch.patio_light: 'on'
     switch.piano_room_counter_lights: 'on'
-    switch.christmas_tree: 'on'
-    switch.seasonal_plug_2: 'on'
+    switch.holiday_plug_1: 'on'
+    switch.holiday_plug_2: 'on'
     switch.maggie_holiday_lights: 'on'
+    switch.fish_tank_heater: 'off'
   id: 2a998ab0c78a4174adc310ca5d3d5fb9
 - id: '1632764053923'
   name: Kitchen Closed
@@ -29,23 +33,12 @@
     switch.cabinet_lights:
       friendly_name: Cabinet Lights
       state: 'on'
-- id: '1640806836325'
-  name: Sun Up
-  entities:
-    switch.fish_tank_heater:
-      friendly_name: Fish Tank Heater
-      state: 'on'
-    switch.fish_tank_light:
-      friendly_name: Fish Tank Light
-      state: 'on'
-    light.porch:
-      state: 'off'
 - id: '1659712908313'
   name: Vikings Colors
   entities:
     light.basement_hall:
-        color_name: darkgoldenrod
-        state: 'on'
+      color_name: darkgoldenrod
+      state: 'on'
     light.basement_tv_ln:
       color_name: purple
       state: 'on'
@@ -172,3 +165,135 @@
     light.bar_uw:
       color_name: navy
       state: 'on'
+- id: '1674857557266'
+  name: Full Interior Shutdown
+  entities:
+    light.all_basement_downlights:
+      supported_color_modes:
+      - color_temp
+      - rgb
+      icon: mdi:lightbulb-group
+      friendly_name: All Basement Downlights
+      supported_features: 40
+      min_color_temp_kelvin: 2702
+      max_color_temp_kelvin: 6534
+      min_mireds: 153
+      max_mireds: 370
+      entity_id:
+      - light.basement_tv_lights
+      - light.basement_main_lights
+      - light.bar_lights
+      - light.basement_hall
+      state: 'off'
+    switch.basement_peninsula_lights:
+      friendly_name: basement_peninsula_lights
+      state: 'off'
+    switch.fireplace_lights:
+      friendly_name: Fireplace Lights
+      state: 'off'
+    switch.fireplace:
+      friendly_name: Fireplace
+      state: 'off'
+    light.foyer:
+      supported_color_modes:
+      - brightness
+      friendly_name: Foyer LIght
+      supported_features: 32
+      state: 'off'
+    switch.porch_fan:
+      icon: hass:fan
+      friendly_name: Porch Fan
+      state: 'off'
+    light.porch:
+      supported_color_modes:
+      - brightness
+      friendly_name: Porch Light
+      supported_features: 32
+      state: 'off'
+    switch.table_light:
+      friendly_name: table_light
+      state: 'off'
+    switch.island_lights:
+      friendly_name: island_lights
+      state: 'off'
+    switch.counter_lights:
+      friendly_name: Counter Lights
+      state: 'off'
+    switch.cabinet_lights:
+      friendly_name: cabinet lights
+      state: 'off'
+    switch.piano_room_counter_lights:
+      friendly_name: Piano Room Counter Lights
+      state: 'off'
+    switch.piano_room_interior_cabinet:
+      friendly_name: Piano Room Interior Cabinet
+      state: 'off'
+    switch.piano_room_lights:
+      friendly_name: piano_room_lights
+      state: 'off'
+    lock.front_door:
+      friendly_name: Front Door Lock
+      supported_features: 0
+      state: locked
+    lock.porch_door:
+      friendly_name: Porch Door
+      supported_features: 0
+      state: locked
+    switch.lower_foyer:
+      friendly_name: Lower Foyer
+      state: 'off'
+    switch.garage_lights:
+      friendly_name: Garage Lights
+      state: 'off'
+    cover.garage_door:
+      device_class: garage
+      friendly_name: Garage Door
+      supported_features: 3
+      state: closed
+    cover.third_stall:
+      device_class: garage
+      friendly_name: Third Stall
+      supported_features: 3
+      state: closed
+  icon: mdi:power-off
+  metadata:
+    light.all_basement_downlights:
+      entity_only: true
+    switch.basement_peninsula_lights:
+      entity_only: true
+    switch.fireplace_lights:
+      entity_only: true
+    switch.fireplace:
+      entity_only: true
+    light.foyer:
+      entity_only: true
+    switch.porch_fan:
+      entity_only: true
+    light.porch:
+      entity_only: true
+    switch.table_light:
+      entity_only: true
+    switch.island_lights:
+      entity_only: true
+    switch.counter_lights:
+      entity_only: true
+    switch.cabinet_lights:
+      entity_only: true
+    switch.piano_room_counter_lights:
+      entity_only: true
+    switch.piano_room_interior_cabinet:
+      entity_only: true
+    switch.piano_room_lights:
+      entity_only: true
+    lock.front_door:
+      entity_only: true
+    lock.porch_door:
+      entity_only: true
+    switch.lower_foyer:
+      entity_only: true
+    switch.garage_lights:
+      entity_only: true
+    cover.garage_door:
+      entity_only: true
+    cover.third_stall:
+      entity_only: true

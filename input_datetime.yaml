@@ -2,7 +2,3 @@
     name: Crock-Pot Start Time
     has_date: false
     has_time: true
-  karlee_alarm_start_time:
-    name: Karlee Alarm Time
-    has_date: false
-    has_time: true

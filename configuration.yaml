@@ -17,10 +17,6 @@ script: !include scripts.yaml
 sensor: !include sensors.yaml
 zone: !include zones.yaml
 
-spotcast:
-  sp_dc: !secret sp_dc
-  sp_key: !secret sp_key
-
 tts:
   - platform: google_translate
     service_name: google_say
@@ -38,7 +34,7 @@ logger:
   default: warn
   logs:
     homeassistant.components.mqtt: debug
- 
+
 influxdb:
   host: !secret local_ip
   port: 8086
@@ -57,15 +53,14 @@ logbook:
     entities:
       - sensor.time
       - cover.garage_doors
-      - binary_sensor.master_bath_pir
       - switch.master_night_light
-      - binary_sensor.up_bath_pir_occupancy
       - switch.up_bath_night_light
     entity_globs:
       - sensor.dayoftheweek*
       - sensor.*_date
       - sensor.date*
       - sensor.*_geocoded_location
+      - binary_sensor.*_interactive
 
 google_assistant:
   project_id: hassio-5ca3f

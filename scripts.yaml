@@ -41,8 +41,8 @@ bed_time:
       - switch.deck_lights
       - switch.garage_lights
       - switch.porch_fan
-      - switch.seasonal_plug_2
-      - switch.christmas_tree
+      - switch.holiday_plug_1
+      - switch.holiday_plug_2
       - switch.maggie_holiday_lights
   - service: light.turn_off
     data: {}
@@ -378,103 +378,157 @@ basement_color_loop:
       - 66
       - 0
   mode: single
-
 basement_zwave_to_physical:
   mode: single
   sequence:
-    - service: light.turn_on
-      data: {}
-      target:
-        entity_id:
-        - light.all_basement_downlights
-        - light.basement_bedroom_closet
-        - light.basement_stairs_closet
-    - service: zwave_js.set_config_parameter
-      target:
-        entity_id:
-        - switch.basement_bar_area_lights
-        - switch.basement_hall_light
-        - switch.basement_main_lights
-        - switch.basement_tv_side_lights
-      data:
-        parameter: 12
-        value: 1
-    - service: zwave_js.set_config_parameter
-      target:
-        entity_id:
-        - switch.basement_tv_room_lights
-      data:
-        parameter: 19
-        value: 1
-    - service: automation.turn_off
-      data: {}
-      target:
-        entity_id:
-        - automation.bar_lights_zooz_zen76_control_smart_light_configuration
-        - automation.bar_peninsula_zooz_zen76_control_smart_light_configuration
-        - automation.basement_main_zooz_zen76_control_smart_light_configuration
-        - automation.basement_tv_room_zooz_zen76_control_smart_light_configuration
-        - automation.basement_hall_zooz_zen76_control_smart_light_configuration
-        - automation.basement_stairs_zen32_z_wave_js
-        - automation.basement_tv_room_lights
-        - automation.basement_bedroom_closet_contact_sensor_toggle_lights
-        - automation.basement_stairs_contact_sensor_toggle_lights
-    - service: switch.turn_off
-      data: {}
-      target:
-        entity_id:
-        - switch.basement_bar_area_lights
-        - switch.basement_hall_light
-        - switch.basement_main_lights
-        - switch.basement_tv_side_lights
-        - switch.basement_tv_room_lights
-
+  - service: light.turn_on
+    data: {}
+    target:
+      entity_id:
+      - light.all_basement_downlights
+      - light.basement_bedroom_closet
+      - light.basement_stairs_closet
+  - service: zwave_js.set_config_parameter
+    target:
+      entity_id:
+      - switch.basement_bar_area_lights
+      - switch.basement_hall_light
+      - switch.basement_main_lights
+      - switch.basement_tv_side_lights
+    data:
+      parameter: 12
+      value: 1
+  - service: zwave_js.set_config_parameter
+    target:
+      entity_id:
+      - switch.basement_tv_room_lights
+    data:
+      parameter: 19
+      value: 1
+  - service: automation.turn_off
+    data: {}
+    target:
+      entity_id:
+      - automation.bar_lights_zooz_zen76_control_smart_light_configuration
+      - automation.bar_peninsula_zooz_zen76_control_smart_light_configuration
+      - automation.basement_main_zooz_zen76_control_smart_light_configuration
+      - automation.basement_tv_room_zooz_zen76_control_smart_light_configuration
+      - automation.basement_hall_zooz_zen76_control_smart_light_configuration
+      - automation.basement_stairs_zen32_z_wave_js
+      - automation.basement_tv_room_lights
+      - automation.basement_bedroom_closet_contact_sensor_toggle_lights
+      - automation.basement_stairs_contact_sensor_toggle_lights
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id:
+      - switch.basement_bar_area_lights
+      - switch.basement_hall_light
+      - switch.basement_main_lights
+      - switch.basement_tv_side_lights
+      - switch.basement_tv_room_lights
 basement_zwave_to_virtual:
   mode: single
   sequence:
-    - service: switch.turn_on
-      data: {}
-      target:
-        entity_id:
-        - switch.basement_bar_area_lights
-        - switch.basement_hall_light
-        - switch.basement_main_lights
-        - switch.basement_tv_side_lights
-        - switch.basement_tv_room_lights
-    - service: automation.turn_on
-      data: {}
-      target:
-        entity_id:
-        - automation.bar_lights_zooz_zen76_control_smart_light_configuration
-        - automation.bar_peninsula_zooz_zen76_control_smart_light_configuration
-        - automation.basement_main_zooz_zen76_control_smart_light_configuration
-        - automation.basement_tv_room_zooz_zen76_control_smart_light_configuration
-        - automation.basement_hall_zooz_zen76_control_smart_light_configuration
-        - automation.basement_stairs_zen32_z_wave_js
-        - automation.basement_tv_room_lights
-        - automation.basement_bedroom_closet_contact_sensor_toggle_lights
-        - automation.basement_stairs_contact_sensor_toggle_lights
-    - service: zwave_js.set_config_parameter
-      target:
-        entity_id:
-        - switch.basement_bar_area_lights
-        - switch.basement_hall_light
-        - switch.basement_main_lights
-        - switch.basement_tv_side_lights
-      data:
-        parameter: 12
-        value: 0
-    - service: zwave_js.set_config_parameter
-      target:
-        entity_id:
-        - switch.basement_tv_room_lights
-      data:
-        parameter: 19
-        value: 0
-    - service: light.turn_off
-      data: {}
-      target:
-        entity_id:
-        - light.all_basement_downlights
-        - light.basement_bedroom_closet
-        - light.basement_stairs_closet
+  - service: switch.turn_on
+    data: {}
+    target:
+      entity_id:
+      - switch.basement_bar_area_lights
+      - switch.basement_hall_light
+      - switch.basement_main_lights
+      - switch.basement_tv_side_lights
+      - switch.basement_tv_room_lights
+  - service: automation.turn_on
+    data: {}
+    target:
+      entity_id:
+      - automation.bar_lights_zooz_zen76_control_smart_light_configuration
+      - automation.bar_peninsula_zooz_zen76_control_smart_light_configuration
+      - automation.basement_main_zooz_zen76_control_smart_light_configuration
+      - automation.basement_tv_room_zooz_zen76_control_smart_light_configuration
+      - automation.basement_hall_zooz_zen76_control_smart_light_configuration
+      - automation.basement_stairs_zen32_z_wave_js
+      - automation.basement_tv_room_lights
+      - automation.basement_bedroom_closet_contact_sensor_toggle_lights
+      - automation.basement_stairs_contact_sensor_toggle_lights
+  - service: zwave_js.set_config_parameter
+    target:
+      entity_id:
+      - switch.basement_bar_area_lights
+      - switch.basement_hall_light
+      - switch.basement_main_lights
+      - switch.basement_tv_side_lights
+    data:
+      parameter: 12
+      value: 0
+  - service: zwave_js.set_config_parameter
+    target:
+      entity_id:
+      - switch.basement_tv_room_lights
+    data:
+      parameter: 19
+      value: 0
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id:
+      - light.all_basement_downlights
+      - light.basement_bedroom_closet
+      - light.basement_stairs_closet
+cam_color_loop:
+  alias: Cam Color Loop
+  sequence:
+  - service: light.turn_on
+    data:
+      effect: colorloop
+    target:
+      entity_id: light.cams_led_lights
+  mode: single
+cam_color_strobe:
+  alias: Cam Color Strobe
+  sequence:
+  - service: light.turn_on
+    data:
+      effect: colorstrobe
+    target:
+      entity_id: light.cams_led_lights
+  mode: single
+cam_color_jump:
+  alias: Cam Color Jump
+  sequence:
+  - service: light.turn_on
+    data:
+      effect: colorjump
+    target:
+      entity_id: light.cams_led_lights
+  mode: single
+notify_parents_with_picture:
+  alias: Notify Parents with Picture
+  sequence:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_andy
+        state: 'on'
+      sequence:
+      - service: notify.mobile_app_salmob1
+        data:
+          message: '{{ message }}'
+          data:
+            ttl: 0
+            priority: high
+            image: '{{ cameraURL }}'
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_katie
+        state: 'on'
+      sequence:
+      - service: notify.mobile_app_salmob2
+        data:
+          message: '{{ message }}'
+          data:
+            ttl: 0
+            priority: high
+            image: '{{ cameraURL }}'
+  mode: single
