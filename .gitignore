@@ -21,6 +21,7 @@ _trash/
 .cache/
 .local/
 backups/
+lsiopy/
 
 # Specific file ignores
 home-assistant.log
