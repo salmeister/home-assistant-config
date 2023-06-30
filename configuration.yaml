@@ -15,6 +15,7 @@ panel_iframe: !include panel_iframe.yaml
 scene: !include scenes.yaml
 script: !include scripts.yaml
 sensor: !include sensors.yaml
+command_line: !include command_line.yaml
 zone: !include zones.yaml
 
 tts:
@@ -29,6 +30,13 @@ http:
 recorder:
   db_url: !secret postgres_url
   purge_keep_days: 30
+  exclude:
+    entities:
+      - sensor.time
+    entity_globs:
+      - sensor.dayoftheweek*
+      - sensor.*_date
+      - sensor.date*
 
 logger:
   default: warn
@@ -47,19 +55,12 @@ influxdb:
 # View all events in a logbook
 logbook:
   exclude:
-    domains:
-      - media_player
-      - device_tracker
     entities:
-      - sensor.time
+      - binary_sensor.main_bath_switch_motion
+      - binary_sensor.up_bath_switch_motion
+      - binary_sensor.back_entry_switch_daylight
       - cover.garage_doors
-      - switch.master_night_light
-      - switch.up_bath_night_light
     entity_globs:
-      - sensor.dayoftheweek*
-      - sensor.*_date
-      - sensor.date*
-      - sensor.*_geocoded_location
       - binary_sensor.*_interactive
 
 google_assistant:

@@ -169,21 +169,21 @@
   name: Full Interior Shutdown
   entities:
     light.all_basement_downlights:
+      min_color_temp_kelvin: 2702
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 370
       supported_color_modes:
       - color_temp
       - rgb
-      icon: mdi:lightbulb-group
-      friendly_name: All Basement Downlights
-      supported_features: 40
-      min_color_temp_kelvin: 2702
-      max_color_temp_kelvin: 6534
-      min_mireds: 153
-      max_mireds: 370
       entity_id:
       - light.basement_tv_lights
       - light.basement_main_lights
       - light.bar_lights
       - light.basement_hall
+      icon: mdi:lightbulb-group
+      friendly_name: All Basement Downlights
+      supported_features: 40
       state: 'off'
     switch.basement_peninsula_lights:
       friendly_name: basement_peninsula_lights
@@ -194,11 +194,8 @@
     switch.fireplace:
       friendly_name: Fireplace
       state: 'off'
-    light.foyer:
-      supported_color_modes:
-      - brightness
-      friendly_name: Foyer LIght
-      supported_features: 32
+    switch.living_room_lights:
+      friendly_name: Living Room Lights
       state: 'off'
     switch.porch_fan:
       icon: hass:fan
@@ -215,15 +212,6 @@
       state: 'off'
     switch.island_lights:
       friendly_name: island_lights
-      state: 'off'
-    switch.counter_lights:
-      friendly_name: Counter Lights
-      state: 'off'
-    switch.cabinet_lights:
-      friendly_name: cabinet lights
-      state: 'off'
-    switch.piano_room_counter_lights:
-      friendly_name: Piano Room Counter Lights
       state: 'off'
     switch.piano_room_interior_cabinet:
       friendly_name: Piano Room Interior Cabinet
@@ -255,6 +243,50 @@
       friendly_name: Third Stall
       supported_features: 3
       state: closed
+    lock.back_door:
+      friendly_name: Back Door Lock
+      supported_features: 0
+      state: locked
+    switch.cabinet_lights:
+      friendly_name: cabinet lights
+      state: 'off'
+    light.bar_led_lights:
+      min_color_temp_kelvin: 2702
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 370
+      effect_list:
+      - blue_fade
+      - blue_strobe
+      - colorjump
+      - colorloop
+      - colorstrobe
+      - cyan_fade
+      - cyan_strobe
+      - cycle_rgb
+      - cycle_seven_colors
+      - gb_cross_fade
+      - green_fade
+      - green_strobe
+      - purple_fade
+      - purple_strobe
+      - rb_cross_fade
+      - red_fade
+      - red_strobe
+      - rg_cross_fade
+      - rgb_cross_fade
+      - white_fade
+      - white_strobe
+      - yellow_fade
+      - yellow_strobe
+      - random
+      supported_color_modes:
+      - color_temp
+      - rgbw
+      ip_address: 192.168.30.199
+      friendly_name: Bar LED Lights
+      supported_features: 36
+      state: 'off'
   icon: mdi:power-off
   metadata:
     light.all_basement_downlights:
@@ -265,8 +297,6 @@
       entity_only: true
     switch.fireplace:
       entity_only: true
-    light.foyer:
-      entity_only: true
     switch.porch_fan:
       entity_only: true
     light.porch:
@@ -274,12 +304,6 @@
     switch.table_light:
       entity_only: true
     switch.island_lights:
-      entity_only: true
-    switch.counter_lights:
-      entity_only: true
-    switch.cabinet_lights:
-      entity_only: true
-    switch.piano_room_counter_lights:
       entity_only: true
     switch.piano_room_interior_cabinet:
       entity_only: true
@@ -296,4 +320,10 @@
     cover.garage_door:
       entity_only: true
     cover.third_stall:
+      entity_only: true
+    lock.back_door:
+      entity_only: true
+    switch.cabinet_lights:
+      entity_only: true
+    light.bar_led_lights:
       entity_only: true

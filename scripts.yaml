@@ -11,52 +11,20 @@ school_lunches:
     data:
       entity_id: media_player.kitchen_hub
       view_path: lunch
-bed_time:
-  alias: Bed Time
+house_shutdown:
+  alias: House Shutdown
   sequence:
-  - service: lock.lock
-    data: {}
+  - service: scene.turn_on
     target:
-      entity_id:
-      - lock.back_door
-      - lock.front_door
-      - lock.porch_door
-  - service: cover.close_cover
-    data:
-      entity_id:
-      - cover.garage_door
-      - cover.third_stall
-  - service: switch.turn_off
-    data: {}
-    target:
-      entity_id:
-      - switch.fireplace
-      - switch.table_light
-      - switch.island_lights
-      - switch.family_room_lights
-      - switch.piano_room_lights
-      - switch.piano_room_counter_lights
-      - switch.piano_room_interior_cabinet
-      - switch.porch_door_light
-      - switch.deck_lights
-      - switch.garage_lights
-      - switch.porch_fan
-      - switch.holiday_plug_1
-      - switch.holiday_plug_2
-      - switch.maggie_holiday_lights
-  - service: light.turn_off
-    data: {}
-    target:
-      entity_id:
-      - light.porch
-      - light.foyer
+      entity_id: scene.full_shutdown
+    metadata: {}
   - delay: 00:02:00
   - service: switch.turn_off
     data: {}
     target:
       entity_id:
       - switch.counter_lights
-      - switch.cabinet_lights
+      - switch.piano_room_counter_lights
   - delay: 00:15:00
   - service: homeassistant.update_entity
     entity_id: sensor.next_alarm
@@ -64,19 +32,21 @@ bed_time:
     entity_id: input_boolean.external_armed_mode
   - service: input_boolean.turn_on
     entity_id: input_boolean.bedtime
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id: light.foyer
   mode: single
 dog_last_fed:
   alias: Dogs Last Fed
   sequence:
-  - service: tts.google_say
-    entity_id: media_player.kitchen_hub
-    data_template:
+  - service: notify.google_assistant_sdk
+    data:
       message: The dogs were last fed on {{ states('sensor.dogs_last_fed_date') }}
         at  {{ states('sensor.dogs_last_fed_time') }}
-  - delay: 00:00:10
-  - service: media_player.turn_off
-    data:
-      entity_id: media_player.kitchen_hub
+      target:
+      - kitchen
+
 turn_off_basement_lights:
   alias: Turn Off Basement Lights
   sequence:
@@ -88,7 +58,12 @@ turn_off_basement_lights:
       - light.basement_tv_lights
       - light.basement_main_lights
       - light.bar_lights
-      - light.basement_peninsula
+      - light.bar_led_lights
+      - light.bar_tv_led_lights
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.basement_peninsula_lights
   - delay:
       hours: 0
       minutes: 2

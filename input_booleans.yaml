@@ -12,19 +12,24 @@ bedtime:
   icon: mdi:bed
 unload_dishwasher:
   name: Unload Dishwasher
-  initial: false
   icon: mdi:dishwasher-alert
-karlee_alarm:
-  name: Karlee Alarm
-  icon: mdi:alarm
 notify_fpm_andy:
-  initial: true
   name: Notify Andy
   icon: mdi:format-list-checks
 notify_fpm_katie:
-  initial: false
   name: Notify Katie
   icon: mdi:format-list-checks
 andy_vitamins:
-  initial: false
   name: Andy Vitamins
+andy_absent:
+  name: Andy Absent
+katie_absent:
+  name: Katie Absent
+karlee_absent:
+  name: Karlee Absent
+cam_absent:
+  name: Cam Absent
+maggie_absent:
+  name: Maggie Absent
+guest_mode:
+  name: Guest Mode

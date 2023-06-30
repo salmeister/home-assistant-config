@@ -11,3 +11,12 @@
       - sensor.up_bath_pir_battery
       - sensor.dog_food_battery
       - sensor.front_closet_door_battery
+
+  household_members:
+    name: Household Members
+    entities:
+      - person.andy
+      - person.katie
+      - person.karlee
+      - person.cam
+      - person.maggie

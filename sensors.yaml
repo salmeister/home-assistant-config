@@ -12,8 +12,8 @@
     resources:
       - type: last_boot
   - platform: history_stats
-    name: "replay_foyer_light"
-    entity_id: light.foyer
+    name: "replay_lower_foyer_light"
+    entity_id: light.lower_foyer
     state: "on"
     type: count
     start: >
@@ -68,8 +68,8 @@
       {{ as_timestamp(now()) - (7*86400) }}
     duration: 00:00:30
   - platform: history_stats
-    name: "replay_family_room_lights"
-    entity_id: switch.family_room_lights
+    name: "replay_living_room_lights"
+    entity_id: switch.living_room_lights
     state: "on"
     type: count
     start: >
@@ -283,68 +283,6 @@
     sensors:
       dayoftheweek_plus_five:
         value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%A',true)}}"
-
-  - platform: command_line
-    name: Twin Oaks Lunch 0
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Twin Oaks Lunch 1
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Twin Oaks Lunch 2
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Twin Oaks Lunch 3
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Twin Oaks Lunch 4
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: Twin Oaks Lunch 5
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-
-  - platform: command_line
-    name: PLHS Lunch 0
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: PLHS Lunch 1
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: PLHS Lunch 2
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: PLHS Lunch 3
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: PLHS Lunch 4
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
-  - platform: command_line
-    name: PLHS Lunch 5
-    command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-    scan_interval: 20000
-    command_timeout: 45
 
   - platform: history_stats
     name: Andy Daily Phone Usage
