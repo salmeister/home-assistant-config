@@ -274,9 +274,9 @@
       sequence:
       - service: switch.turn_off
         entity_id: switch.front_lights
-      - condition: template
-        value_template: '{{ states(''media_player.samsung_qn800a_75_tv'') != ''Playing''
-          }}'
+      - condition: state
+        entity_id: switch.basement_tv
+        state: 'off'
       - condition: template
         value_template: '{{ states(''media_player.living_room_tv'') != ''Playing''
           }}'
@@ -526,36 +526,6 @@
       - kitchen
       - basement
       - entryway
-- id: 936744a235ac43f78bc16cf5cb507e6e
-  alias: Washer Done
-  trigger:
-  - platform: state
-    entity_id: binary_sensor.washing_machine_status
-    from: 'on'
-    to: 'off'
-  action:
-  - service: notify.google_assistant_sdk
-    data:
-      message: The washing machine is done
-      target:
-      - kitchen
-      - basement
-      - entryway
-- alias: Dryer Done
-  trigger:
-  - platform: state
-    entity_id: binary_sensor.dryer_current_status
-    from: 'on'
-    to: 'off'
-  action:
-  - service: notify.google_assistant_sdk
-    data:
-      message: The dryer is almost done.
-      target:
-      - kitchen
-      - basement
-      - entryway
-  id: 3890066b7c124a3fa5ca1f5d0ffcc782
 - alias: Water Softener Low
   trigger:
     platform: time
@@ -639,15 +609,15 @@
   - platform: homeassistant
     event: start
   action:
-  - service: "{% set minutes = ((now().strftime('%H') | int) * 60) + (now().strftime('%M')\
-      \ | int) %} {% if (360 <= minutes < 1410) and (is_state('sensor.dayoftheweek',\
-      \ 'Friday')) %}\n  input_boolean.turn_off\n{% elif (480 <= minutes < 1410) and\
-      \ (is_state('sensor.dayoftheweek', 'Saturday')) %}\n  input_boolean.turn_off\
-      \ \n{% elif (480 <= minutes < 1350) and (is_state('sensor.dayoftheweek', 'Sunday'))\
-      \ %}\n  input_boolean.turn_off \n{% elif (360 <= minutes < 1350) and ((is_state('sensor.dayoftheweek',\
-      \ 'Monday')) or (is_state('sensor.dayoftheweek', 'Tuesday')) or (is_state('sensor.dayoftheweek',\
-      \ 'Wednesday')) or (is_state('sensor.dayoftheweek', 'Thursday'))) %}\n  input_boolean.turn_off\
-      \ \n{% else %}\n  input_boolean.turn_on\n{% endif %}\n"
+  - service: "{% set minutes = ((now().strftime('%H') | int) * 60) + (now().strftime('%M')
+      | int) %} {% if (360 <= minutes < 1410) and (is_state('sensor.dayoftheweek',
+      'Friday')) %}\n  input_boolean.turn_off\n{% elif (480 <= minutes < 1410) and
+      (is_state('sensor.dayoftheweek', 'Saturday')) %}\n  input_boolean.turn_off \n{%
+      elif (480 <= minutes < 1350) and (is_state('sensor.dayoftheweek', 'Sunday'))
+      %}\n  input_boolean.turn_off \n{% elif (360 <= minutes < 1350) and ((is_state('sensor.dayoftheweek',
+      'Monday')) or (is_state('sensor.dayoftheweek', 'Tuesday')) or (is_state('sensor.dayoftheweek',
+      'Wednesday')) or (is_state('sensor.dayoftheweek', 'Thursday'))) %}\n  input_boolean.turn_off
+      \n{% else %}\n  input_boolean.turn_on\n{% endif %}\n"
     entity_id: input_boolean.bedtime
 - id: c7208b98b0e9474a97ccbe9bd71d8473
   alias: Crock-Pot On
@@ -724,11 +694,6 @@
     to: 'off'
     from: 'on'
     for: 0:01:00
-  - platform: state
-    entity_id:
-    - switch.main_bath
-    to: 'on'
-    from: 'off'
   condition:
   - condition: and
     conditions:
@@ -769,12 +734,6 @@
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''off'' }}'
-      sequence:
-      - service: switch.turn_off
-        entity_id: switch.master_night_light
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.entity_id == ''switch.main_bath'' }}'
       sequence:
       - service: switch.turn_off
         entity_id: switch.master_night_light
@@ -1956,17 +1915,6 @@
       scene_42: []
       scene_33: []
       scene_43: []
-- id: '1670854053910'
-  alias: 'SALMOB1 - Charge phone '
-  description: ''
-  use_blueprint:
-    path: apollo1220/phone_charger.yaml
-    input:
-      phone_battery: sensor.salmob1_battery_level
-      phone_charger:
-        entity_id: switch.andy_phone_charger
-      low_battery: 35
-      charged_battery: 99
 - id: '1671465390451'
   alias: Aquarium Cleaned
   description: ''
@@ -2366,7 +2314,9 @@
   condition:
   - condition: state
     entity_id: input_boolean.bedtime
-    state: 'off'
+    state: 'on'
+  - condition: time
+    after: 05:00:00
   action:
   - service: input_boolean.turn_off
     data: {}
@@ -2401,16 +2351,18 @@
       - switch.lower_foyer
   - choose:
     - conditions:
-      - condition: or
+      - condition: not
         conditions:
-        - condition: template
-          value_template: '{{ ''12-24'' in now().date() | string }}'
-        - condition: template
-          value_template: '{{ ''12-25'' in now().date() | string }}'
-        - condition: template
-          value_template: '{{ ''12-31'' in now().date() | string }}'
-        - condition: template
-          value_template: '{{ ''01-01'' in now().date() | string }}'
+        - condition: or
+          conditions:
+          - condition: template
+            value_template: '{{ ''12-24'' in now().date() | string }}'
+          - condition: template
+            value_template: '{{ ''12-25'' in now().date() | string }}'
+          - condition: template
+            value_template: '{{ ''12-31'' in now().date() | string }}'
+          - condition: template
+            value_template: '{{ ''01-01'' in now().date() | string }}'
       sequence:
       - service: switch.turn_off
         data:
@@ -2452,9 +2404,9 @@
       sequence:
       - service: switch.turn_off
         entity_id: switch.front_lights
-      - condition: template
-        value_template: '{{ states(''media_player.samsung_qn800a_75_tv'') != ''Playing''
-          }}'
+      - condition: state
+        entity_id: switch.basement_tv
+        state: 'off'
       - condition: template
         value_template: '{{ states(''media_player.living_room_tv'') != ''Playing''
           }}'
@@ -2509,7 +2461,8 @@
       sequence:
       - service: light.turn_on
         target:
-          entity_id: light.back_entry
+          entity_id:
+          - light.back_entry
         data:
           color_temp: 300
     - conditions:
@@ -2533,7 +2486,8 @@
         - service: light.turn_off
           data: {}
           target:
-            entity_id: light.back_entry
+            entity_id:
+            - light.back_entry
   mode: single
 - id: '1674942127235'
   alias: Garage Door Closed
@@ -2559,23 +2513,6 @@
     target:
       entity_id: light.back_entry
   mode: single
-- id: '1675095229485'
-  alias: Test Automation
-  description: ''
-  trigger: []
-  condition: []
-  action:
-  - choose:
-    - conditions: []
-      sequence:
-      - condition: numeric_state
-        entity_id: zone.home
-        above: 1
-      - service: logbook.log
-        data:
-          name: Test Automation
-          message: at least 1 person is home
-  mode: single
 - id: '1675097486189'
   alias: 'Zwave: Always On Switches'
   description: ''
@@ -2588,21 +2525,6 @@
       - switch.basement_main_lights
       - switch.basement_hall
       - switch.basement_bar_area_lights
-- id: '1675097486298'
-  alias: Fix front door lock
-  initial_state: true
-  trigger:
-  - platform: event
-    event_type: zwave_js_event
-    event_data:
-      node_id: 95
-  condition:
-    condition: template
-    value_template: '{{ ''Manual'' in trigger.event.data.label }}'
-  action:
-  - entity_id: lock.front_door_lock
-    service: lock.{{ 'unlock' if 'unlock' in trigger.event.data.label else 'lock'
-      }}
 - id: '1677591531023'
   alias: Sump Pump Power
   description: ''
@@ -2627,4 +2549,86 @@
       - kitchen
       - basement
       - entryway
+  mode: single
+- id: '1693235905492'
+  alias: Washer Stuck
+  description: If the washer goes from spin back to rinse, the load may be unbalanced
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.washer_washer_job_state
+    from: spin
+    to: rinse
+  condition: []
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      message: The washer may be uneven.
+  - service: notify.mobile_app_salmob2
+    data:
+      message: The washer may be uneven.
+  - service: notify.google_assistant_sdk
+    data:
+      message: The washer may be uneven.
+      target:
+      - kitchen
+  mode: single
+- id: '1693313942878'
+  alias: Main Bath Sync Switch & Nightlight
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - switch.main_bath
+    from: 'off'
+    to: 'on'
+  condition:
+  - condition: state
+    entity_id: switch.master_night_light
+    state: 'on'
+  action:
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.master_night_light
+  mode: single
+- id: '1697117849488'
+  alias: Maggie Power Down Phone
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.salmob5_interactive
+    from: 'off'
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+  condition:
+  - condition: state
+    entity_id: binary_sensor.school_day
+    state: 'on'
+  - condition: zone
+    entity_id: person.maggie
+    zone: zone.twin_oaks
+  action:
+  - service: python_script.set_state
+    data_template:
+      entity_id: binary_sensor.salmob5_interactive
+      state: 'Off'
+  mode: single
+- id: '1699561924797'
+  alias: Monthly Tasks Reminder
+  description: ''
+  trigger:
+  - platform: calendar
+    event: start
+    offset: 0:0:0
+    entity_id: calendar.salmelas
+  condition: []
+  action:
+  - service: notify.mobile_app_salmob1
+    data:
+      message: This is a test
   mode: single

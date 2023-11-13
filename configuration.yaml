@@ -17,6 +17,7 @@ script: !include scripts.yaml
 sensor: !include sensors.yaml
 command_line: !include command_line.yaml
 zone: !include zones.yaml
+python_script:
 
 tts:
   - platform: google_translate
@@ -40,8 +41,6 @@ recorder:
 
 logger:
   default: warn
-  logs:
-    homeassistant.components.mqtt: debug
 
 influxdb:
   host: !secret local_ip

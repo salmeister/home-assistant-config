@@ -1,8 +1,11 @@
   - platform: next_holiday
     min_future_holidays: 3
+    custom_holidays:
+        "10-31": "Halloween"
     sources: 
      - country: "USA"
        state: "MN"
+       observed: false
        exclude:
          - "Washington's Birthday"
          - "Juneteenth National Independence Day"
