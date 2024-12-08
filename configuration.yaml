@@ -8,10 +8,8 @@ automation: !include automations.yaml
 binary_sensor: !include binary_sensors.yaml
 group: !include groups.yaml
 input_boolean: !include input_booleans.yaml
-input_datetime: !include input_datetime.yaml
 light: !include lights.yml
 notify: !include notify.yaml
-panel_iframe: !include panel_iframe.yaml
 scene: !include scenes.yaml
 script: !include scripts.yaml
 sensor: !include sensors.yaml
@@ -26,10 +24,9 @@ tts:
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 192.168.176.0/24
+    - 192.168.70.0/24
 
 recorder:
-  db_url: !secret postgres_url
   purge_keep_days: 30
   exclude:
     entities:
@@ -38,18 +35,32 @@ recorder:
       - sensor.dayoftheweek*
       - sensor.*_date
       - sensor.date*
+      - binary_sensor.*_motion
+      - sensor.*_last_seen
 
 logger:
   default: warn
 
-influxdb:
-  host: !secret local_ip
-  port: 8086
-  database: homeassistant
-  username: hass
-  password: !secret influxdb_psswd
-  max_retries: 3
-  default_measurement: state
+#influxdb:
+#  api_version: 2
+#  ssl: false
+#  host: !secret local_ip
+#  port: 8086
+#  token: !secret influxdb_token
+#  organization: salmeister
+#  bucket: homeassistant
+#  tags:
+#    source: HomeAssistant
+#  tags_attributes:
+#    - friendly_name
+#  default_measurement: units
+#  ignore_attributes:
+#    - icon
+#  #database: homeassistant
+#  #username: hass
+#  #password: !secret influxdb_psswd
+#  #max_retries: 3
+  
 
 # View all events in a logbook
 logbook:

@@ -8,9 +8,13 @@ blueprint:
       description: List of available Zooz ZEN32 switches.
       selector:
         device:
-          integration: zwave_js
-          manufacturer: Zooz
-          model: ZEN32
+          filter:
+          - integration: zwave_js
+            manufacturer: Zooz
+            model: ZEN32
+          - integration: zwave_js
+            manufacturer: Zooz
+            model: ZEN32 800LR
           multiple: false
     scene_5:
       name: Scene 5 - Pressed Once
@@ -226,7 +230,7 @@ blueprint:
 mode: single
 max_exceeded: silent
 variables:
-  device_id: !input 'zooz_switch'
+  device_id: !input zooz_switch
 trigger:
 - platform: event
   event_type: zwave_js_value_notification
@@ -243,72 +247,72 @@ action:
     message: 'received event: {{ command_class_name }} - {{ value }} - {{ label }}'
 - choose:
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyPressed'' }}'
-    sequence: !input 'scene_1'
+    sequence: !input scene_1
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyHeldDown'' }}'
-    sequence: !input 'scene_1h'
+    sequence: !input scene_1h
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyReleased'' }}'
-    sequence: !input 'scene_1r'
+    sequence: !input scene_1r
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyPressed2x'' }}'
-    sequence: !input 'scene_12'
+    sequence: !input scene_12
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyPressed3x'' }}'
-    sequence: !input 'scene_13'
+    sequence: !input scene_13
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyPressed4x'' }}'
-    sequence: !input 'scene_14'
+    sequence: !input scene_14
   - conditions: '{{ property_key_name == ''001'' and value == ''KeyPressed5x'' }}'
-    sequence: !input 'scene_15'
+    sequence: !input scene_15
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyPressed'' }}'
-    sequence: !input 'scene_2'
+    sequence: !input scene_2
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyHeldDown'' }}'
-    sequence: !input 'scene_2h'
+    sequence: !input scene_2h
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyReleased'' }}'
-    sequence: !input 'scene_2r'
+    sequence: !input scene_2r
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyPressed2x'' }}'
-    sequence: !input 'scene_22'
+    sequence: !input scene_22
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyPressed3x'' }}'
-    sequence: !input 'scene_23'
+    sequence: !input scene_23
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyPressed4x'' }}'
-    sequence: !input 'scene_24'
+    sequence: !input scene_24
   - conditions: '{{ property_key_name == ''002'' and value == ''KeyPressed5x'' }}'
-    sequence: !input 'scene_25'
+    sequence: !input scene_25
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyPressed'' }}'
-    sequence: !input 'scene_3'
+    sequence: !input scene_3
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyHeldDown'' }}'
-    sequence: !input 'scene_3h'
+    sequence: !input scene_3h
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyReleased'' }}'
-    sequence: !input 'scene_3r'
+    sequence: !input scene_3r
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyPressed2x'' }}'
-    sequence: !input 'scene_32'
+    sequence: !input scene_32
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyPressed3x'' }}'
-    sequence: !input 'scene_33'
+    sequence: !input scene_33
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyPressed4x'' }}'
-    sequence: !input 'scene_34'
+    sequence: !input scene_34
   - conditions: '{{ property_key_name == ''003'' and value == ''KeyPressed5x'' }}'
-    sequence: !input 'scene_35'
+    sequence: !input scene_35
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyPressed'' }}'
-    sequence: !input 'scene_4'
+    sequence: !input scene_4
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyHeldDown'' }}'
-    sequence: !input 'scene_4h'
+    sequence: !input scene_4h
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyReleased'' }}'
-    sequence: !input 'scene_4r'
+    sequence: !input scene_4r
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyPressed2x'' }}'
-    sequence: !input 'scene_42'
+    sequence: !input scene_42
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyPressed3x'' }}'
-    sequence: !input 'scene_43'
+    sequence: !input scene_43
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyPressed4x'' }}'
-    sequence: !input 'scene_44'
+    sequence: !input scene_44
   - conditions: '{{ property_key_name == ''004'' and value == ''KeyPressed5x'' }}'
-    sequence: !input 'scene_45'
+    sequence: !input scene_45
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyPressed'' }}'
-    sequence: !input 'scene_5'
+    sequence: !input scene_5
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyHeldDown'' }}'
-    sequence: !input 'scene_5h'
+    sequence: !input scene_5h
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyReleased'' }}'
-    sequence: !input 'scene_5r'
+    sequence: !input scene_5r
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyPressed2x'' }}'
-    sequence: !input 'scene_52'
+    sequence: !input scene_52
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyPressed3x'' }}'
-    sequence: !input 'scene_53'
+    sequence: !input scene_53
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyPressed4x'' }}'
-    sequence: !input 'scene_54'
+    sequence: !input scene_54
   - conditions: '{{ property_key_name == ''005'' and value == ''KeyPressed5x'' }}'
-    sequence: !input 'scene_55'
+    sequence: !input scene_55

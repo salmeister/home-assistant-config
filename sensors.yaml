@@ -11,36 +11,33 @@
          - "Juneteenth National Independence Day"
          - "Juneteenth National Independence Day (Observed)"
          - "Columbus Day"
-  - platform: systemmonitor
-    resources:
-      - type: last_boot
   - platform: history_stats
     name: "replay_lower_foyer_light"
-    entity_id: light.lower_foyer
+    entity_id: switch.lower_foyer
     state: "on"
     type: count
     start: >
       {{ as_timestamp(now()) - (7*86400) }}
     duration: 00:00:30
   - platform: history_stats
-    name: "replay_counter_lights"
-    entity_id: switch.counter_lights
+    name: "replay_kitchen_counters"
+    entity_id: switch.kitchen_counters
     state: "on"
     type: count
     start: >
       {{ as_timestamp(now()) - (7*86400) }}
     duration: 00:00:30
   - platform: history_stats
-    name: "replay_cabinet_lights"
-    entity_id: switch.cabinet_lights
+    name: "replay_kitchen_cabinets"
+    entity_id: switch.kitchen_cabinets
     state: "on"
     type: count
     start: >
       {{ as_timestamp(now()) - (7*86400) }}
     duration: 00:00:30
   - platform: history_stats
-    name: "replay_table_light"
-    entity_id: switch.table_light
+    name: "replay_table_lights"
+    entity_id: light.table_lights
     state: "on"
     type: count
     start: >
@@ -72,7 +69,15 @@
     duration: 00:00:30
   - platform: history_stats
     name: "replay_living_room_lights"
-    entity_id: switch.living_room_lights
+    entity_id: light.living_room
+    state: "on"
+    type: count
+    start: >
+      {{ as_timestamp(now()) - (7*86400) }}
+    duration: 00:00:30
+  - platform: history_stats
+    name: "replay_fireplace_lights"
+    entity_id: light.fireplace_lights
     state: "on"
     type: count
     start: >
@@ -80,15 +85,15 @@
     duration: 00:00:30
   - platform: history_stats
     name: "replay_porch_light"
-    entity_id: light.porch
+    entity_id: light.porch_fan
     state: "on"
     type: count
     start: >
       {{ as_timestamp(now()) - (7*86400) }}
     duration: 00:00:30
   - platform: history_stats
-    name: "replay_garage_lights"
-    entity_id: switch.garage_lights
+    name: "replay_floor_lamps"
+    entity_id: switch.floor_lamps
     state: "on"
     type: count
     start: >
@@ -150,20 +155,6 @@
         unit_of_measurement: °F
         icon_template: mdi:thermometer
         friendly_name: 'Main Temp'
-
-  - platform: template
-    sensors:
-      dogs_last_fed_date:
-        unique_id: 810fdc6002ce49dd940880bd36e7deee
-        friendly_name: 'Dogs Last Fed Date'
-        value_template: '{{ as_timestamp(states.binary_sensor.dog_food_contact.last_changed) | timestamp_custom("%A %B %d ",true) }}'
-
-  - platform: template
-    sensors:
-      dogs_last_fed_time:
-        unique_id: bac7843a94f144519910070d24bd0cc3
-        friendly_name: 'Dogs Last Fed Time'
-        value_template: '{{ as_timestamp(states.binary_sensor.dog_food_contact.last_changed) | timestamp_custom("%I:%M %p",true) }}'
 
   - platform: template
     sensors:
@@ -288,6 +279,7 @@
         value_template: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%A',true)}}"
 
   - platform: history_stats
+    unique_id: 2593538384867
     name: Andy Daily Phone Usage
     entity_id: binary_sensor.salmob1_interactive
     state: 'on'
@@ -296,6 +288,17 @@
     end: "{{ now() }}"
 
   - platform: history_stats
+    unique_id: 9237677928357
+    name: Andy Monthly Phone Usage
+    entity_id: binary_sensor.salmob1_interactive
+    state: 'on'
+    type: time
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 4666657398792
     name: Katie Daily Phone Usage
     entity_id: binary_sensor.salmob2_interactive
     state: 'on'
@@ -304,6 +307,17 @@
     end: "{{ now() }}"
 
   - platform: history_stats
+    unique_id: 2669894878483
+    name: Katie Monthly Phone Usage
+    entity_id: binary_sensor.salmob2_interactive
+    state: 'on'
+    type: time
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 3789773592893
     name: Cam Daily Phone Usage
     entity_id: binary_sensor.salmob4_interactive
     state: 'on'
@@ -312,9 +326,126 @@
     end: "{{ now() }}"
 
   - platform: history_stats
+    unique_id: 5567737466887
+    name: Cam Monthly Phone Usage
+    entity_id: binary_sensor.salmob4_interactive
+    state: 'on'
+    type: time
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 6847358567369
     name: Maggie Daily Phone Usage
     entity_id: binary_sensor.salmob5_interactive
     state: 'on'
     type: time
     start: "{{ now().replace(hour=0, minute=0, second=0) }}"
     end: "{{ now() }}"
+
+  - platform: history_stats
+    unique_id: 3388553578645
+    name: Maggie Monthly Phone Usage
+    entity_id: binary_sensor.salmob5_interactive
+    state: 'on'
+    type: time
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 3246467276524
+    name: Andy Gym
+    entity_id: person.andy
+    state: Lifetime
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    unique_id: 8879492248672
+    name: Andy Gym Month Count
+    entity_id: binary_sensor.andy_gym_count
+    state: 'on'
+    type: count
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 4636577339958
+    name: Katie Gym
+    entity_id: person.katie
+    state: Lifetime
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    unique_id: 3899637952449
+    name: Katie Gym Month Count
+    entity_id: binary_sensor.katie_gym_count
+    state: 'on'
+    type: count
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 5744396865467
+    name: Cam Gym
+    entity_id: person.cam
+    state: Lifetime
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    unique_id: 7934766774449
+    name: Cam Gym Month Count
+    entity_id: binary_sensor.cam_gym_count
+    state: 'on'
+    type: count
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 4567623344477
+    name: Maggie Gym
+    entity_id: person.Maggie
+    state: Lifetime
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    unique_id: 6436677934382
+    name: Maggie Gym Month Count
+    entity_id: binary_sensor.maggie_gym_count
+    state: 'on'
+    type: count
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+
+  - platform: history_stats
+    unique_id: 3654435636455
+    name: Karlee Gym
+    entity_id: person.karlee
+    state: Lifetime
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    unique_id: 4295589477456
+    name: Karlee Gym Month Count
+    entity_id: binary_sensor.karlee_gym_count
+    state: 'on'
+    type: count
+    end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    duration:
+      days: 30
+

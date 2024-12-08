@@ -1,18 +1,3 @@
-- name: all_mobile_devices
-  platform: group
-  services:
-    - service: mobile_app_salmob1
-    - service: mobile_app_salmob2
-    - service: mobile_app_salmob3
-    - service: mobile_app_salmob4
-    - service: mobile_app_salmob5
-
-- name: parent_mobile_devices
-  platform: group
-  services:
-    - service: mobile_app_salmob1
-    - service: mobile_app_salmob2
-
 - name: gmail_email_andy
   platform: smtp
   server: smtp.gmail.com
@@ -39,32 +24,17 @@
     - !secret katie_email
   sender_name: Home Assistant
 
-- name: gmail_text_andy
-  platform: smtp
-  server: smtp.gmail.com
-  port: 587
-  timeout: 15
-  sender: !secret sender_email
-  encryption: starttls
-  username: !secret andy_email
-  password: !secret salmeister_app_psswd
-  recipient:
-    - !secret andy_text
-
-- name: gmail_text_katie
-  platform: smtp
-  server: smtp.gmail.com
-  port: 587
-  timeout: 15
-  sender: !secret sender_email
-  encryption: starttls
-  username: !secret andy_email
-  password: !secret salmeister_app_psswd
-  recipient:
-    - !secret katie_text
-
-- name: emergency
+- name: all_mobile_devices
   platform: group
   services:
-    - service: gmail_text_andy
-    - service: gmail_email_andy
+    - service: mobile_app_salmob1
+    - service: mobile_app_salmob2
+    - service: mobile_app_salmob3
+    - service: mobile_app_salmob4
+    - service: mobile_app_salmob5
+
+- name: parent_mobile_devices
+  platform: group
+  services:
+    - service: mobile_app_salmob1
+    - service: mobile_app_salmob2

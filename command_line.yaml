@@ -1,61 +1,30 @@
   - sensor:
-      name: Twin Oaks Lunch 0
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: Twin Oaks Lunch 1
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: Twin Oaks Lunch 2
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: Twin Oaks Lunch 3
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: Twin Oaks Lunch 4
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: Twin Oaks Lunch 5
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=3c5166dd-98a2-4e41-9f3c-7fd70e837db9&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
-      scan_interval: 20000
-      command_timeout: 45
-
-  - sensor:
       name: PLHS Lunch 0
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45
   - sensor:
       name: PLHS Lunch 1
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45
   - sensor:
       name: PLHS Lunch 2
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45
   - sensor:
       name: PLHS Lunch 3
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45
   - sensor:
       name: PLHS Lunch 4
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45
   - sensor:
       name: PLHS Lunch 5
-      command: curl ""'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.ENTREE//[] | map(.MenuItemDescription) | join(", or ")'""
+      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45

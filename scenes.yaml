@@ -1,36 +1,99 @@
-- name: Dawn
+- id: aad33734aeea468794854ea85da45c04
+  name: Dawn
   entities:
-    switch.patio_light: 'off'
-    switch.front_lights: 'off'
-    switch.lower_foyer: 'off'
-    switch.porch_door_light: 'off'
-    switch.deck_lights: 'off'
-    light.foyer: 'off'
-    light.porch: 'off'
-    switch.fish_tank_heater: 'on'
-  id: aad33734aeea468794854ea85da45c04
-- name: Dusk
+    switch.front_lights:
+      icon: mdi:post-lamp
+      friendly_name: Front Lights
+      state: 'off'
+    switch.lower_foyer:
+      friendly_name: Lower Foyer
+      state: 'off'
+    switch.porch_door_light:
+      icon: mdi:post-lamp
+      friendly_name: Porch Door Light
+      state: 'off'
+    switch.deck_lights:
+      icon: mdi:string-lights
+      friendly_name: Deck Lights
+      state: 'off'
+    light.foyer:
+      supported_color_modes:
+      - brightness
+      color_mode:
+      brightness:
+      icon: mdi:chandelier
+      friendly_name: Foyer LIght
+      supported_features: 32
+      state: 'off'
+    light.porch_fan:
+      supported_color_modes:
+      - brightness
+      color_mode:
+      brightness:
+      icon: mdi:ceiling-fan-light
+      friendly_name: 'Porch Fan '
+      supported_features: 32
+      state: 'off'
+    switch.fish_tank_heater:
+      icon: mdi:heat-wave
+      friendly_name: Fish Tank Heater
+      state: 'on'
+    switch.patio_light:
+      icon: mdi:post-lamp
+      friendly_name: Patio Light
+      state: 'off'
+    light.front_landscape_lights:
+      friendly_name: Front Yard Landscape Lights
+      state: 'off'
+  metadata:
+    switch.patio_light:
+      entity_only: true
+    light.front_landscape_lights:
+      entity_only: true
+- id: 2a998ab0c78a4174adc310ca5d3d5fb9
+  name: Dusk
   entities:
-    switch.patio_light: 'on'
-    switch.piano_room_counter_lights: 'on'
-    switch.holiday_plug_1: 'on'
-    switch.holiday_plug_2: 'on'
-    switch.maggie_holiday_lights: 'on'
-    switch.fish_tank_heater: 'off'
-  id: 2a998ab0c78a4174adc310ca5d3d5fb9
+    switch.piano_room_kitchen_counters:
+      icon: mdi:led-strip
+      friendly_name: Piano Room Counter Lights
+      state: 'on'
+    switch.holiday_plug_1:
+      friendly_name: holiday-plug-1
+      state: 'on'
+    switch.holiday_plug_2:
+      friendly_name: Holiday Plug 2
+      state: 'on'
+    switch.maggie_holiday_lights:
+      icon: mdi:tree
+      friendly_name: Maggie Holiday Lights
+      state: 'on'
+    switch.fish_tank_heater:
+      icon: mdi:heat-wave
+      friendly_name: Fish Tank Heater
+      state: 'off'
+    switch.patio_light:
+      icon: mdi:post-lamp
+      friendly_name: Patio Light
+      state: 'on'
+    light.front_landscape_lights:
+      friendly_name: Front Yard Landscape Lights
+      state: 'on'
+  metadata:
+    switch.patio_light:
+      entity_only: true
+    light.front_landscape_lights:
+      entity_only: true
 - id: '1632764053923'
   name: Kitchen Closed
   entities:
     switch.island_lights:
       friendly_name: Island Lights
       state: 'off'
-    switch.table_light:
-      friendly_name: Table Light
-      state: 'off'
-    switch.counter_lights:
+    light.table_lights: 'off'
+    switch.kitchen_counters:
       friendly_name: Counter Lights
       state: 'on'
-    switch.cabinet_lights:
+    switch.kitchen_cabinets:
       friendly_name: Cabinet Lights
       state: 'on'
 - id: '1659712908313'
@@ -168,14 +231,24 @@
 - id: '1674857557266'
   name: Full Interior Shutdown
   entities:
+    light.table_lights: 'off'
+    light.living_room: 'off'
+    light.fireplace_lights: 'off'
     light.all_basement_downlights:
-      min_color_temp_kelvin: 2702
-      max_color_temp_kelvin: 6535
+      min_color_temp_kelvin: 2700
+      max_color_temp_kelvin: 6500
       min_mireds: 153
       max_mireds: 370
       supported_color_modes:
       - color_temp
       - rgb
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
       entity_id:
       - light.basement_tv_lights
       - light.basement_main_lights
@@ -186,41 +259,38 @@
       supported_features: 40
       state: 'off'
     switch.basement_peninsula_lights:
+      icon: mdi:ceiling-light-multiple
       friendly_name: basement_peninsula_lights
       state: 'off'
     switch.fireplace_lights:
+      icon: mdi:lightbulb-multiple
       friendly_name: Fireplace Lights
       state: 'off'
     switch.fireplace:
+      icon: mdi:fire
       friendly_name: Fireplace
       state: 'off'
-    switch.living_room_lights:
-      friendly_name: Living Room Lights
+    switch.floor_lamps:
+      icon: mdi:lamps
+      friendly_name: Living Room Floor Lamps
       state: 'off'
     switch.porch_fan:
-      icon: hass:fan
+      icon: mdi:ceiling-fan
       friendly_name: Porch Fan
       state: 'off'
-    light.porch:
-      supported_color_modes:
-      - brightness
-      friendly_name: Porch Light
-      supported_features: 32
-      state: 'off'
-    switch.table_light:
-      friendly_name: table_light
-      state: 'off'
     switch.island_lights:
+      icon: mdi:ceiling-light-multiple
       friendly_name: island_lights
       state: 'off'
     switch.piano_room_interior_cabinet:
+      icon: mdi:led-strip
       friendly_name: Piano Room Interior Cabinet
       state: 'off'
     switch.piano_room_lights:
       friendly_name: piano_room_lights
       state: 'off'
     lock.front_door:
-      friendly_name: Front Door Lock
+      friendly_name: Front Door
       supported_features: 0
       state: locked
     lock.porch_door:
@@ -231,23 +301,23 @@
       friendly_name: Lower Foyer
       state: 'off'
     switch.garage_lights:
+      icon: mdi:lightbulb-group
       friendly_name: Garage Lights
       state: 'off'
     cover.garage_door:
       device_class: garage
+      icon: mdi:garage-variant
       friendly_name: Garage Door
-      supported_features: 3
+      supported_features: 11
       state: closed
     cover.third_stall:
       device_class: garage
+      icon: mdi:garage
       friendly_name: Third Stall
-      supported_features: 3
+      supported_features: 11
       state: closed
-    lock.back_door:
-      friendly_name: Back Door Lock
-      supported_features: 0
-      state: locked
-    switch.cabinet_lights:
+    switch.kitchen_cabinets:
+      icon: mdi:led-strip
       friendly_name: cabinet lights
       state: 'off'
     light.bar_led_lights:
@@ -283,9 +353,25 @@
       supported_color_modes:
       - color_temp
       - rgbw
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      rgbw_color:
+      effect:
       ip_address: 192.168.30.199
+      icon: mdi:led-strip
       friendly_name: Bar LED Lights
       supported_features: 36
+      state: 'off'
+    switch.holiday_plug_1:
+      friendly_name: holiday-plug-1
+      state: 'off'
+    switch.holiday_plug_2:
+      friendly_name: Holiday Plug 2
       state: 'off'
   icon: mdi:power-off
   metadata:
@@ -299,9 +385,7 @@
       entity_only: true
     switch.porch_fan:
       entity_only: true
-    light.porch:
-      entity_only: true
-    switch.table_light:
+    light.table_lights:
       entity_only: true
     switch.island_lights:
       entity_only: true
@@ -321,9 +405,11 @@
       entity_only: true
     cover.third_stall:
       entity_only: true
-    lock.back_door:
-      entity_only: true
-    switch.cabinet_lights:
+    switch.kitchen_cabinets:
       entity_only: true
     light.bar_led_lights:
+      entity_only: true
+    switch.holiday_plug_1:
+      entity_only: true
+    switch.holiday_plug_2:
       entity_only: true

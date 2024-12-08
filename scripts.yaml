@@ -23,15 +23,17 @@ house_shutdown:
     data: {}
     target:
       entity_id:
-      - switch.counter_lights
-      - switch.piano_room_counter_lights
+      - switch.kitchen_counters
+      - switch.piano_room_kitchen_counters
   - delay: 00:15:00
   - service: homeassistant.update_entity
     entity_id: sensor.next_alarm
   - service: input_boolean.turn_on
-    entity_id: input_boolean.external_armed_mode
-  - service: input_boolean.turn_on
-    entity_id: input_boolean.bedtime
+    data: {}
+    target:
+      entity_id:
+      - input_boolean.external_armed_mode
+      - input_boolean.bedtime
   - service: light.turn_off
     data: {}
     target:
@@ -42,11 +44,10 @@ dog_last_fed:
   sequence:
   - service: notify.google_assistant_sdk
     data:
-      message: The dogs were last fed on {{ states('sensor.dogs_last_fed_date') }}
-        at  {{ states('sensor.dogs_last_fed_time') }}
+      message: The dogs were last fed at {{ states('input_datetime.dogs_last_fed')
+        }}
       target:
       - kitchen
-
 turn_off_basement_lights:
   alias: Turn Off Basement Lights
   sequence:
@@ -91,40 +92,6 @@ basement_lights_to_cool_modify_active_lights:
       color_temp: 215
       target_lights: light.all_basement_downlights
   mode: single
-basement_tv_lights_to_dim_modify_active_lights:
-  alias: 'Basement TV Lights To Dim: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      brightness: 25
-      target_lights: light.basement_tv_lights
-      brightness_pct: 10
-  mode: single
-basement_tv_lights_to_bright_modify_active_lights:
-  alias: 'Basement TV Lights To Bright: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      brightness: 255
-      target_lights: light.basement_tv_lights
-      brightness_pct: 100
-  mode: single
-basement_tv_step_up_brightness_modify_active_lights:
-  alias: 'Basement TV Step Up Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      target_lights: light.basement_tv_lights
-      brightness_step: 10
-  mode: single
-basement_tv_step_down_brightness_modify_active_lights:
-  alias: 'Basement TV Step Down Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      target_lights: light.basement_tv_lights
-      brightness_step: -10
-  mode: single
 basement_lights_to_red_modify_active_lights:
   alias: 'Basement Lights To Red: Modify Active Lights'
   use_blueprint:
@@ -149,80 +116,8 @@ basement_lights_to_blue_modify_active_lights:
       color_name: Blue
       target_lights: light.all_basement_downlights
   mode: single
-basement_hall_to_bright_modify_active_lights:
-  alias: 'Basement Hall To Bright: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      brightness_pct: 100
-      target_lights: light.basement_hall
-  mode: single
-basement_hall_to_dim_modify_active_lights:
-  alias: 'Basement Hall To Dim: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_hall
-      brightness_pct: 10
-  mode: single
-basement_hall_step_up_brightness_modify_active_lights:
-  alias: 'Basement Hall Step Up Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_hall
-      brightness_step: 10
-  mode: single
-basement_hall_step_down_brightness_modify_active_lights:
-  alias: 'Basement Hall Step Down Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_hall
-      brightness_step: -10
-  mode: single
-bar_lights_to_bright_modify_active_lights:
-  alias: 'Bar Lights to Bright: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.bar_lights
-      brightness_pct: 100
-  mode: single
-bar_lights_to_dim_modify_active_lights:
-  alias: 'Bar Lights to Dim: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.bar_lights
-      brightness_pct: 10
-  mode: single
-bar_lights_step_up_brightness_modify_active_lights:
-  alias: 'Bar Lights Step Up Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.bar_lights
-      brightness_step: 10
-  mode: single
-bar_lights_step_down_brightness_modify_active_lights:
-  alias: 'Bar Lights Step Down Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.bar_lights
-      brightness_step: -10
-  mode: single
 basement_to_bright_modify_active_lights:
-  alias: 'Basement To Bright: Modify Active Lights'
+  alias: 'Basement Lights To Bright: Modify Active Lights'
   use_blueprint:
     path: salmeister/modify_active_lights.yaml
     input:
@@ -231,7 +126,7 @@ basement_to_bright_modify_active_lights:
       target_lights: light.all_basement_downlights
   mode: single
 basement_to_dim_modify_active_lights:
-  alias: 'Basement To Dim: Modify Active Lights'
+  alias: 'Basement Lights To Dim: Modify Active Lights'
   use_blueprint:
     path: salmeister/modify_active_lights.yaml
     input:
@@ -255,42 +150,6 @@ basement_step_down_brightness_modify_active_lights:
     input:
       color_name: NA
       target_lights: light.all_basement_downlights
-      brightness_step: -10
-  mode: single
-basement_main_to_bright_modify_active_lights:
-  alias: 'Basement Main To Bright: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_main_lights
-      brightness_pct: 100
-  mode: single
-basement_main_to_dim_modify_active_lights:
-  alias: 'Basement Main to Dim: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_main_lights
-      brightness_pct: 10
-  mode: single
-basement_main_step_up_brightness_modify_active_lights:
-  alias: 'Basement Main Step Up Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_main_lights
-      brightness_step: 10
-  mode: single
-basement_main_step_up_brightness_modify_active_lights_2:
-  alias: 'Basement Main Step Down Brightness: Modify Active Lights'
-  use_blueprint:
-    path: salmeister/modify_active_lights.yaml
-    input:
-      color_name: NA
-      target_lights: light.basement_main_lights
       brightness_step: -10
   mode: single
 basement_color_loop:
@@ -493,6 +352,7 @@ notify_parents_with_picture:
           data:
             ttl: 0
             priority: high
+            sticky: 'true'
             image: '{{ cameraURL }}'
     - conditions:
       - condition: state

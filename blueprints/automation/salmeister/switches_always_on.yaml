@@ -9,7 +9,8 @@ blueprint:
       description: The switcesh that will always be kept on.
       selector:
         entity:
-          domain: switch
+          domain:
+          - switch
           multiple: true
   source_url: https://gist.github.com/salmeister/52699f0c22acbf2464bff41b15a3ae45
 mode: single
@@ -18,8 +19,10 @@ trigger:
 - platform: homeassistant
   event: start
 - platform: state
-  entity_id: !input 'target_switches'
+  entity_id: !input target_switches
   to: 'off'
 action:
+- delay:
+    seconds: 15
 - service: switch.turn_on
-  entity_id: !input 'target_switches'
+  entity_id: !input target_switches

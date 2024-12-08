@@ -1,4 +1,0 @@
-  crock_pot_start_time:
-    name: Crock-Pot Start Time
-    has_date: false
-    has_time: true
