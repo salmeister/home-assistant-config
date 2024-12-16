@@ -27,8 +27,8 @@
   - choose:
     - conditions:
       - condition: state
-        entity_id: group.household_members
-        state: home
+        entity_id: binary_sensor.empty_house
+        state: 'off'
       - condition: time
         before: '21:00:00'
         after: 00:00:00
@@ -39,8 +39,8 @@
           brightness: 50
     - conditions:
       - condition: state
-        entity_id: group.household_members
-        state: not_home
+        entity_id: binary_sensor.empty_house
+        state: 'on'
       sequence:
       - service: light.turn_on
         data:
@@ -102,12 +102,10 @@
   conditions: []
   actions:
   - parallel:
-    - alias: Update Location
-      action: homeassistant.update_entity
+    - alias: Request location update
+      action: notify.all_android_devices
       data:
-        entity_id:
-        - 'device_tracker.salmob1, device_tracker.salmob2, device_tracker.salmob3,
-          device_tracker.salmob4, device_tracker.salmob5      '
+        message: request_location_update
     - choose:
       - conditions: []
         sequence:
@@ -284,37 +282,43 @@
     - choose:
       - conditions:
         - condition: state
-          entity_id: group.household_members
-          state: home
+          entity_id: binary_sensor.empty_house
+          state: 'off'
         sequence:
         - service: light.turn_off
           entity_id: light.foyer
       alias: Turn Off Foyer Light
 - id: 7117193270954e6eb43c8385f30e1601
   alias: Midnight Tasks
-  trigger:
-  - platform: time
-    at: '23:30:00'
-  action:
-  - service: input_boolean.turn_off
-    entity_id:
-    - input_boolean.andy_vitamins
-  - service: switch.turn_off
-    entity_id:
+  triggers:
+  - at: '23:30:00'
+    trigger: time
+  actions:
+  - action: input_boolean.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - input_boolean.andy_vitamins
+      - input_boolean.morning_startup_done
+      - input_boolean.unload_dishwasher
+    alias: Turn Off Booleans
+  - entity_id:
     - switch.piano_room_kitchen_counters
     - switch.holiday_plug_1
     - switch.holiday_plug_2
     - switch.maggie_holiday_lights
-  - service: lock.lock
-    entity_id: lock.porch_door, lock.front_door
+    action: switch.turn_off
+  - entity_id: lock.porch_door, lock.front_door
+    action: lock.lock
   - choose:
     - conditions:
       - condition: state
         entity_id: binary_sensor.full_house
         state: 'on'
       sequence:
-      - service: switch.turn_off
-        entity_id: switch.front_lights
+      - entity_id: switch.front_lights
+        action: switch.turn_off
       - condition: state
         entity_id: switch.basement_tv
         state: 'off'
@@ -327,25 +331,28 @@
       - condition: template
         value_template: '{{ states(''media_player.bar_tv'') != ''Playing'' }}'
       - condition: template
+        value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.up_stairs_motion_occupancy.last_changed))
+          > 900 }}'
+      - condition: template
         value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.fireplace_lights_switch_motion.last_changed))
           > 900 }}'
       - condition: template
         value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.back_entry_switch_motion.last_changed))
           > 900 }}'
-      - service: script.house_shutdown
-        data: {}
+      - data: {}
+        action: script.house_shutdown
   - condition: and
     conditions:
     - condition: state
       entity_id: light.foyer
       state: 'on'
     - condition: state
-      entity_id: group.household_members
-      state: not_home
-  - service: light.turn_on
-    data:
+      entity_id: binary_sensor.empty_house
+      state: 'on'
+  - data:
       entity_id: light.foyer
       brightness: 50
+    action: light.turn_on
 - alias: Lock Door When Home Alone
   trigger:
   - platform: zone
@@ -640,16 +647,17 @@
       time: 00:00:00
     target:
       entity_id: input_datetime.crock_pot_start_time
-- alias: Dishwasher Done
-  trigger:
-  - platform: state
-    entity_id: binary_sensor.dishwasher_status
-    from: 'on'
-    to: 'off'
-  action:
-  - service: input_boolean.turn_on
-    entity_id: input_boolean.unload_dishwasher
-  id: d05b1353782f4bab862635a9d82a9b8e
+- id: d05b1353782f4bab862635a9d82a9b8e
+  alias: Dishwasher Done
+  triggers:
+  - entity_id:
+    - sensor.dishwasher_state
+    from: drying
+    to: none
+    trigger: state
+  actions:
+  - entity_id: input_boolean.unload_dishwasher
+    action: input_boolean.turn_on
 - alias: Hassio Startup
   trigger:
   - platform: homeassistant
@@ -813,28 +821,21 @@
 - id: '1608237220910'
   alias: Unload Dishwasher Reminder
   description: ''
-  trigger:
-  - platform: time
-    at: '14:35'
-  - platform: time
-    at: '16:15'
-  condition:
+  triggers:
+  - at: '15:20:00'
+    trigger: time
+  conditions:
   - condition: state
     entity_id: input_boolean.unload_dishwasher
     state: 'on'
-  action:
-  - service: notify.google_assistant_sdk
-    data:
+  actions:
+  - data:
       message: Time to unload the dishwasher.
       target:
       - kitchen
       - basement
       - entryway
-  - condition: time
-    after: '16:14'
-  - service: input_boolean.turn_off
-    data: {}
-    entity_id: input_boolean.unload_dishwasher
+    action: notify.google_assistant_sdk
   mode: single
 - id: '1616783648058'
   alias: House Wake Up
@@ -853,8 +854,8 @@
       - condition: and
         conditions:
         - condition: state
-          entity_id: group.household_members
-          state: home
+          entity_id: binary_sensor.empty_house
+          state: 'off'
         - condition: state
           entity_id: binary_sensor.school_day
           state: 'off'
@@ -923,48 +924,50 @@
 - id: '1632516039727'
   alias: School Morning Routine
   description: ''
-  trigger:
-  - platform: time
-    at: 06:15:00
-  condition:
-  - condition: and
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.up_stairs_motion_occupancy
+    to: 'on'
+    alias: Motion Detected on the Upstairs Stairs
+  conditions:
+  - alias: There is someone home, it is a school day, it is after 6am
+    condition: and
     conditions:
     - condition: state
-      entity_id: group.household_members
-      state: home
+      entity_id: input_boolean.morning_startup_done
+      state: 'off'
+    - condition: state
+      entity_id: binary_sensor.empty_house
+      state: 'off'
     - condition: state
       entity_id: binary_sensor.school_day
       state: 'on'
-  action:
+    - condition: time
+      after: 06:00:00
+      before: 07:45:00
+      weekday:
+      - mon
+      - tue
+      - wed
+      - thu
+      - fri
+  actions:
   - parallel:
-    - data: {}
-      target:
-        entity_id: input_boolean.bedtime
-      alias: Turn off House Sleep Mode
-      action: input_boolean.turn_off
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: switch.fish_tank_light
-          state: 'off'
+    - alias: Instance Startup
+      choose:
+      - conditions: []
         sequence:
-        - data:
-            entity_id:
-            - switch.fish_tank_light
-            - switch.maggie_holiday_lights
-          action: switch.turn_on
-      alias: Turn On Aquarium
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: switch.island_lights
-          state: 'off'
-        sequence:
-        - delay:
-            hours: 0
-            minutes: 15
-            seconds: 0
-            milliseconds: 0
+        - data: {}
+          target:
+            entity_id: input_boolean.morning_startup_done
+          alias: Set to Is Running
+          action: input_boolean.turn_on
+        - data: {}
+          target:
+            entity_id: input_boolean.bedtime
+          alias: Turn off House Sleep Mode
+          action: input_boolean.turn_off
         - data:
             entity_id:
             - switch.kitchen_counters
@@ -972,13 +975,13 @@
             - switch.holiday_plug_1
             - switch.holiday_plug_2
           action: switch.turn_on
-      alias: Turn On Kitchen Lights
-    - choose:
+    - alias: Feed the Dogs Reminder
+      choose:
       - conditions: []
         sequence:
         - delay:
             hours: 0
-            minutes: 30
+            minutes: 5
             seconds: 0
             milliseconds: 0
         - condition: template
@@ -989,34 +992,31 @@
             target:
             - kitchen
           action: notify.google_assistant_sdk
-      alias: Feed the Dogs Reminder
-    - choose:
+    - alias: Its Dark Outside
+      choose:
       - conditions:
         - condition: sun
           before: sunrise
           before_offset: -00:30:00
         sequence:
-        - target:
-            entity_id: switch.front_lights
-          data: {}
-          action: switch.turn_on
-      alias: Turn on Front Lights
-    - choose:
-      - conditions: []
-        sequence:
-        - delay:
-            hours: 0
-            minutes: 40
+        - wait_for_trigger:
+          - trigger: time
+            at: 06:45:00
+          continue_on_timeout: false
+          timeout:
+            hours: 1
+            minutes: 0
             seconds: 0
             milliseconds: 0
         - condition: sun
           before: sunrise
           before_offset: -00:30:00
         - target:
-            entity_id: switch.lower_foyer
+            entity_id:
+            - switch.lower_foyer
+            - switch.front_lights
           data: {}
           action: switch.turn_on
-      alias: Turn on Lower Foyer
     - choose:
       - conditions:
         - condition: numeric_state
@@ -1024,10 +1024,10 @@
           below: 45
         sequence:
         - wait_for_trigger:
-          - platform: state
-            entity_id:
+          - entity_id:
             - binary_sensor.floor_lamps_switch_motion
             to: 'on'
+            trigger: state
         - data: {}
           target:
             entity_id:
@@ -1054,10 +1054,10 @@
           above: 44
         sequence:
         - wait_for_trigger:
-          - platform: state
-            entity_id:
+          - entity_id:
             - binary_sensor.floor_lamps_switch_motion
             to: 'on'
+            trigger: state
         - data: {}
           target:
             entity_id:
@@ -1069,34 +1069,44 @@
             - light.living_room
           action: light.turn_on
       alias: Turn on Living Room
-    - choose:
+    - alias: Shutdown
+      choose:
       - conditions: []
         sequence:
-        - delay:
-            hours: 1
-            minutes: 45
+        - wait_for_trigger:
+          - trigger: time
+            at: 07:35:00
+          timeout:
+            hours: 2
+            minutes: 0
             seconds: 0
             milliseconds: 0
+          continue_on_timeout: false
+          alias: Wait Until 7:35am
         - data: {}
           target:
             entity_id: switch.fireplace
           action: switch.turn_off
+          alias: Turn off Fireplace
+        - delay:
+            hours: 0
+            minutes: 25
+            seconds: 0
+            milliseconds: 0
         - choose:
           - conditions:
             - condition: numeric_state
               entity_id: zone.home
               below: 2
             sequence:
-            - data:
+            - data: {}
+              action: switch.turn_off
+              target:
                 entity_id:
                 - switch.lower_foyer
                 - switch.island_lights
-                - switch.floor_lamps
-              action: switch.turn_off
-            - data:
-                entity_id:
-                - light.living_room
-              action: light.turn_off
+            alias: Just 1 Person Home
+          alias: Shutdown Kitchen and Entry
         - choose:
           - conditions:
             - condition: state
@@ -1115,15 +1125,15 @@
                 entity_id:
                 - light.living_room
               action: light.turn_off
-      alias: Shutdown
+          alias: Shutdown Living Room
   mode: single
 - id: '1634573031535'
   alias: No One Home
   trigger:
   - platform: state
-    entity_id: group.household_members
-    from: home
-    to: not_home
+    entity_id: binary_sensor.empty_house
+    from: 'off'
+    to: 'on'
     for: 00:02:00
   action:
   - service: scene.turn_on
@@ -1183,7 +1193,7 @@
     path: SgtBatten/Stable.yaml
     input:
       camera: camera.kitchen
-      notify_device: 901b2da2be65ec01867dc4fd65d496ba
+      notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
       base_url: https://ha.salmeister.com
       critical: 'false'
@@ -1283,39 +1293,19 @@
 - id: '1732866971344'
   alias: Refresh Zwave Battery Levels
   description: Poll all battery powered devices to update their battery levels
-  trigger:
-  - platform: time
-    at: 00:00:00
-  condition:
+  triggers:
+  - at: 00:00:00
+    trigger: time
+  conditions:
   - condition: time
     weekday:
     - sun
-  action:
-  - service: zwave_js.refresh_value
-    data:
-      entity_id: group.zwave_battery_level_group
+  actions:
+  - data:
+      entity_id:
+      - group.zwave_battery_level_group
+    action: zwave_js.refresh_value
   mode: single
-- id: '1658411588680'
-  alias: Low battery level detection & notification for all battery sensors
-  description: ''
-  use_blueprint:
-    path: sbyx/low-battery-level-detection-notification-for-all-battery-sensors.yaml
-    input:
-      day: 1
-      exclude:
-        entity_id:
-        - sensor.salmob1_battery_level
-        - sensor.salmob2_battery_level
-        - sensor.salmob3_battery_level
-        - sensor.salmob4_battery_level
-        - sensor.salmob5_battery_level
-        - sensor.water_valve_battery_level
-        - binary_sensor.porch_door_power_management_replace_battery_now
-        - binary_sensor.front_door_replace_battery_now
-      actions:
-      - service: notify.gmail_email_andy
-        data:
-          message: 'The following sensors have a low battery level: {{sensors}}'
 - id: '1658425165735'
   alias: 'Basement Stairs: ZEN32 (Z-Wave JS)'
   description: ''
@@ -1487,10 +1477,10 @@
     path: SgtBatten/Stable.yaml
     input:
       camera: camera.driveway
-      notify_device: 901b2da2be65ec01867dc4fd65d496ba
+      notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
       base_url: https://ha.salmeister.com
-      critical: 'true'
+      critical: 'false'
       zone_filter: true
       zones:
       - south_front_yard
@@ -1505,10 +1495,10 @@
     path: SgtBatten/Stable.yaml
     input:
       camera: camera.front_porch
-      notify_device: 901b2da2be65ec01867dc4fd65d496ba
+      notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
       base_url: https://ha.salmeister.com
-      critical: 'true'
+      critical: 'false'
       alert_once: true
       update_thumbnail: true
       zone_filter: true
@@ -1555,7 +1545,7 @@
     path: SgtBatten/Stable.yaml
     input:
       camera: camera.front_porch
-      notify_device: 4f10e24d9b3bf24bcdd00adf65f6aa60
+      notify_device: 7f64dbef8d1ab27c9bc1ab438f89c9aa
       critical: 'true'
       alert_once: true
       update_thumbnail: true
@@ -1768,77 +1758,42 @@
       scene_42: []
       scene_33: []
       scene_43: []
-- id: '1671465390451'
-  alias: Aquarium Cleaned
-  description: ''
-  trigger:
-  - platform: event
-    event_type: tag_scanned
-    event_data:
-      tag_id: 693f1551-739a-4c16-b59c-bf7ad0c970a0
-    context: {}
-  condition: []
-  action:
-  - service: input_datetime.set_datetime
-    data:
-      datetime: '{{ now().strftime("%Y-%m-%d %H:%M:%S") }}'
-    target:
-      entity_id: input_datetime.aquarium_cleaned_date
-  mode: single
-- id: '1671484596220'
-  alias: Aquarium Cleaning Reminder
-  description: ''
-  trigger:
-  - platform: time_pattern
-    hours: '16'
-  condition:
-  - condition: template
-    value_template: '{{ now() >= states(''input_datetime.aquarium_cleaned_date'')
-      | as_datetime | as_local + timedelta(days=30) }}'
-  action:
-  - service: notify.mobile_app_salmob1
-    data:
-      message: The aquarium is due for a monthly cleaning
-  - service: notify.mobile_app_salmob5
-    data:
-      message: The aquarium is due for a monthly cleaning
-  mode: single
 - id: '1673906074263'
   alias: Laundry Room Motion
   description: ''
-  trigger:
-  - platform: state
-    entity_id:
-    - binary_sensor.laundry_motion_occupancy
+  triggers:
+  - entity_id:
+    - binary_sensor.laundry_motion_motion_detection
     to: 'on'
-  - platform: state
-    entity_id:
-    - binary_sensor.laundry_motion_occupancy
+    trigger: state
+  - entity_id:
+    - binary_sensor.laundry_motion_motion_detection
     to: 'off'
     from: 'on'
     for:
       hours: 0
       minutes: 3
       seconds: 0
-  condition: []
-  action:
+    trigger: state
+  conditions: []
+  actions:
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''on'' }}'
       sequence:
-      - service: light.turn_on
-        data: {}
+      - data: {}
         target:
           entity_id: light.laundry_room
+        action: light.turn_on
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''off'' }}'
       sequence:
-      - service: light.turn_off
-        data: {}
+      - data: {}
         target:
           entity_id: light.laundry_room
+        action: light.turn_off
   mode: single
 - id: '1674508087688'
   alias: Returning to Empty Home
@@ -1846,9 +1801,9 @@
   trigger:
   - platform: state
     entity_id:
-    - group.household_members
-    from: not_home
-    to: home
+    - binary_sensor.empty_house
+    from: 'on'
+    to: 'off'
   condition: []
   action:
   - choose:
@@ -1920,8 +1875,8 @@
           entity_id: input_boolean.bedtime
           state: 'on'
         - condition: state
-          entity_id: group.household_members
-          state: home
+          entity_id: binary_sensor.empty_house
+          state: 'off'
         - condition: time
           after: 04:00:00
           before: '10:30:00'
@@ -2143,27 +2098,6 @@
     data:
       message: It is pretty late to be using your phone on a school night
   mode: single
-- id: '1674846448593'
-  alias: Counter Lights First On
-  description: ''
-  trigger:
-  - platform: state
-    entity_id:
-    - switch.kitchen_counters
-    to: 'on'
-    from: 'off'
-  condition:
-  - condition: state
-    entity_id: input_boolean.bedtime
-    state: 'on'
-  - condition: time
-    after: 05:00:00
-  action:
-  - service: input_boolean.turn_off
-    data: {}
-    target:
-      entity_id: input_boolean.bedtime
-  mode: single
 - id: '1674847821608'
   alias: Mid Morning Tasks
   description: Catch things when it should be bright out
@@ -2260,6 +2194,9 @@
       - condition: template
         value_template: '{{ states(''media_player.bar_tv'') != ''Playing'' }}'
       - condition: template
+        value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.up_stairs_motion_occupancy.last_changed))
+          > 900 }}'
+      - condition: template
         value_template: '{{ (now().timestamp() - as_timestamp(states.binary_sensor.floor_lamps_switch_motion.last_changed))
           > 900 }}'
       - condition: template
@@ -2271,30 +2208,42 @@
 - id: '1674940514975'
   alias: Back Entry
   description: ''
-  trigger:
-  - platform: state
-    entity_id:
+  triggers:
+  - entity_id:
     - switch.back_entry
     from: 'off'
     to: 'on'
-  - platform: state
-    entity_id:
+    trigger: state
+  - entity_id:
     - switch.back_entry
     from: 'on'
     to: 'off'
-  condition: []
-  action:
+    trigger: state
+  conditions: []
+  actions:
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''on'' }}'
       sequence:
-      - service: light.turn_on
-        target:
+      - target:
           entity_id:
           - light.back_entry
         data:
           color_temp: 300
+        action: light.turn_on
+      - condition: state
+        entity_id: switch.kitchen_counters
+        state: 'off'
+      - action: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.kitchen_counters
+      - alias: Request location update
+        action: notify.all_android_devices
+        data:
+          message: request_location_update
     - conditions:
       - condition: template
         value_template: '{{ trigger.to_state.state == ''off'' }}'
@@ -2304,20 +2253,20 @@
           entity_id: cover.garage_doors
           state: open
         then:
-        - service: light.turn_on
-          data:
+        - data:
             rgb_color:
             - 250
             - 0
             - 0
           target:
             entity_id: light.back_entry
+          action: light.turn_on
         else:
-        - service: light.turn_off
-          data: {}
+        - data: {}
           target:
             entity_id:
             - light.back_entry
+          action: light.turn_off
   mode: single
 - id: '1674942127235'
   alias: Garage Door Closed
@@ -2702,4 +2651,112 @@
         data_template:
           entity_id: sensor.andy_daily_phone_usage
           state: 0
+  mode: single
+- id: '1733772182232'
+  alias: Late Night Motion Detection
+  description: Turn on kitchen counters based on motion and bedtime, with time-based
+    deactivation.
+  triggers:
+  - entity_id: binary_sensor.up_stairs_motion_occupancy
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: input_boolean.bedtime
+    state: 'on'
+  actions:
+  - target:
+      entity_id: switch.kitchen_counters
+    action: switch.turn_on
+    data: {}
+  - condition: time
+    after: 04:30:00
+  - choose:
+    - conditions:
+      - condition: time
+        after: 04:30:00
+      sequence:
+      - target:
+          entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+        data: {}
+    default:
+    - delay:
+        minutes: 5
+    - condition: state
+      entity_id: binary_sensor.up_stairs_motion_occupancy
+      state: 'off'
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: binary_sensor.up_stairs_motion_occupancy
+          state: 'off'
+        sequence:
+        - target:
+            entity_id: switch.kitchen_counters
+          action: switch.turn_off
+      default:
+      - delay:
+          minutes: 5
+      - target:
+          entity_id: switch.kitchen_counters
+        action: switch.turn_off
+- id: '1733929064909'
+  alias: Low Battery Email
+  description: ''
+  triggers:
+  - at: 08:00:00
+    trigger: time
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+  - condition: or
+    conditions:
+    - condition: numeric_state
+      entity_id: sensor.zwave_battery_level_group
+      below: 20
+    - condition: numeric_state
+      entity_id: sensor.zigbee_battery_level_group
+      below: 20
+  actions:
+  - variables:
+      battery_levels: "{%- set zwave_entities = state_attr('sensor.zwave_battery_level_group',
+        'entity_id') | default([]) -%} {%- set zigbee_entities = state_attr('sensor.zigbee_battery_level_group',
+        'entity_id') | default([]) -%} {%- set all_entities = zwave_entities + zigbee_entities
+        -%} {%- set ns = namespace(battery_info=[]) -%} {%- for entity_id in all_entities
+        -%}\n  {%- if states(entity_id) is not none and states(entity_id) | float
+        < 20 -%}\n    {%- set battery_info = ns.battery_info + [{\"name\": state_attr(entity_id,
+        'friendly_name')|default(entity_id.split('.')[1], true), \"value\": states(entity_id),
+        \"type\": entity_id.split('.')[0]}] -%}\n    {%- set ns.battery_info = battery_info
+        -%}\n  {%- endif -%}\n{%- endfor -%} {{ ns.battery_info }}\n"
+  - data:
+      title: HA Battery Level Warning
+      message: ''
+      data:
+        html: "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+          <html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n  <head>\n    <meta
+          charset=\"UTF-8\">\n    <meta http-equiv=\"Content-Type\" content=\"text/html;
+          charset=UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,
+          initial-scale=1.0\">\n    <title>Battery Alert</title>\n    <link rel=\"stylesheet\"
+          href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css\">\n
+          \   <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css\">\n
+          \   <style type=\"text/css\">\n      @font-face {\n        font-family:
+          'Open Sans';\n        font-style: normal;\n        font-weight: 300;\n        src:
+          local('Open Sans Light'), local('OpenSans-Light'), url(http://fonts.gstatic.com/s/opensans/v13/DXI1ORHCpsQm3Vp6mXoaTZS3E-kSBmtLoNJPDtbj2Pk.ttf)
+          format('truetype');\n      }\n      h1,h2,h3,h4,h5,h6 {\n        font-family:'Open
+          Sans',Arial,sans-serif;\n        font-weight:400;\n        margin:10px 0\n
+          \     }\n    </style>\n  </head>\n  <body>\n    <div class=\"jumbotron jumbotron-fluid\"
+          style=\"background-color: #f00a2d; color: white;\">\n      <div class=\"container
+          py-0\">\n        <h1>Low Battery Alert</h1>\n      </div>\n    </div>\n
+          \   <div class=\"container-fluid\">\n      <div class=\"row\">\n        <div
+          class=\"col-xs-12\">\n          <h3>Devices with Low Battery:</h3>\n          <ul>\n
+          \         {%- for battery in battery_levels -%}\n            <li>{{ battery.type
+          | upper }} - {{ battery.name }}: {{ battery.value }}%</li>\n          {%-
+          else -%}\n            <li>No devices with low battery levels found.</li>\n
+          \         {%- endfor -%}\n          </ul>\n          <p>\n            Review
+          more at:\n            <a href=\"intent://lovelace/batteries#Intent;scheme=homeassistant;package=io.homeassistant.companion.android;end;fallback_url=https://ha.salmeister.com/lovelace/batteries\">Home
+          Assistant</a>\n          </p>\n        </div>\n      </div>\n    </div>\n
+          \ </body>\n</html>\n"
+    action: notify.gmail_email_andy
   mode: single

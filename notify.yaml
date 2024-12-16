@@ -24,12 +24,11 @@
     - !secret katie_email
   sender_name: Home Assistant
 
-- name: all_mobile_devices
+- name: all_android_devices
   platform: group
   services:
     - service: mobile_app_salmob1
     - service: mobile_app_salmob2
-    - service: mobile_app_salmob3
     - service: mobile_app_salmob4
     - service: mobile_app_salmob5
 

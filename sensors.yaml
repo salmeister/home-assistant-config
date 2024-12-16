@@ -99,46 +99,78 @@
     start: >
       {{ as_timestamp(now()) - (7*86400) }}
     duration: 00:00:30
+
   - platform: template
     sensors:
       next_alarm:
         friendly_name: 'Next Alarm'
         value_template: >-
-            {% if is_state('device_tracker.salmob1', 'home') %}
-              {% if is_state('device_tracker.salmob2', 'home') %}
-                {{ [states('sensor.salmob1_next_alarm'), states('sensor.salmob2_next_alarm')] | min }}
-              {% else %}
-                {{ states('sensor.salmob1_next_alarm') }}
-              {% endif %}
-            {% elif is_state('device_tracker.salmob2', 'home') %}
-                {{ states('sensor.salmob2_next_alarm') }}
+          {% if is_state('device_tracker.salmob1', 'home') %}
+            {% if is_state('device_tracker.salmob2', 'home') %}
+              {{ [states('sensor.salmob1_next_alarm'), states('sensor.salmob2_next_alarm')] | min }}
             {% else %}
-              'No one home'
+              {{ states('sensor.salmob1_next_alarm') }}
             {% endif %}
+          {% elif is_state('device_tracker.salmob2', 'home') %}
+            {{ states('sensor.salmob2_next_alarm') }}
+          {% else %}
+            'No one home'
+          {% endif %}
         attribute_templates:
           alarm_time: >-
-            {{ as_timestamp(states('sensor.next_alarm')) | timestamp_custom('%H:%M') }}
-          minutes_left: >-
-            {% set dummy = states("sensor.time") %}
-            {{((states('sensor.next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int}}
-          text_time_left: >-
-            {% set time = state_attr('sensor.next_alarm','minutes_left') %}
-            {% set hours = ((time | int /  60) | string).split('.')[0] %}
-            {% set minutes = time | int % 60 %}
-            {{hours}} hours {{minutes}} minutes 
-          text_whose_alarm: >-
-            {% if states('sensor.salmob1_next_alarm') == states('sensor.salmob2_next_alarm') %}
-              Same alarm
-            {% elif ((states('sensor.next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int == ((states('sensor.salmob1_next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int %}
-              Andy's Phone
-            {% elif ((states('sensor.next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int == ((states('sensor.salmob2_next_alarm')|as_timestamp|int - now()|as_timestamp|int)/60)|int %}
-              Katie's Phone
+            {% set next_alarm = states('sensor.next_alarm') %}
+            {% if next_alarm != 'unavailable' and next_alarm != 'unknown' and next_alarm != 'No one home' %}
+              {% set alarm_time = as_timestamp(next_alarm) | timestamp_custom('%H:%M') %}
             {% else %}
-              ERROR
+              {% set alarm_time = 'N/A' %}
             {% endif %}
+            {{ alarm_time }}
+          minutes_left: >-
+            {% set next_alarm = states('sensor.next_alarm') %}
+            {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+              {% set minutes_left = ((as_timestamp(next_alarm) | int - now() | as_timestamp | int) / 60) | int %}
+            {% else %}
+              {% set minutes_left = 0 %}
+            {% endif %}
+            {{ minutes_left }}
+          text_time_left: >-
+            {% set next_alarm = states('sensor.next_alarm') %}
+            {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+              {% set time = ((as_timestamp(next_alarm) | int - now() | as_timestamp | int) / 60) | int %}
+              {% set hours = (time // 60) | string %}
+              {% set minutes = (time % 60) | string %}
+              {% set text_time_left = hours ~ ' hours ' ~ minutes ~ ' minutes' %}
+            {% else %}
+              {% set text_time_left = 'N/A' %}
+            {% endif %}
+            {{ text_time_left }}
+          text_whose_alarm: >-
+            {% set next_alarm = states('sensor.next_alarm') %}
+            {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+              {% set salmob1_alarm = states('sensor.salmob1_next_alarm') %}
+              {% set salmob2_alarm = states('sensor.salmob2_next_alarm') %}
+              {% if salmob1_alarm == salmob2_alarm %}
+                {% set whose_alarm = 'Same alarm' %}
+              {% elif as_timestamp(salmob1_alarm) | int == as_timestamp(next_alarm) | int %}
+                {% set whose_alarm = 'Andy\'s Phone' %}
+              {% elif as_timestamp(salmob2_alarm) | int == as_timestamp(next_alarm) | int %}
+                {% set whose_alarm = 'Katie\'s Phone' %}
+              {% else %}
+                {% set whose_alarm = 'ERROR' %}
+              {% endif %}
+            {% else %}
+              {% set whose_alarm = 'N/A' %}
+            {% endif %}
+            {{ whose_alarm }}
           next_alarm_localtime: >-
-            {{ as_timestamp(states('sensor.next_alarm')) | timestamp_custom('%A %H:%M') }}
-        
+            {% set next_alarm = states('sensor.next_alarm') %}
+            {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+              {% set local_time = as_timestamp(next_alarm) | timestamp_custom('%A %H:%M') %}
+            {% else %}
+              {% set local_time = 'N/A' %}
+            {% endif %}
+            {{ local_time }}
+
   - platform: template
     sensors:
       outdoor_temp:
