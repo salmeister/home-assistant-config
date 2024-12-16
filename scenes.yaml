@@ -42,13 +42,16 @@
       icon: mdi:post-lamp
       friendly_name: Patio Light
       state: 'off'
-    light.front_landscape_lights:
+    light.front_yard_landscape_main:
       friendly_name: Front Yard Landscape Lights
+      state: 'off'
+    switch.outdoor_lights:
+      friendly_name: Outdoor Lights
       state: 'off'
   metadata:
     switch.patio_light:
       entity_only: true
-    light.front_landscape_lights:
+    light.front_yard_landscape_main:
       entity_only: true
 - id: 2a998ab0c78a4174adc310ca5d3d5fb9
   name: Dusk
@@ -75,13 +78,16 @@
       icon: mdi:post-lamp
       friendly_name: Patio Light
       state: 'on'
-    light.front_landscape_lights:
+    light.front_yard_landscape_main:
       friendly_name: Front Yard Landscape Lights
+      state: 'on'
+    switch.outdoor_lights:
+      friendly_name: Outdoor Lights
       state: 'on'
   metadata:
     switch.patio_light:
       entity_only: true
-    light.front_landscape_lights:
+    light.front_yard_landscape_main:
       entity_only: true
 - id: '1632764053923'
   name: Kitchen Closed
@@ -262,10 +268,6 @@
       icon: mdi:ceiling-light-multiple
       friendly_name: basement_peninsula_lights
       state: 'off'
-    switch.fireplace_lights:
-      icon: mdi:lightbulb-multiple
-      friendly_name: Fireplace Lights
-      state: 'off'
     switch.fireplace:
       icon: mdi:fire
       friendly_name: Fireplace
@@ -378,8 +380,6 @@
     light.all_basement_downlights:
       entity_only: true
     switch.basement_peninsula_lights:
-      entity_only: true
-    switch.fireplace_lights:
       entity_only: true
     switch.fireplace:
       entity_only: true

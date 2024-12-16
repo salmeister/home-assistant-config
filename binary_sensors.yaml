@@ -41,3 +41,21 @@
             and (is_state('input_boolean.cam_absent', 'on') or is_state('person.cam','home'))
             and (is_state('input_boolean.maggie_absent', 'on') or is_state('person.maggie','home'))
           }}
+
+  - platform: template
+    sensors:
+      empty_house:
+        friendly_name: Empty House
+        icon_template: >-
+          {% if is_state('binary_sensor.empty_house','on') %}
+            hass:home-outline
+          {% else %}
+            hass:home-account
+          {% endif %}
+        value_template: >
+          {{ not is_state('person.andy','home')
+            and not is_state('person.katie','home')
+            and not is_state('person.karlee','home')
+            and not is_state('person.cam','home')
+            and not is_state('person.maggie','home')
+          }}
