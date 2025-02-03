@@ -23,7 +23,7 @@ tts:
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 192.168.70.0/24
+    - !secret docker_net
 
 recorder:
   purge_keep_days: 30
