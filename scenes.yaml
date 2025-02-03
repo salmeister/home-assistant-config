@@ -12,10 +12,6 @@
       icon: mdi:post-lamp
       friendly_name: Porch Door Light
       state: 'off'
-    switch.deck_lights:
-      icon: mdi:string-lights
-      friendly_name: Deck Lights
-      state: 'off'
     light.foyer:
       supported_color_modes:
       - brightness
@@ -42,7 +38,7 @@
       icon: mdi:post-lamp
       friendly_name: Patio Light
       state: 'off'
-    light.front_yard_landscape_main:
+    light.front_landscape:
       friendly_name: Front Yard Landscape Lights
       state: 'off'
     switch.outdoor_lights:
@@ -51,12 +47,12 @@
   metadata:
     switch.patio_light:
       entity_only: true
-    light.front_yard_landscape_main:
+    light.front_landscape:
       entity_only: true
 - id: 2a998ab0c78a4174adc310ca5d3d5fb9
   name: Dusk
   entities:
-    switch.piano_room_kitchen_counters:
+    switch.piano_room_counter_lights:
       icon: mdi:led-strip
       friendly_name: Piano Room Counter Lights
       state: 'on'
@@ -78,7 +74,7 @@
       icon: mdi:post-lamp
       friendly_name: Patio Light
       state: 'on'
-    light.front_yard_landscape_main:
+    light.front_landscape:
       friendly_name: Front Yard Landscape Lights
       state: 'on'
     switch.outdoor_lights:
@@ -87,7 +83,7 @@
   metadata:
     switch.patio_light:
       entity_only: true
-    light.front_yard_landscape_main:
+    light.front_landscape:
       entity_only: true
 - id: '1632764053923'
   name: Kitchen Closed
@@ -251,7 +247,6 @@
       color_mode:
       brightness:
       color_temp_kelvin:
-      color_temp:
       hs_color:
       rgb_color:
       xy_color:
@@ -358,7 +353,6 @@
       color_mode:
       brightness:
       color_temp_kelvin:
-      color_temp:
       hs_color:
       rgb_color:
       xy_color:

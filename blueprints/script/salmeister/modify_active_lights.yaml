@@ -8,13 +8,20 @@ blueprint:
       description: The lights to keep in sync
       selector:
         entity:
-          domain: light
+          domain:
+          - light
           multiple: false
     color_temp:
-      default: 0
+      name: Color Temperature
+      description: Set the color temperature (in mireds)
+      default: 153
       selector:
-        color_temp:
-          max_mireds: 370
+        number:
+          mode: slider
+          unit_of_measurement: mired
+          min: 153.0
+          max: 500.0
+          step: 1.0
     color_name:
       default: White
       selector:
@@ -38,6 +45,7 @@ blueprint:
           - Navy
           multiple: false
           custom_value: false
+          sort: false
     brightness_pct:
       name: Brightness Percentage
       description: The percentage of brightness
@@ -60,11 +68,11 @@ blueprint:
           step: 1.0
   source_url: https://gist.github.com/salmeister/642317d9fb3ffe9aa179fb26cc67d3ce
 variables:
-  color_name: !input 'color_name'
-  color_temp: !input 'color_temp'
-  brightness_pct: !input 'brightness_pct'
-  brightness_step: !input 'brightness_step'
-  target_lights: !input 'target_lights'
+  color_name: !input color_name
+  color_temp: !input color_temp
+  brightness_pct: !input brightness_pct
+  brightness_step: !input brightness_step
+  target_lights: !input target_lights
   lights: '{{ expand(target_lights) | selectattr(''state'', ''eq'', ''on'') | map(attribute=''entity_id'')
     | list }}'
 sequence:
@@ -73,16 +81,18 @@ sequence:
     - condition: template
       value_template: '{{ brightness_pct != 0 }}'
     sequence:
-    - service: light.turn_on
-      target:
-        entity_id: '{{ lights }}'
+    - action: light.turn_on
+      metadata: {}
       data:
         brightness_pct: '{{ brightness_pct }}'
+      target:
+        entity_id: '{{ lights }}'
   - conditions:
     - condition: template
       value_template: '{{ brightness_step != 0 }}'
     sequence:
-    - service: light.turn_on
+    - action: light.turn_on
+      metadata: {}
       target:
         entity_id: '{{ lights }}'
       data:
@@ -91,16 +101,18 @@ sequence:
     - condition: template
       value_template: '{{ color_name != ''White'' }}'
     sequence:
-    - service: light.turn_on
+    - action: light.turn_on
+      metadata: {}
       target:
         entity_id: '{{ lights }}'
       data:
         color_name: '{{ color_name }}'
   - conditions:
     - condition: template
-      value_template: '{{ color_temp > 154 }}'
+      value_template: '{{ color_temp > 152 }}'
     sequence:
-    - service: light.turn_on
+    - action: light.turn_on
+      metadata: {}
       target:
         entity_id: '{{ lights }}'
       data:

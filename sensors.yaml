@@ -119,7 +119,7 @@
         attribute_templates:
           alarm_time: >-
             {% set next_alarm = states('sensor.next_alarm') %}
-            {% if next_alarm != 'unavailable' and next_alarm != 'unknown' and next_alarm != 'No one home' %}
+            {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
               {% set alarm_time = as_timestamp(next_alarm) | timestamp_custom('%H:%M') %}
             {% else %}
               {% set alarm_time = 'N/A' %}
@@ -170,7 +170,7 @@
               {% set local_time = 'N/A' %}
             {% endif %}
             {{ local_time }}
-
+  
   - platform: template
     sensors:
       outdoor_temp:
@@ -480,4 +480,3 @@
     end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
     duration:
       days: 30
-
