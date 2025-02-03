@@ -32,6 +32,17 @@
     - service: mobile_app_salmob4
     - service: mobile_app_salmob5
 
+- name: all_apple_devices
+  platform: group
+  services:
+    - service: mobile_app_salmob3
+
+- name: all_mobile_devices
+  platform: group
+  services:
+    - service: all_android_devices
+    - service: all_apple_devices
+
 - name: parent_mobile_devices
   platform: group
   services:

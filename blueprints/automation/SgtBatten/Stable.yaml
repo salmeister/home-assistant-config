@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4c)
+  name: Frigate Notifications (0.12.0.4e)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -106,7 +106,8 @@ blueprint:
     base_url:
       name: Base URL (Optional)
       description: "The external URL for your Home Assistant instance. \nRecommended
-        for iOS and required for Android/Fire TV.\n"
+        for iOS and required for Android/Fire TV.\nMust include the scheme i.e http://
+        or https://\nExamples: http://192.168.1.25:8123   https://homeassistant.mydomain.com\n"
       default: ''
     mqtt_topic:
       name: MQTT Topic (Advanced)
@@ -161,8 +162,8 @@ blueprint:
                   }} on the {{ camera_name }} camera{% if enteredzones %} in the {{
                   enteredzones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}.
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         update_sub_label:
           name: Update Sub Label (Advanced)
           description: "Update the title and/or message with the matched face name
@@ -198,8 +199,8 @@ blueprint:
                 }}'
               - '{{ event[''after''][''top_score''] |float(0) > 0.8 }}'
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         alert_once:
           name: Alert Once (Optional)
           description: Only the first notification for each event will play a sound.
@@ -231,9 +232,9 @@ blueprint:
               - label: Snapshot cropped with bounding box
                 value: snapshot.jpg?bbox=1&crop=1
               mode: dropdown
+              multiple: false
               sort: false
               custom_value: false
-              multiple: false
         update_thumbnail:
           name: Update Image (Optional)
           description: Update the notification if a new "better" image is available.
@@ -252,9 +253,9 @@ blueprint:
                 value: ''
               - label: Clip
                 value: '{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4'
+              multiple: false
               sort: false
               custom_value: false
-              multiple: false
         color:
           name: Notification Color - Android/TV only (Optional)
           description: Set the color of the notification on your Android mobile device
@@ -311,9 +312,9 @@ blueprint:
                 value: '#000000'
               - label: White
                 value: '#ffffff'
+              multiple: false
               sort: false
               custom_value: false
-              multiple: false
         icon:
           name: Notification Icon (Optional)
           description: Change the icon that displays on the notification. You can
@@ -329,8 +330,8 @@ blueprint:
                 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else
                 'home-assistant'}}
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         group:
           name: Group
           description: The group name that will determine if notifications are grouped
@@ -349,8 +350,8 @@ blueprint:
               - default
               - none
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         volume:
           name: Volume Sound - iOS only (Optional)
           description: You can specify a sound level between 0 and 100
@@ -458,15 +459,17 @@ blueprint:
               sort: false
         presence_filter:
           name: Presence Filter (Optional)
-          description: Only notify if the selected presence entity is not "home".
+          description: Only notify if ALL of the selected presence entities are not
+            "home".
           default: ''
           selector:
             entity:
-              domain:
-              - device_tracker
-              - person
-              - group
-              multiple: false
+              filter:
+              - domain:
+                - device_tracker
+                - person
+                - group
+              multiple: true
         state_filter:
           name: State Filter on/off (Optional)
           description: Enable the two State Filter settings below. Only notify if
@@ -652,8 +655,8 @@ blueprint:
               - label: Custom Action (Manual Trigger)
                 value: custom-{{ camera }}
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         button_1:
           name: Action Button 1 Text
           description: The text used on the first Action button at the bottom of the
@@ -691,8 +694,8 @@ blueprint:
               - label: Custom Action (Manual Trigger)
                 value: custom-{{ camera }}
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         icon_1:
           name: Action Button 1 icon - iOS Only
           description: Customise the Icon on the first Action Button. Only the iOS
@@ -735,8 +738,8 @@ blueprint:
               - label: Custom Action (Manual Trigger)
                 value: custom-{{ camera }}
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         icon_2:
           name: Action Button 2 icon - iOS Only
           description: Customise the Icon on the second Action Button. Only the iOS
@@ -781,8 +784,8 @@ blueprint:
               - label: Custom Action (Manual Trigger)
                 value: custom-{{ camera }}
               custom_value: true
-              sort: false
               multiple: false
+              sort: false
         icon_3:
           name: Action Button 3 icon - iOS Only
           description: Customise the Icon on the third Action Button. Only the iOS
@@ -842,9 +845,9 @@ blueprint:
               - top-right
               - top-left
               - center
+              multiple: false
               sort: false
               custom_value: false
-              multiple: false
         tv_size:
           name: TV Notification Size (Optional)
           description: Set the size of the notification on your TV.
@@ -857,9 +860,9 @@ blueprint:
               - medium
               - large
               - max
+              multiple: false
               sort: false
               custom_value: false
-              multiple: false
         tv_duration:
           name: TV Notification Duration (Optional)
           description: The duration (in seconds) that the notification will display
@@ -885,9 +888,9 @@ blueprint:
               - 50%
               - 75%
               - 100%
+              multiple: false
               sort: false
               custom_value: false
-              multiple: false
         tv_interrupt:
           name: TV Notification Interrupt (Optional)
           description: If set to true the notification is interactive and can be dismissed
@@ -1021,8 +1024,8 @@ action:
         id: '{{ trigger.payload_json[''after''][''id''] }}'
         object: '{{ trigger.payload_json[''after''][''label''] }}'
         label: '{{ object | title }}'
-        initial_home: '{{ presence_entity != '''' and is_state(presence_entity, ''home'')
-          }}'
+        initial_home: '{{presence_entity |reject(''in'', '''') |select(''is_state'',
+          ''home'') |list |length != 0 }}'
         enteredzones: '{{ trigger.payload_json[''after''][''entered_zones'']}}'
         zone_multi_filter: '{{zone_only and zone_multi and enteredzones|length and
           zones and zones |reject(''in'', enteredzones) |list |length == 0 }}'
@@ -1088,7 +1091,7 @@ action:
               else 'FAIL'}}, \n    disabled times: {{disable_times}}, \n    State
               Filter: \n      state filter toggle on: {{state_only}}, \n      state
               filter entity: {{input_entity}}, \n      required states: {{input_states}},
-              \n      State Filter TEST: {{'PASS' if not state_only or states(input_entity)
+              \n      State Filter TEST: {{'PASS' if not state_only or states(input_entity)|lower
               in states_filter else 'FAIL' }},\n    Custom Filter: {{custom_filter}}\n"
     - alias: Notifications enabled for object label
       condition: template
@@ -1108,7 +1111,7 @@ action:
           > 0) or (zone_multi and enteredzones|length > 0 and zones |reject(''in'',
           enteredzones) |list |length == 0) }}'
         - '{{ not initial_home }}'
-        - '{{ not state_only or states(input_entity) in states_filter }}'
+        - '{{ not state_only or states(input_entity)|lower in states_filter }}'
         sequence: !input custom_action_auto
     - alias: Notify on new object
       choose:
@@ -1117,7 +1120,7 @@ action:
           > 0) or (zone_multi and enteredzones|length > 0 and zones |reject(''in'',
           enteredzones) |list |length == 0) }}'
         - '{{ not initial_home }}'
-        - '{{ not state_only or states(input_entity) in states_filter }}'
+        - '{{ not state_only or states(input_entity)|lower in states_filter }}'
         - '{{ custom_filter }}'
         sequence:
         - choose:
@@ -1283,10 +1286,11 @@ action:
               loiter_timer }}'
             new_snapshot: '{{ update_thumbnail and event[''before''][''snapshot''][''frame_time'']
               != event[''after''][''snapshot''][''frame_time''] }}'
-            home: '{{ presence_entity != '''' and is_state(presence_entity, ''home'')
-              }}'
-            presence_changed: '{{ presence_entity != '''' and as_datetime(event[''before''][''frame_time''])
-              < states[presence_entity].last_changed }}'
+            home: '{{presence_entity |reject(''in'', '''') |select(''is_state'', ''home'')
+              |list |length != 0 }}'
+            presence_changed: '{{ presence_entity |reject(''in'', '''') |expand |map(attribute=''last_changed'')
+              |list |select(''gt'', as_datetime(event[''before''][''frame_time'']))
+              |list |length != 0}}'
             last_zones: '{{ event[''before''][''entered_zones'']|lower}}'
             enteredzones: '{{ event[''after''][''entered_zones'']|lower}}'
             zone_filter: '{{ not zone_only or zones|select(''in'', enteredzones)|list|length
@@ -1301,13 +1305,16 @@ action:
             entered_zones_changed: '{{ zones|length > 0 and (zones|select(''in'',
               enteredzones)|list|length > zones|select(''in'', last_zones)|list|length)
               }}'
-            state_true: '{{ not state_only or states(input_entity) in states_filter
+            state_true: '{{ not state_only or states(input_entity)|lower in states_filter
               }}'
             sub_label: "{% if event['after']['sub_label'] %} \n  {{event['after']['sub_label'][0]}}\n{%else%}\n
               \ {{event['after']['sub_label']}}\n{%endif%}\n"
             sub_label_before: "{% if event['before']['sub_label'] %} \n  {{event['before']['sub_label'][0]}}\n{%else%}\n
               \ {{event['before']['sub_label']}}\n{%endif%}\n"
             sub_label_changed: '{{ update_sub_label and sub_label != sub_label_before
+              }}'
+            update: '{{ alert_once or (new_snapshot and not loitering and not presence_changed
+              and not zone_only_changed and not entered_zones_changed and not sub_label_changed)
               }}'
             critical_input: !input critical
             critical: '{{ true if critical_input == ''true'' else true if critical_input
