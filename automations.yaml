@@ -85,6 +85,62 @@
           - basement
           - entryway
         action: notify.google_assistant_sdk
+      # Create a helper for Google Hub interaction
+      - data: {}
+        target:
+          entity_id: input_boolean.garage_hub_notification_active
+        action: input_boolean.turn_on
+      # Send visual notification to kitchen hub with action
+      - data:
+          message: "Garage door is open. Say 'Hey Google, close the garage door' or use the dashboard."
+          data:
+            display_url: "https://ha.salmeister.com/lovelace/garage-control"
+          target:
+          - kitchen
+        action: notify.google_assistant_sdk
+      - parallel:
+        # Send actionable notification to Andy if enabled
+        - choose:
+          - conditions:
+            - condition: state
+              entity_id: input_boolean.notify_fpm_andy
+              state: 'on'
+            sequence:
+            - data:
+                title: "Garage Door Open"
+                message: "It's getting dark and the garage door is still open."
+                data:
+                  tag: "garage_open_dark"
+                  persistent: true
+                  actions:
+                  - action: "close_garage_door"
+                    title: "Close Garage"
+                    icon: "sli:home-garage"
+                  - action: "ignore_garage_notification"
+                    title: "Ignore"
+                    icon: "sli:close"
+              action: notify.mobile_app_salmob1
+        # Send actionable notification to Katie if enabled
+        - choose:
+          - conditions:
+            - condition: state
+              entity_id: input_boolean.notify_fpm_katie
+              state: 'on'
+            sequence:
+            - data:
+                title: "Garage Door Open"
+                message: "It's getting dark and the garage door is still open."
+                data:
+                  tag: "garage_open_dark"
+                  persistent: true
+                  actions:
+                  - action: "close_garage_door"
+                    title: "Close Garage"
+                    icon: "sli:home-garage"
+                  - action: "ignore_garage_notification"
+                    title: "Ignore"
+                    icon: "sli:close"
+              action: notify.mobile_app_salmob2
     alias: Notify Garage Open
 - id: b903ec6aacd748959d03f2b1d38f2e2d
   alias: Garage Door Opened
@@ -205,6 +261,177 @@
           target:
             entity_id: switch.garage_detect
           action: switch.turn_off
+- id: enhanced_garage_door_person_detection
+  alias: Enhanced Garage Door Person Detection
+  description: 'Enhanced notification using proper Frigate events with GenAI summaries and face recognition'
+  triggers:
+  - trigger: mqtt
+    topic: frigate/events
+  conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.payload_json.after.camera == 'garage' and 
+         'person' in trigger.payload_json.after.label and
+         trigger.payload_json.type in ['new', 'update'] and
+         trigger.payload_json.after.has_snapshot == true }}
+  - condition: state
+    entity_id: cover.garage_doors
+    state: 'open'
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: input_boolean.external_armed_mode
+      state: 'on'
+    - condition: and
+      conditions:
+      - condition: template
+        value_template: '{{states(''person.andy'') != ''home''}}'
+      - condition: template
+        value_template: '{{states(''person.katie'') != ''home''}}'
+  actions:
+  - variables:
+      camera_name: "{{ trigger.payload_json.after.camera }}"
+      event_id: "{{ trigger.payload_json.after.id }}"
+      event_label: "{{ trigger.payload_json.after.label }}"
+      sub_labels: "{{ trigger.payload_json.after.sub_label | default([]) }}"
+      base_url: "https://ha.salmeister.com"
+      client_id: ""
+  - parallel:
+    # Wait for potential GenAI description and face recognition updates
+    - sequence:
+      - wait_for_trigger:
+        - trigger: mqtt
+          topic: frigate/tracked_object_update
+          payload_condition: >-
+            {{ trigger.payload_json.id == event_id and 
+               trigger.payload_json.type == 'description' }}
+        timeout: "00:00:10"
+        continue_on_timeout: true
+      - variables:
+          ai_description: >-
+            {% if wait.trigger %}
+              {{ wait.trigger.payload_json.description }}
+            {% else %}
+              AI description not available
+            {% endif %}
+      - wait_for_trigger:
+        - trigger: mqtt
+          topic: frigate/tracked_object_update  
+          payload_condition: >-
+            {{ trigger.payload_json.id == event_id and 
+               trigger.payload_json.type == 'face' }}
+        timeout: "00:00:10" 
+        continue_on_timeout: true
+      - variables:
+          person_name: >-
+            {% if wait.trigger %}
+              {{ wait.trigger.payload_json.name }}
+            {% elif sub_labels | length > 0 %}
+              {{ sub_labels[0] | title }}
+            {% else %}
+              Unknown Person
+            {% endif %}
+          snapshot_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/snapshot.jpg"
+          clip_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/clip.mp4"
+      # Send enhanced notifications to both parents
+      - parallel:
+        - action: notify.mobile_app_salmob1
+          data:
+            title: "🚗 Garage Entry Detected"
+            message: >-
+              {{ person_name }} entered the garage.
+              {% if ai_description != 'AI description not available' %}
+              
+              🤖 {{ ai_description }}
+              {% endif %}
+              
+              📍 Time: {{ now().strftime('%I:%M %p') }}
+            data:
+              tag: "garage_person_{{ event_id }}"
+              group: "garage_security"
+              image: "{{ snapshot_url }}"
+              video: "{{ clip_url }}"
+              sticky: true
+              channel: "garage_alerts"
+              importance: high
+              actions:
+              - action: "VIEW_GARAGE_CLIP"
+                title: "View Full Clip"
+                icon: "sli:video"
+              - action: "close_garage_door"
+                title: "Close Garage"
+                icon: "sli:close"
+              - action: "DISMISS_GARAGE_ALERT"
+                title: "Dismiss"
+                icon: "sli:check"
+        - action: notify.mobile_app_salmob2
+          data:
+            title: "🚗 Garage Entry Detected"
+            message: >-
+              {{ person_name }} entered the garage.
+              {% if ai_description != 'AI description not available' %}
+              
+              🤖 {{ ai_description }}
+              {% endif %}
+              
+              📍 Time: {{ now().strftime('%I:%M %p') }}
+            data:
+              tag: "garage_person_{{ event_id }}"
+              group: "garage_security"
+              image: "{{ snapshot_url }}"
+              video: "{{ clip_url }}"
+              sticky: true
+              channel: "garage_alerts" 
+              importance: high
+              actions:
+              - action: "VIEW_GARAGE_CLIP"
+                title: "View Full Clip"
+                icon: "sli:video"
+              - action: "close_garage_door"
+                title: "Close Garage"
+                icon: "sli:close"
+              - action: "DISMISS_GARAGE_ALERT"
+                title: "Dismiss"
+                icon: "sli:check"
+  mode: queued
+  max: 3
+
+- id: handle_enhanced_garage_actions
+  alias: Handle Enhanced Garage Actions
+  description: 'Handle all garage notification actions including video viewing'
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: VIEW_GARAGE_CLIP
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: DISMISS_GARAGE_ALERT
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.event.data.action == 'VIEW_GARAGE_CLIP' }}"
+      sequence:
+      - action: notify.mobile_app_{{ trigger.event.data.sourceDeviceID.replace('mobile_app_', '') }}
+        data:
+          title: "Opening Garage Video"
+          message: "Loading full clip..."
+          data:
+            tag: "garage_video_loading"
+            timeout: 5
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
+      sequence:
+      - action: notify.mobile_app_{{ trigger.event.data.sourceDeviceID.replace('mobile_app_', '') }}
+        data:
+          message: "clear_notification"
+          data:
+            tag: "{{ trigger.event.data.tag }}"
+  mode: parallel
+
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
@@ -2320,7 +2547,7 @@
   mode: parallel
 - id: '1674942127235'
   alias: Garage Door Closed
-  description: ''
+  description: 'Reset back entry light from red to warm white when garage closes'
   triggers:
   - entity_id:
     - cover.garage_doors
@@ -2333,9 +2560,15 @@
     from: open
     trigger: state
   conditions:
-  - condition: template
-    value_template: '{{ states.light.back_entry.attributes.rgb_color == ''(255,0,0)''
-      }}'
+  - condition: state
+    entity_id: light.back_entry
+    state: 'on'
+  - condition: or
+    conditions:
+    - condition: template
+      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [250, 0, 0] }}'
+    - condition: template
+      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [255, 0, 0] }}'
   actions:
   - data: {}
     target:
@@ -2882,4 +3115,142 @@
           entity_id: switch.piano_room_lamp
         action: switch.toggle
     default: []
+  mode: single
+- id: 'garage_door_actionable_notifications'
+  alias: Handle Garage Door Actionable Notifications
+  description: Handle actionable notifications for garage door being open after dark
+  triggers:
+  # Handle notification actions
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: "close_garage_door"
+    trigger: event
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: "ignore_garage_notification"
+    trigger: event
+  # Auto-clear notifications when garage door closes
+  - entity_id: cover.garage_doors
+    to: 'closed'
+    trigger: state
+  actions:
+  - choose:
+    # Handle close garage action
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.event.data.action == "close_garage_door" }}'
+      sequence:
+      - choose:
+        # Only close if garage is still open
+        - conditions:
+          - condition: state
+            entity_id: cover.garage_doors
+            state: 'open'
+          sequence:
+          - data: {}
+            target:
+              entity_id: cover.garage_doors
+            action: cover.close_cover
+          - data:
+              message: "Garage door is closing..."
+            action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+        # If already closed, just acknowledge
+        default:
+        - data:
+            message: "Garage door is already closed."
+          action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+      # Clear the notification
+      - data:
+          message: "clear_notification"
+          data:
+            tag: "garage_open_dark"
+        action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+    # Handle ignore action
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.event.data.action == "ignore_garage_notification" }}'
+      sequence:
+      - data:
+          message: "clear_notification"
+          data:
+            tag: "garage_open_dark"
+        action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+    # Auto-clear when garage closes
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.entity_id == "cover.garage_doors" }}'
+      sequence:
+      # Clear notifications from both parents' devices
+      - parallel:
+        - choose:
+          - conditions:
+            - condition: state
+              entity_id: input_boolean.notify_fpm_andy
+              state: 'on'
+            sequence:
+            - data:
+                message: "clear_notification"
+                data:
+                  tag: "garage_open_dark"
+              action: notify.mobile_app_salmob1
+        - choose:
+          - conditions:
+            - condition: state
+              entity_id: input_boolean.notify_fpm_katie
+              state: 'on'
+            sequence:
+            - data:
+                message: "clear_notification"
+                data:
+                  tag: "garage_open_dark"
+              action: notify.mobile_app_salmob2
+        # Clear Google Hub notification
+        - sequence:
+          - data: {}
+            target:
+              entity_id: input_boolean.garage_hub_notification_active
+            action: input_boolean.turn_off
+          - data:
+              message: "Garage door is now closed."
+              target:
+              - kitchen
+            action: notify.google_assistant_sdk
+  mode: single
+- id: 'google_assistant_garage_voice_control'
+  alias: Google Assistant Garage Voice Control
+  description: Handle voice commands to close garage door when notification is active
+  triggers:
+  - event_type: google_assistant_command
+    event_data:
+      command: "close the garage door"
+    trigger: event
+  - event_type: google_assistant_command
+    event_data:
+      command: "close garage door"
+    trigger: event
+  - event_type: google_assistant_command
+    event_data:
+      command: "shut the garage door"
+    trigger: event
+  conditions:
+  - condition: state
+    entity_id: input_boolean.garage_hub_notification_active
+    state: 'on'
+  - condition: state
+    entity_id: cover.garage_doors
+    state: 'open'
+  actions:
+  - data: {}
+    target:
+      entity_id: cover.garage_doors
+    action: cover.close_cover
+  - data:
+      message: "Closing the garage door now."
+      target:
+      - kitchen
+    action: notify.google_assistant_sdk
+  - data: {}
+    target:
+      entity_id: input_boolean.garage_hub_notification_active
+    action: input_boolean.turn_off
   mode: single
