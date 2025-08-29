@@ -296,99 +296,108 @@
       sub_labels: "{{ trigger.payload_json.after.sub_label | default([]) }}"
       base_url: "https://ha.salmeister.com"
       client_id: ""
+      session_tag: "garage_session_{{ now().strftime('%Y%m%d_%H%M') }}"
+  # Wait to collect multiple people and AI data before sending notification
+  - delay: "00:00:15"
+  - variables:
+      # Collect all recent garage events to group people
+      all_people: >-
+        {% set ns = namespace(people=[]) %}
+        {% if sub_labels | length > 0 %}
+          {% for label in sub_labels %}
+            {% if label not in ['person', 'unknown'] %}
+              {% set ns.people = ns.people + [label | title] %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+        {% if ns.people | length == 0 %}
+          {% set ns.people = ['Unknown Person'] %}
+        {% endif %}
+        {{ ns.people | unique | list }}
+      people_text: >-
+        {% if all_people | length == 1 %}
+          {{ all_people[0] }}
+        {% elif all_people | length == 2 %}
+          {{ all_people[0] }} and {{ all_people[1] }}
+        {% else %}
+          {{ all_people[:-1] | join(', ') }}, and {{ all_people[-1] }}
+        {% endif %}
+      snapshot_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/snapshot.jpg"
+      clip_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/clip.mp4"
+  # Wait for potential GenAI description
+  - wait_for_trigger:
+    - trigger: mqtt
+      topic: frigate/tracked_object_update
+    timeout: "00:00:05"
+    continue_on_timeout: true
+  - variables:
+      ai_description: >-
+        {% if wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
+          {{ wait.trigger.payload_json.description }}
+        {% else %}
+          AI description not available
+        {% endif %}
+  # Send single consolidated notification to both parents
   - parallel:
-    # Wait for potential GenAI description and face recognition updates
-    - sequence:
-      - wait_for_trigger:
-        - trigger: mqtt
-          topic: frigate/tracked_object_update
-        timeout: "00:00:10"
-        continue_on_timeout: true
-      - variables:
-          ai_description: >-
-            {% if wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
-              {{ wait.trigger.payload_json.description }}
-            {% else %}
-              AI description not available
-            {% endif %}
-      - wait_for_trigger:
-        - trigger: mqtt
-          topic: frigate/tracked_object_update  
-        timeout: "00:00:10" 
-        continue_on_timeout: true
-      - variables:
-          person_name: >-
-            {% if wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'face' %}
-              {{ wait.trigger.payload_json.name }}
-            {% elif sub_labels | length > 0 %}
-              {{ sub_labels[0] | title }}
-            {% else %}
-              Unknown Person
-            {% endif %}
-          snapshot_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/snapshot.jpg"
-          clip_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/clip.mp4"
-      # Send enhanced notifications to both parents
-      - parallel:
-        - action: notify.mobile_app_salmob1
-          data:
-            title: "🚗 Garage Entry Detected"
-            message: >-
-              {{ person_name }} entered the garage.
-              {% if ai_description != 'AI description not available' %}
-              
-              🤖 {{ ai_description }}
-              {% endif %}
-              
-              📍 Time: {{ now().strftime('%I:%M %p') }}
-            data:
-              tag: "garage_person_{{ event_id }}"
-              group: "garage_security"
-              image: "{{ snapshot_url }}"
-              video: "{{ clip_url }}"
-              sticky: true
-              channel: "garage_alerts"
-              importance: high
-              actions:
-              - action: "VIEW_GARAGE_CLIP"
-                title: "View Full Clip"
-                icon: "sli:video"
-              - action: "close_garage_door"
-                title: "Close Garage"
-                icon: "sli:close"
-              - action: "DISMISS_GARAGE_ALERT"
-                title: "Dismiss"
-                icon: "sli:check"
-        - action: notify.mobile_app_salmob2
-          data:
-            title: "🚗 Garage Entry Detected"
-            message: >-
-              {{ person_name }} entered the garage.
-              {% if ai_description != 'AI description not available' %}
-              
-              🤖 {{ ai_description }}
-              {% endif %}
-              
-              📍 Time: {{ now().strftime('%I:%M %p') }}
-            data:
-              tag: "garage_person_{{ event_id }}"
-              group: "garage_security"
-              image: "{{ snapshot_url }}"
-              video: "{{ clip_url }}"
-              sticky: true
-              channel: "garage_alerts" 
-              importance: high
-              actions:
-              - action: "VIEW_GARAGE_CLIP"
-                title: "View Full Clip"
-                icon: "sli:video"
-              - action: "close_garage_door"
-                title: "Close Garage"
-                icon: "sli:close"
-              - action: "DISMISS_GARAGE_ALERT"
-                title: "Dismiss"
-                icon: "sli:check"
-  mode: queued
-  max: 3
+    - action: notify.mobile_app_salmob1
+      data:
+        title: "🚗 Garage Entry Detected"
+        message: >-
+          {{ people_text }} entered the garage.
+          {% if ai_description != 'AI description not available' %}
+          
+          🤖 {{ ai_description }}
+          {% endif %}
+          
+          📍 Time: {{ now().strftime('%I:%M %p') }}
+        data:
+          tag: "{{ session_tag }}"
+          group: "garage_security"
+          sticky: true
+          channel: "garage_alerts"
+          importance: high
+          image: "{{ snapshot_url }}"
+          actions:
+          - action: "VIEW_GARAGE_CLIP"
+            title: "View Full Clip"
+            icon: "sli:video"
+            uri: "{{ clip_url }}"
+          - action: "close_garage_door"
+            title: "Close Garage"
+            icon: "sli:close"
+          - action: "DISMISS_GARAGE_ALERT"
+            title: "Dismiss"
+            icon: "sli:check"
+    - action: notify.mobile_app_salmob2
+      data:
+        title: "🚗 Garage Entry Detected"
+        message: >-
+          {{ people_text }} entered the garage.
+          {% if ai_description != 'AI description not available' %}
+          
+          🤖 {{ ai_description }}
+          {% endif %}
+          
+          📍 Time: {{ now().strftime('%I:%M %p') }}
+        data:
+          tag: "{{ session_tag }}"
+          group: "garage_security" 
+          sticky: true
+          channel: "garage_alerts"
+          importance: high
+          image: "{{ snapshot_url }}"
+          actions:
+          - action: "VIEW_GARAGE_CLIP"
+            title: "View Full Clip"
+            icon: "sli:video"
+            uri: "{{ clip_url }}"
+          - action: "close_garage_door"
+            title: "Close Garage"
+            icon: "sli:close"
+          - action: "DISMISS_GARAGE_ALERT"
+            title: "Dismiss"
+            icon: "sli:check"
+  mode: single
 
 - id: handle_enhanced_garage_actions
   alias: Handle Enhanced Garage Actions
@@ -408,13 +417,16 @@
       - condition: template
         value_template: "{{ trigger.event.data.action == 'VIEW_GARAGE_CLIP' }}"
       sequence:
+      # The URI should be automatically handled by the mobile app
+      # But we can provide feedback that the action was received
       - action: notify.mobile_app_{{ trigger.event.data.sourceDeviceID.replace('mobile_app_', '') }}
         data:
-          title: "Opening Garage Video"
-          message: "Loading full clip..."
+          title: "🎬 Opening Video"
+          message: "Opening garage video clip..."
           data:
-            tag: "garage_video_loading"
-            timeout: 5
+            tag: "garage_video_opening"
+            timeout: 3
+            priority: low
     - conditions:
       - condition: template
         value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
