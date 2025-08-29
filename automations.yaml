@@ -3204,11 +3204,11 @@
             target:
               entity_id: input_boolean.garage_hub_notification_active
             action: input_boolean.turn_off
-          - data:
-              message: "Garage door is now closed."
-              target:
-              - kitchen
-            action: notify.google_assistant_sdk
+          # - data:
+          #     message: "Garage door is now closed."
+          #     target:
+          #     - kitchen
+          #   action: notify.google_assistant_sdk
   mode: single
 - id: 'google_assistant_garage_voice_control'
   alias: Google Assistant Garage Voice Control

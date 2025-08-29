@@ -1,6 +1,6 @@
-# 🏠 Smart Home Assistant Configuration
+# 🏠 Home Assistant Configuration
 
-Welcome to my comprehensive Home Assistant configuration! This repository showcases a sophisticated smart home setup with advanced automations, integrations, and custom solutions that have evolved over years of refinement.
+Welcome to my Home Assistant configuration! This repository showcases a smart home setup with advanced automations, integrations, and custom solutions that have evolved over years of refinement.
 
 ## 🌟 Highlights
 
@@ -9,7 +9,7 @@ Welcome to my comprehensive Home Assistant configuration! This repository showca
 - **🎯 Intelligent Lighting**: Zone-based lighting with automated schedules and presence detection
 - **📱 Rich Mobile Notifications**: Actionable notifications with images, videos, and smart actions
 - **🔊 Voice Control**: Google Assistant integration with custom commands and hub displays
-- **📊 Custom Sensors**: Python scripts for intelligent light level calculation and state management
+- **📊 Custom Sensors**: Python scripts for light level calculation and state management
 - **🔒 Security Automation**: Multi-layered security with external/internal armed modes
 
 ## 🏗️ Architecture
@@ -20,7 +20,7 @@ Welcome to my comprehensive Home Assistant configuration! This repository showca
 |------|---------|--------------|
 | `automations.yaml` | Smart home logic | 60+ automations including garage security, lighting, notifications |
 | `scripts.yaml` | Reusable actions | Notification scripts, light control, utility functions |
-| `sensors.yaml` | Custom sensors | Weather-based light levels, device tracking, usage monitoring |
+| `sensors.yaml` | Custom sensors | Device tracking, usage monitoring, external light level calculation |
 | `scenes.yaml` | Predefined states | Lighting scenes, security modes, entertainment setups |
 | `configuration.yaml` | Main config | Integration setup, includes, basic settings |
 
@@ -35,10 +35,11 @@ Welcome to my comprehensive Home Assistant configuration! This repository showca
 - **Voice Control**: "Hey Google, close the garage door" integration
 
 #### 💡 Intelligent Lighting
-- **Weather-Aware Automation**: Custom Python script calculates light levels based on sun elevation and cloud coverage
 - **Zone-Based Control**: Different lighting behaviors for basement, main floor, outdoor areas
 - **Presence Detection**: Automatic on/off based on occupancy and time of day
 - **Always-On Management**: Z-Wave switches that maintain power for smart bulbs
+- **Smart Scenes**: Dawn/Dusk lighting with custom brightness levels
+- **Motion-Based Automation**: Lights respond to room occupancy sensors
 
 #### 📹 Frigate Camera Integration
 - **Multi-Camera Setup**: Front porch, garage, and additional security cameras
@@ -59,7 +60,7 @@ Welcome to my comprehensive Home Assistant configuration! This repository showca
 ### Custom Python Scripts
 ```
 python_scripts/
-├── calc_light_level.py     # Weather-based light level calculation
+├── calc_light_level.py     # Weather-based light level calculation (foundation for future automation)
 └── set_state.py           # Dynamic entity state management
 ```
 
@@ -81,8 +82,9 @@ python_scripts/
 
 #### Smart Lighting (`automations.yaml`) 
 ```yaml
-# Weather-aware lighting with custom sensors
-- Light level calculation based on sun elevation and cloud coverage
+# Sun-based lighting with scene automation
+- Dawn Settings: Sunrise-triggered scene activation
+- Dusk Settings: Sunset-triggered scene with garage notifications
 - Zone-specific automation for different areas
 - Always-on switch management for smart bulbs
 ```
@@ -98,18 +100,7 @@ python_scripts/
 
 ### Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/salmeister/home-assistant-config.git
-   ```
-
-2. **Adapt to your setup**:
-   - Update device names in `automations.yaml`
-   - Modify camera names in Frigate configurations
-   - Adjust notification targets for your mobile devices
-   - Configure your Z-Wave device IDs
-
-3. **Install required integrations**:
+**Install required integrations**:
    - [Frigate Integration](https://github.com/blakeblackshear/frigate-hass-integration)
    - [Google Assistant SDK](https://www.home-assistant.io/integrations/google_assistant_sdk/)
    - [Mobile App](https://companion.home-assistant.io/)
@@ -183,7 +174,7 @@ Found something useful? Have improvements?
 ## 📊 Statistics
 
 - **60+ Automations**: Covering security, lighting, notifications, device management
-- **15+ Custom Sensors**: Weather awareness, device monitoring, usage tracking  
+- **15+ Custom Sensors**: Device monitoring, usage tracking, external light level foundation  
 - **Multiple Integrations**: Frigate, Google Assistant, Z-Wave, MQTT
 - **Advanced Features**: Face recognition, AI descriptions, actionable notifications
 - **3+ Years**: Continuous refinement and optimization
