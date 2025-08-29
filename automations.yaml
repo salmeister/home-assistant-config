@@ -231,7 +231,7 @@
       camera_name: "{{ trigger.payload_json.after.camera }}"
       event_id: "{{ trigger.payload_json.after.id }}"
       event_label: "{{ trigger.payload_json.after.label }}"
-      sub_labels: "{{ trigger.payload_json.after.sub_label | default([]) }}"
+      sub_labels: "{{ trigger.payload_json.after.sub_label | default([]) if trigger.payload_json.after.sub_label is not none else [] }}"
       base_url: "https://ha.salmeister.com"
       client_id: ""
       session_tag: "garage_session_{{ now().strftime('%Y%m%d_%H%M') }}"
@@ -241,7 +241,7 @@
       # Collect all recent garage events to group people
       all_people: >-
         {% set ns = namespace(people=[]) %}
-        {% if sub_labels | length > 0 %}
+        {% if sub_labels is not none and sub_labels | length > 0 %}
           {% for label in sub_labels %}
             {% if label not in ['person', 'unknown'] %}
               {% set ns.people = ns.people + [label | title] %}
