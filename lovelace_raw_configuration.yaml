@@ -612,7 +612,7 @@ views:
                 type: custom:mini-media-player
               - entity: media_player.living_room_tv
                 type: custom:mini-media-player
-              - entity: media_player.porch_tv_cast
+              - entity: media_player.porch_tv
                 type: custom:mini-media-player
           - type: vertical-stack
             cards:
