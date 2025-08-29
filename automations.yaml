@@ -143,7 +143,8 @@
               action: notify.mobile_app_salmob2
     alias: Notify Garage Open
 - id: b903ec6aacd748959d03f2b1d38f2e2d
-  alias: Garage Door Opened
+  alias: Garage Door Basic Controls
+  description: 'Handle immediate physical responses when garage door opens - lights, status indicators, location updates'
   triggers:
   - entity_id:
     - cover.garage_doors
@@ -191,79 +192,16 @@
         - entity_id: switch.garage_lights
           action: switch.turn_on
         - delay: 00:05:00
+        # Only turn off lights if no person is detected in garage
+        - condition: state
+          entity_id: binary_sensor.garage_person_occupancy
+          state: 'off'
         - entity_id: switch.garage_lights
           action: switch.turn_off
       alias: Garage Light
-    - alias: Send Notification
-      choose:
-      - conditions:
-        - condition: or
-          conditions:
-          - condition: state
-            entity_id: input_boolean.external_armed_mode
-            state: 'on'
-          - condition: and
-            conditions:
-            - condition: template
-              value_template: '{{states(''person.andy'') != ''home''}}'
-            - condition: template
-              value_template: '{{states(''person.katie'') != ''home''}}'
-            alias: Parents Not Home
-        sequence:
-        - data: {}
-          target:
-            entity_id: switch.garage_detect
-          action: switch.turn_on
-        - wait_for_trigger:
-          - entity_id:
-            - binary_sensor.garage_person_occupancy
-            to: 'on'
-            trigger: state
-          timeout:
-            hours: 0
-            minutes: 5
-            seconds: 0
-            milliseconds: 0
-          continue_on_timeout: true
-          alias: Wait up to 5 minutes for a person
-        - alias: Send Notification
-          choose:
-          - conditions:
-            - condition: state
-              entity_id: binary_sensor.garage_person_occupancy
-              state: 'off'
-            sequence:
-            - data:
-                message: The garage door opened but no person detected after 5 minutes
-                cameraURL: /api/camera_proxy/camera.garage
-              action: script.notify_parents_with_picture
-            alias: Person never detected
-          - conditions:
-            - condition: state
-              entity_id: binary_sensor.garage_person_occupancy
-              state: 'on'
-            sequence:
-            - delay:
-                hours: 0
-                minutes: 0
-                seconds: 3
-                milliseconds: 0
-            - data:
-                message: The garage door opened
-                cameraURL: /api/image_proxy/image.garage_person
-              action: script.notify_parents_with_picture
-            alias: Person detected
-          default: []
-        - condition: state
-          entity_id: input_boolean.full_armed_mode
-          state: 'off'
-        - data: {}
-          target:
-            entity_id: switch.garage_detect
-          action: switch.turn_off
 - id: enhanced_garage_door_person_detection
   alias: Enhanced Garage Door Person Detection
-  description: 'Enhanced notification using proper Frigate events with GenAI summaries and face recognition'
+  description: 'Smart notifications using Frigate events with GenAI summaries and face recognition. Handles all garage security notifications when door is open and person detected.'
   triggers:
   - trigger: mqtt
     topic: frigate/events
@@ -3259,4 +3197,21 @@
     target:
       entity_id: input_boolean.garage_hub_notification_active
     action: input_boolean.turn_off
+  mode: single
+- id: garage_lights_auto_off
+  alias: Auto Turn Off Garage Lights When Empty
+  description: 'Turn off garage lights when no person is detected and lights are on'
+  triggers:
+  - entity_id: binary_sensor.garage_person_occupancy
+    from: 'on'
+    to: 'off'
+    trigger: state
+    for: '00:01:00'  # Wait 1 minute to avoid false triggers
+  conditions:
+  - condition: state
+    entity_id: switch.garage_lights
+    state: 'on'
+  actions:
+  - entity_id: switch.garage_lights
+    action: switch.turn_off
   mode: single
