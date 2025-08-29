@@ -302,14 +302,11 @@
       - wait_for_trigger:
         - trigger: mqtt
           topic: frigate/tracked_object_update
-          payload_condition: >-
-            {{ trigger.payload_json.id == event_id and 
-               trigger.payload_json.type == 'description' }}
         timeout: "00:00:10"
         continue_on_timeout: true
       - variables:
           ai_description: >-
-            {% if wait.trigger %}
+            {% if wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
               {{ wait.trigger.payload_json.description }}
             {% else %}
               AI description not available
@@ -317,14 +314,11 @@
       - wait_for_trigger:
         - trigger: mqtt
           topic: frigate/tracked_object_update  
-          payload_condition: >-
-            {{ trigger.payload_json.id == event_id and 
-               trigger.payload_json.type == 'face' }}
         timeout: "00:00:10" 
         continue_on_timeout: true
       - variables:
           person_name: >-
-            {% if wait.trigger %}
+            {% if wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'face' %}
               {{ wait.trigger.payload_json.name }}
             {% elif sub_labels | length > 0 %}
               {{ sub_labels[0] | title }}
