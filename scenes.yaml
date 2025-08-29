@@ -5,6 +5,10 @@
       icon: mdi:post-lamp
       friendly_name: Front Lights
       state: 'off'
+    switch.piano_room_lamp:
+      icon: mdi:lamp
+      friendly_name: Piano Room Lamp
+      state: 'off'
     switch.lower_foyer:
       friendly_name: Lower Foyer
       state: 'off'
@@ -56,6 +60,10 @@
       icon: mdi:led-strip
       friendly_name: Piano Room Counter Lights
       state: 'on'
+    switch.piano_room_lamp:
+      icon: mdi:lamp
+      friendly_name: Piano Room Lamp
+      state: 'on'
     switch.holiday_plug_1:
       friendly_name: holiday-plug-1
       state: 'on'
@@ -76,9 +84,6 @@
       state: 'on'
     light.front_landscape:
       friendly_name: Front Yard Landscape Lights
-      state: 'on'
-    switch.outdoor_lights:
-      friendly_name: Outdoor Lights
       state: 'on'
   metadata:
     switch.patio_light:
@@ -266,6 +271,10 @@
     switch.fireplace:
       icon: mdi:fire
       friendly_name: Fireplace
+      state: 'off'
+    switch.piano_room_lamp:
+      icon: mdi:lamp
+      friendly_name: Piano Room Lamp
       state: 'off'
     switch.floor_lamps:
       icon: mdi:lamps

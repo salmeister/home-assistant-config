@@ -130,15 +130,7 @@
           action: light.turn_on
       alias: Garage Status Light
     - choose:
-      - conditions:
-        - condition: or
-          conditions:
-          - condition: sun
-            after: sunset
-            after_offset: -00:10:00
-          - condition: sun
-            before: sunrise
-            before_offset: 00:10:00
+      - conditions: []
         sequence:
         - entity_id: switch.garage_lights
           action: switch.turn_on
@@ -277,6 +269,7 @@
           target:
             entity_id:
             - switch.piano_room_counter_lights
+            - switch.piano_room_lamp
             - switch.holiday_plug_2
             - switch.holiday_plug_1
           action: switch.turn_off
@@ -307,6 +300,7 @@
     alias: Turn Off Booleans
   - entity_id:
     - switch.piano_room_counter_lights
+    - switch.piano_room_lamp
     - switch.holiday_plug_1
     - switch.holiday_plug_2
     - switch.maggie_holiday_lights
@@ -1448,7 +1442,8 @@
   use_blueprint:
     path: SgtBatten/Stable.yaml
     input:
-      camera: camera.front_porch
+      camera:
+      - camera.front_porch
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       base_url: https://ha.salmeister.com
       critical: 'false'
@@ -1463,6 +1458,7 @@
       sticky: true
       presence_filter:
       - ''
+      video: '{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4'
 - id: '1658507839970'
   alias: External Armed Mode
   description: ''
@@ -1756,24 +1752,29 @@
     input:
       zooz_switch: c68efc11ec22fb1c3c879a00d80da8b3
       scene_1:
-      - service: switch.toggle
-        data: {}
+      - data: {}
         target:
           entity_id: switch.piano_room_counter_lights
+        action: switch.toggle
       scene_2:
-      - service: switch.toggle
-        data: {}
+      - data: {}
         target:
           entity_id: switch.piano_room_interior_cabinet
+        action: switch.toggle
       scene_4:
       - condition: sun
         after: sunset
-      - service: script.turn_on
-        data: {}
+      - data: {}
         target:
           entity_id: script.house_shutdown
+        action: script.turn_on
       scene_5: []
-      scene_3: []
+      scene_3:
+      - action: switch.toggle
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.piano_room_lamp
       scene_32: []
       scene_42: []
       scene_33: []
@@ -1843,6 +1844,7 @@
         target:
           entity_id:
           - switch.piano_room_counter_lights
+          - switch.piano_room_lamp
           - switch.holiday_plug_1
           - switch.holiday_plug_2
         action: switch.turn_on
@@ -2729,6 +2731,14 @@
           entity_id: input_boolean.bedtime
         action: input_boolean.turn_off
         data: {}
+      - condition: sun
+        before: sunrise
+        before_offset: 00:15:00
+      - action: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.piano_room_lamp
     default:
     - delay:
         minutes: 5
@@ -2776,11 +2786,12 @@
         'entity_id') | default([]) -%} {%- set zigbee_entities = state_attr('sensor.zigbee_battery_level_group',
         'entity_id') | default([]) -%} {%- set all_entities = zwave_entities + zigbee_entities
         -%} {%- set ns = namespace(battery_info=[]) -%} {%- for entity_id in all_entities
-        -%}\n  {%- if states(entity_id) is not none and states(entity_id) | float
-        < 20 -%}\n    {%- set battery_info = ns.battery_info + [{\"name\": state_attr(entity_id,
-        'friendly_name')|default(entity_id.split('.')[1], true), \"value\": states(entity_id),
-        \"type\": entity_id.split('.')[0]}] -%}\n    {%- set ns.battery_info = battery_info
-        -%}\n  {%- endif -%}\n{%- endfor -%} {{ ns.battery_info }}\n"
+        -%}\n  {%- if states(entity_id) not in ['unavailable', 'unknown', 'none']
+        and states(entity_id) | float(100) < 20 -%}\n    {%- set battery_info = ns.battery_info
+        + [{\"name\": state_attr(entity_id, 'friendly_name')|default(entity_id.split('.')[1],
+        true), \"value\": states(entity_id), \"type\": entity_id.split('.')[0]}] -%}\n
+        \   {%- set ns.battery_info = battery_info -%}\n  {%- endif -%}\n{%- endfor
+        -%} {{ ns.battery_info }}\n"
   - data:
       title: HA Battery Level Warning
       message: ''
@@ -2810,4 +2821,65 @@
           Assistant</a>\n          </p>\n        </div>\n      </div>\n    </div>\n
           \ </body>\n</html>\n"
     action: notify.gmail_email_andy
+  mode: single
+- id: '1747060007889'
+  alias: 'Porch Door: ZEN32 (Z-Wave JS)'
+  description: ''
+  use_blueprint:
+    path: fxlt/zen32-scene-controller-z-wave-js.yaml
+    input:
+      zooz_switch: 4ef16f4d9bff22b35de758e86df728ca
+      scene_1:
+      - action: switch.toggle
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.patio_light
+      scene_2:
+      - action: switch.toggle
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.outdoor_lights
+- id: '1747060007998'
+  alias: Linkind Keypad Button Press
+  description: Detects button presses from Linkind ZS130000178 and performs a dummy
+    action
+  triggers:
+  - topic: zigbee2mqtt/LinkindKeypad
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload_json.action is defined }}'
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''arm_day_zones'' }}'
+      sequence:
+      - data:
+          entity_id: switch.piano_room_lamp
+        action: switch.toggle
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''arm_all_zones'' }}'
+      sequence:
+      - data:
+          entity_id: switch.piano_room_lamp
+        action: switch.toggle
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''disarm'' }}'
+      sequence:
+      - data:
+          entity_id: switch.piano_room_lamp
+        action: switch.toggle
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''panic'' }}'
+      sequence:
+      - data:
+          entity_id: switch.piano_room_lamp
+        action: switch.toggle
+    default: []
   mode: single

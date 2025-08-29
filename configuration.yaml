@@ -38,7 +38,9 @@ recorder:
       - sensor.*_last_seen
 
 logger:
-  default: warn
+  default: info
+  logs:
+    homeassistant.components.http.ban: warning
 
 #influxdb:
 #  api_version: 2

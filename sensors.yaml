@@ -102,6 +102,15 @@
 
   - platform: template
     sensors:
+      external_light_level:
+        friendly_name: "External Light Level"
+        value_template: "{{ states('sensor.external_light_level') }}"
+        attribute_templates:
+          elevation: "{{ state_attr('sensor.external_light_level', 'elevation') }}"
+          cloud_coverage: "{{ state_attr('sensor.external_light_level', 'cloud_coverage') }}"
+
+  - platform: template
+    sensors:
       next_alarm:
         friendly_name: 'Next Alarm'
         value_template: >-
