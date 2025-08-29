@@ -271,8 +271,8 @@
   - condition: template
     value_template: >-
       {{ trigger.payload_json.after.camera == 'garage' and 
-         'person' in trigger.payload_json.after.label and
-         trigger.payload_json.type in ['new', 'update'] and
+         trigger.payload_json.after.label == 'person' and
+         trigger.payload_json.type == 'new' and
          trigger.payload_json.after.has_snapshot == true }}
   - condition: state
     entity_id: cover.garage_doors
