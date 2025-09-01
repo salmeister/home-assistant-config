@@ -191,13 +191,6 @@
         sequence:
         - entity_id: switch.garage_lights
           action: switch.turn_on
-        - delay: 00:05:00
-        # Only turn off lights if no person is detected in garage
-        - condition: state
-          entity_id: binary_sensor.garage_person_occupancy
-          state: 'off'
-        - entity_id: switch.garage_lights
-          action: switch.turn_off
       alias: Garage Light
 - id: enhanced_garage_door_person_detection
   alias: Enhanced Garage Door Person Detection
@@ -219,6 +212,9 @@
     conditions:
     - condition: state
       entity_id: input_boolean.external_armed_mode
+      state: 'on'
+    - condition: state
+      entity_id: input_boolean.bedtime
       state: 'on'
     - condition: and
       conditions:
@@ -3200,13 +3196,13 @@
   mode: single
 - id: garage_lights_auto_off
   alias: Auto Turn Off Garage Lights When Empty
-  description: 'Turn off garage lights when no person is detected and lights are on'
+  description: 'Turn off garage lights when no person is detected for 15 minutes and lights are on'
   triggers:
   - entity_id: binary_sensor.garage_person_occupancy
     from: 'on'
     to: 'off'
     trigger: state
-    for: '00:01:00'  # Wait 1 minute to avoid false triggers
+    for: '00:15:00'  # Wait 15 minutes before turning off lights
   conditions:
   - condition: state
     entity_id: switch.garage_lights
