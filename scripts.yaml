@@ -409,23 +409,23 @@ github_pull_config:
   - condition: state
     entity_id: input_boolean.github_config_sync_enabled
     state: 'on'
-  - action: notify.persistent_notification
+  - service: notify.persistent_notification
     data:
       title: "🔄 GitHub Sync"
       message: "Starting configuration update from GitHub repository..."
       notification_id: "github_sync_status"
-  - action: shell_command.git_pull_config
+  - service: shell_command.git_pull_config
   - delay: '00:00:05'
-  - action: automation.reload
-  - action: script.reload
-  - action: scene.reload
+  - service: automation.reload
+  - service: script.reload
+  - service: scene.reload
   - delay: '00:00:02'
-  - action: notify.persistent_notification
+  - service: notify.persistent_notification
     data:
       title: "✅ GitHub Sync Complete"
       message: "Configuration successfully updated from GitHub and reloaded!"
       notification_id: "github_sync_status"
-  - action: notify.mobile_app_salmob1
+  - service: notify.mobile_app_salmob1
     data:
       title: "🏠 Home Assistant"
       message: "Configuration updated from GitHub repository"
@@ -438,8 +438,8 @@ github_pull_config:
 github_status_check:
   alias: Check GitHub Repository Status
   sequence:
-  - action: shell_command.git_status_config
-  - action: notify.persistent_notification
+  - service: shell_command.git_status_config
+  - service: notify.persistent_notification
     data:
       title: "📊 GitHub Status"
       message: "Repository status check completed. Check logs for details."
