@@ -437,7 +437,7 @@ github_check_updates:
       message: >-
         {% set updates = states('sensor.github_config_updates_available') | int %}
         {% if updates > 0 %}
-          {{ updates }} new commit{{ 's' if updates > 1 else '' }} available on GitHub.
+          {{ updates }} new commit{{ 's' if updates > 1 else '' }} available on GitHub. Use the GitHub Configuration Management panel to pull updates.
         {% else %}
           Your configuration is up to date with the GitHub repository.
         {% endif %}
