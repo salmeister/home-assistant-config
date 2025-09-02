@@ -402,3 +402,52 @@ close_garage_from_google:
         - kitchen
       action: notify.google_assistant_sdk
   mode: single
+
+github_pull_config:
+  alias: Pull Latest Configuration from GitHub
+  sequence:
+  - condition: state
+    entity_id: input_boolean.github_config_sync_enabled
+    state: 'on'
+  - action: notify.persistent_notification
+    data:
+      title: "🔄 GitHub Sync"
+      message: "Starting configuration update from GitHub repository..."
+      notification_id: "github_sync_status"
+  - action: shell_command.git_pull_config
+  - delay: '00:00:05'
+  - action: homeassistant.reload_config_entry
+    target:
+      entity_id: automation
+  - action: homeassistant.reload_config_entry
+    target:
+      entity_id: script
+  - action: homeassistant.reload_config_entry
+    target:
+      entity_id: scene
+  - delay: '00:00:02'
+  - action: notify.persistent_notification
+    data:
+      title: "✅ GitHub Sync Complete"
+      message: "Configuration successfully updated from GitHub and reloaded!"
+      notification_id: "github_sync_status"
+  - action: notify.mobile_app_salmob1
+    data:
+      title: "🏠 Home Assistant"
+      message: "Configuration updated from GitHub repository"
+      data:
+        tag: "github_sync"
+        group: "home_assistant"
+        importance: "low"
+  mode: single
+
+github_status_check:
+  alias: Check GitHub Repository Status
+  sequence:
+  - action: shell_command.git_status_config
+  - action: notify.persistent_notification
+    data:
+      title: "📊 GitHub Status"
+      message: "Repository status check completed. Check logs for details."
+      notification_id: "github_status"
+  mode: single

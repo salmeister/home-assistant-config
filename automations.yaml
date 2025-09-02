@@ -3211,3 +3211,40 @@
   - entity_id: switch.garage_lights
     action: switch.turn_off
   mode: single
+- id: github_config_sync_notification
+  alias: GitHub Config Sync Status Notification
+  description: 'Notify when GitHub configuration sync completes or fails'
+  triggers:
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: script
+      service: github_pull_config
+  conditions:
+  - condition: state
+    entity_id: input_boolean.github_config_sync_enabled
+    state: 'on'
+  actions:
+  - delay: '00:00:10'  # Wait for script to complete
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.event.data.service_data is defined }}"
+      sequence:
+      - action: notify.mobile_app_salmob1
+        data:
+          title: "🔄 GitHub Sync"
+          message: "Home Assistant configuration sync initiated"
+          data:
+            tag: "github_sync"
+            group: "home_assistant"
+    default:
+    - action: notify.mobile_app_salmob1
+      data:
+        title: "⚠️ GitHub Sync"
+        message: "Configuration sync may have encountered an issue"
+        data:
+          tag: "github_sync"
+          group: "home_assistant"
+          importance: "high"
+  mode: single

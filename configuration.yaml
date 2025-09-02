@@ -16,6 +16,10 @@ command_line: !include command_line.yaml
 zone: !include zones.yaml
 python_script:
 
+shell_command:
+  git_pull_config: 'cd /config && git pull origin develop-ha'
+  git_status_config: 'cd /config && git status && git log --oneline -5'
+
 tts:
   - platform: google_translate
     service_name: google_say

@@ -179,7 +179,84 @@ Found something useful? Have improvements?
 - **Advanced Features**: Face recognition, AI descriptions, actionable notifications
 - **3+ Years**: Continuous refinement and optimization
 
-## 🙏 Acknowledgments
+## �️ Installation & Setup
+
+### Prerequisites
+- Home Assistant Core/Supervised/OS installation
+- Git configured with repository access
+- Network access for GitHub repository sync
+
+### GitHub Configuration Management
+
+This setup includes automated GitHub configuration management for seamless updates:
+
+#### 🔄 Automated Sync Features
+- **One-Click Updates**: Pull latest configuration from GitHub via UI button
+- **Automatic Reload**: Configuration automatically reloaded after sync
+- **Status Notifications**: Mobile alerts when sync completes
+- **Safety Toggle**: Enable/disable sync functionality via input boolean
+
+#### 🔧 Setup Instructions
+
+1. **Repository Access** (Choose one method):
+
+   **Option A: SSH Key Authentication (Recommended)**
+   ```bash
+   # Generate SSH key on Home Assistant
+   ssh-keygen -t rsa -b 4096 -C "homeassistant@yourdomain.com"
+   
+   # Add public key to GitHub repository settings
+   cat ~/.ssh/id_rsa.pub
+   ```
+
+   **Option B: Personal Access Token**
+   ```bash
+   # Create secrets.yaml with GitHub credentials
+   github_token: "ghp_your_personal_access_token_here"
+   
+   # Update shell commands to use token
+   git_pull_config: 'cd /config && git pull https://github_token@github.com/yourusername/repo.git develop-ha'
+   ```
+
+2. **Initial Repository Clone**:
+   ```bash
+   # Remove default config and clone repository
+   cd /config
+   rm -rf * .*
+   git clone git@github.com:salmeister/home-assistant-config.git .
+   ```
+
+3. **Configure Git Settings**:
+   ```bash
+   git config user.name "Home Assistant"
+   git config user.email "homeassistant@yourdomain.com"
+   git config pull.rebase false
+   ```
+
+4. **Restart Home Assistant** to load the new configuration
+
+#### 📱 Usage
+
+- **UI Button**: Navigate to Home → System → GitHub Configuration Management
+- **Pull Config**: Click to download latest changes from GitHub
+- **Git Status**: Check repository status and recent commits
+- **Sync Toggle**: Enable/disable automatic sync functionality
+
+#### 🔒 Security Considerations
+
+- **SSH Keys**: Use SSH key authentication for secure, passwordless access
+- **Access Tokens**: If using tokens, store in `secrets.yaml` (not committed to repository)
+- **Repository Permissions**: Ensure GitHub repository has appropriate access controls
+- **Backup Strategy**: Always backup working configurations before major updates
+
+#### 🚨 Troubleshooting
+
+- **Sync Failures**: Check Home Assistant logs for Git error messages
+- **Permission Issues**: Verify SSH key or token permissions
+- **Merge Conflicts**: Manual intervention required for conflicting changes
+- **Network Issues**: Ensure Home Assistant has internet access
+
+## �🙏 Acknowledgments
 
 - **Home Assistant Community**: For endless inspiration and support
 - **Frigate Project**: For the best local NVR solution
