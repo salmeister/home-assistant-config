@@ -445,15 +445,14 @@ github_pull_changes:
       - delay: '00:00:05'
       - service: homeassistant.reload_all
       - delay: '00:00:05'
-      - service: homeassistant.update_entity
-        target:
-          entity_id: sensor.github_config_updates_available
-      - delay: '00:00:02'
       - service: persistent_notification.create
         data:
           title: "✅ GitHub Sync Complete"
           message: "Configuration successfully updated from GitHub and reloaded!"
           notification_id: "github_sync_status"
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.github_config_updates_available
     default:
     - service: persistent_notification.create
       data:
