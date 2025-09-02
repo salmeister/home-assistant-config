@@ -422,14 +422,6 @@ github_pull_config:
       title: "✅ GitHub Sync Complete"
       message: "Configuration successfully updated from GitHub and reloaded!"
       notification_id: "github_sync_status"
-  - service: notify.mobile_app_salmob1
-    data:
-      title: "🏠 Home Assistant"
-      message: "Configuration updated from GitHub repository"
-      data:
-        tag: "github_sync"
-        group: "home_assistant"
-        importance: "low"
   mode: single
 
 github_status_check:
