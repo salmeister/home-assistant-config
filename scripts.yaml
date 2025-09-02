@@ -416,15 +416,9 @@ github_pull_config:
       notification_id: "github_sync_status"
   - action: shell_command.git_pull_config
   - delay: '00:00:05'
-  - action: homeassistant.reload_config_entry
-    target:
-      entity_id: automation
-  - action: homeassistant.reload_config_entry
-    target:
-      entity_id: script
-  - action: homeassistant.reload_config_entry
-    target:
-      entity_id: scene
+  - action: automation.reload
+  - action: script.reload
+  - action: scene.reload
   - delay: '00:00:02'
   - action: notify.persistent_notification
     data:
