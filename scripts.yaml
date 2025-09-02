@@ -443,3 +443,24 @@ github_check_updates:
         {% endif %}
       notification_id: "github_update_check"
   mode: single
+
+github_pull_config:
+  alias: Pull Latest Configuration from GitHub
+  sequence:
+  - service: persistent_notification.create
+    data:
+      title: "🔄 GitHub Sync"
+      message: "Starting configuration update from GitHub repository..."
+      notification_id: "github_sync_status"
+  - service: shell_command.git_pull_config
+  - delay: '00:00:05'
+  - service: automation.reload
+  - service: script.reload
+  - service: scene.reload
+  - delay: '00:00:02'
+  - service: persistent_notification.create
+    data:
+      title: "✅ GitHub Sync Complete"
+      message: "Configuration successfully updated from GitHub and reloaded!"
+      notification_id: "github_sync_status"
+  mode: single
