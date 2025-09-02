@@ -442,13 +442,12 @@ github_pull_changes:
         value_template: "{{ states('sensor.github_config_updates_available') | int > 0 }}"
       sequence:
       - service: shell_command.git_pull_config
-      - delay: '00:00:10'
+      - delay: '00:00:05'
       - service: homeassistant.reload_all
       - delay: '00:00:05'
       - service: homeassistant.update_entity
         target:
           entity_id: sensor.github_config_updates_available
-      - delay: '00:00:05'
       - service: persistent_notification.create
         data:
           title: "✅ GitHub Sync Complete"
