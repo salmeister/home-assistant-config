@@ -75,9 +75,3 @@
         attribute_templates:
           commits_behind: "{{ states('sensor.github_config_updates_available') }}"
           last_check: "{{ states('sensor.date_time') }}"
-
-  - platform: template
-    sensors:
-      test_sensor:
-        friendly_name: Test Sensor
-        value_template: "{{ is_state('binary_sensor.test_sensor', 'on') }}"
