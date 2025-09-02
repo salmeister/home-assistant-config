@@ -59,3 +59,10 @@
             and not is_state('person.cam','home')
             and not is_state('person.maggie','home')
           }}
+
+  - platform: template
+    sensors:
+      test_sensor:
+        friendly_name: "Test Sensor"
+        value_template: >-
+          {{ is_state('sensor.test_sensor', 'on') }}
