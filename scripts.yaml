@@ -406,7 +406,7 @@ close_garage_from_google:
 github_pull_config:
   alias: Pull Latest Configuration from GitHub
   sequence:
-  - service: notify.persistent_notification
+  - service: persistent_notification.create
     data:
       title: "🔄 GitHub Sync"
       message: "Starting configuration update from GitHub repository..."
@@ -417,7 +417,7 @@ github_pull_config:
   - service: script.reload
   - service: scene.reload
   - delay: '00:00:02'
-  - service: notify.persistent_notification
+  - service: persistent_notification.create
     data:
       title: "✅ GitHub Sync Complete"
       message: "Configuration successfully updated from GitHub and reloaded!"
@@ -436,7 +436,7 @@ github_status_check:
   alias: Check GitHub Repository Status
   sequence:
   - service: shell_command.git_status_config
-  - service: notify.persistent_notification
+  - service: persistent_notification.create
     data:
       title: "📊 GitHub Status"
       message: "Repository status check completed. Check logs for details."
