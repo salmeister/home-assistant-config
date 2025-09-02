@@ -444,8 +444,8 @@ github_check_updates:
       notification_id: "github_update_check"
   mode: single
 
-github_pull_config:
-  alias: Pull Latest Configuration from GitHub
+github_pull_changes:
+  alias: Pull Latest Configuration Changes from GitHub
   sequence:
   - service: persistent_notification.create
     data:
