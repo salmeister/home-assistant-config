@@ -62,22 +62,6 @@
 
   - platform: template
     sensors:
-      github_updates_available:
-        friendly_name: "GitHub Updates Available"
-        icon_template: >-
-          {% if is_state('binary_sensor.github_updates_available', 'on') %}
-            mdi:source-pull
-          {% else %}
-            mdi:github
-          {% endif %}
-        value_template: >-
-          {{ states('sensor.github_config_updates_available') | int > 0 }}
-        attribute_templates:
-          commits_behind: "{{ states('sensor.github_config_updates_available') }}"
-          last_check: "{{ states('sensor.date_time') }}"
-
-  - platform: template
-    sensors:
       test_sensor:
         friendly_name: "Test Sensor"
         value_template: >-
