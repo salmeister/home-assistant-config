@@ -3220,10 +3220,6 @@
     event_data:
       domain: script
       service: github_pull_config
-  conditions:
-  - condition: state
-    entity_id: input_boolean.github_config_sync_enabled
-    state: 'on'
   actions:
   - delay: '00:00:10'  # Wait for script to complete
   - choose:

@@ -489,24 +489,3 @@
     end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
     duration:
       days: 30
-
-  - platform: template
-    sensors:
-      github_sync_status:
-        friendly_name: "GitHub Sync Status"
-        value_template: >-
-          {% if is_state('input_boolean.github_config_sync_enabled', 'on') %}
-            Ready
-          {% else %}
-            Disabled
-          {% endif %}
-        icon_template: >-
-          {% if is_state('input_boolean.github_config_sync_enabled', 'on') %}
-            mdi:github
-          {% else %}
-            mdi:github-off
-          {% endif %}
-        attribute_templates:
-          last_sync: "{{ states('sensor.date_time') }}"
-          repository: "salmeister/home-assistant-config"
-          branch: "develop-ha"

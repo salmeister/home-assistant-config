@@ -406,9 +406,6 @@ close_garage_from_google:
 github_pull_config:
   alias: Pull Latest Configuration from GitHub
   sequence:
-  - condition: state
-    entity_id: input_boolean.github_config_sync_enabled
-    state: 'on'
   - service: notify.persistent_notification
     data:
       title: "🔄 GitHub Sync"
