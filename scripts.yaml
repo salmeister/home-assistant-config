@@ -417,50 +417,54 @@ github_status_check:
 github_check_updates:
   alias: Check for GitHub Updates
   sequence:
-  - service: persistent_notification.create
-    data:
-      title: "🔍 Checking for Updates"
-      message: "Checking GitHub repository for new commits..."
-      notification_id: "github_update_check"
   - service: homeassistant.update_entity
     target:
       entity_id: sensor.github_config_updates_available
   - delay: '00:00:03'
-  - service: persistent_notification.create
-    data:
-      title: >-
-        {% if states('sensor.github_config_updates_available') | int > 0 %}
-          🆕 Updates Available!
-        {% else %}
-          ✅ Up to Date
-        {% endif %}
-      message: >-
-        {% set updates = states('sensor.github_config_updates_available') | int %}
-        {% if updates > 0 %}
-          {{ updates }} new commit{{ 's' if updates > 1 else '' }} available on GitHub. Use the GitHub Configuration Management panel to pull updates.
-        {% else %}
-          Your configuration is up to date with the GitHub repository.
-        {% endif %}
-      notification_id: "github_update_check"
   mode: single
 
 github_pull_changes:
   alias: Pull Latest Configuration Changes from GitHub
   sequence:
+  - service: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.github_operation_error
   - service: persistent_notification.create
     data:
       title: "🔄 GitHub Sync"
       message: "Starting configuration update from GitHub repository..."
       notification_id: "github_sync_status"
-  - service: shell_command.git_pull_config
-  - delay: '00:00:05'
-  - service: automation.reload
-  - service: script.reload
-  - service: scene.reload
+  - service: shell_command.git_status_config
   - delay: '00:00:02'
-  - service: persistent_notification.create
-    data:
-      title: "✅ GitHub Sync Complete"
-      message: "Configuration successfully updated from GitHub and reloaded!"
-      notification_id: "github_sync_status"
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ states('sensor.github_config_updates_available') | int > 0 }}"
+      sequence:
+      - service: shell_command.git_pull_config
+      - delay: '00:00:05'
+      - service: automation.reload
+      - service: script.reload
+      - service: scene.reload
+      - delay: '00:00:02'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.github_config_updates_available
+      - service: persistent_notification.create
+        data:
+          title: "✅ GitHub Sync Complete"
+          message: "Configuration successfully updated from GitHub and reloaded!"
+          notification_id: "github_sync_status"
+    default:
+    - service: persistent_notification.create
+      data:
+        title: "ℹ️ No Updates Available"
+        message: "Your configuration is already up to date with the GitHub repository."
+        notification_id: "github_sync_status"
+  - service: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.github_operation_error
+    conditions:
+    - condition: template
+      value_template: "{{ states('sensor.github_config_updates_available') == 'unavailable' or states('sensor.github_config_updates_available') == 'unknown' }}"
   mode: single
