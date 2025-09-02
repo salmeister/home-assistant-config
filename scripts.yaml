@@ -460,10 +460,12 @@ github_pull_changes:
         title: "ℹ️ No Updates Available"
         message: "Your configuration is already up to date with the GitHub repository."
         notification_id: "github_sync_status"
-  - service: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.github_operation_error
-    conditions:
-    - condition: template
-      value_template: "{{ states('sensor.github_config_updates_available') == 'unavailable' or states('sensor.github_config_updates_available') == 'unknown' }}"
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ states('sensor.github_config_updates_available') == 'unavailable' or states('sensor.github_config_updates_available') == 'unknown' }}"
+      sequence:
+      - service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.github_operation_error
   mode: single
