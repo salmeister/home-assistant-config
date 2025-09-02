@@ -3244,3 +3244,66 @@
           group: "home_assistant"
           importance: "high"
   mode: single
+- id: github_updates_available_notification
+  alias: GitHub Updates Available Notification
+  description: 'Notify when new configuration updates are available on GitHub'
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.github_updates_available
+    from: 'off'
+    to: 'on'
+  conditions:
+  - condition: state
+    entity_id: input_boolean.github_config_sync_enabled
+    state: 'on'
+  actions:
+  - service: notify.mobile_app_salmob1
+    data:
+      title: "🆕 GitHub Updates Available"
+      message: >-
+        {{ states('sensor.github_config_updates_available') }} new commit{{ 's' if states('sensor.github_config_updates_available') | int > 1 else '' }} available in the Home Assistant configuration repository.
+      data:
+        tag: "github_updates"
+        group: "home_assistant"
+        importance: "low"
+        sticky: false
+        actions:
+        - action: "GITHUB_PULL_CONFIG"
+          title: "Pull Updates"
+          icon: "sli:download"
+        - action: "GITHUB_CHECK_STATUS"
+          title: "View Status"
+          icon: "sli:eye"
+  - service: persistent_notification.create
+    data:
+      title: "🆕 Configuration Updates Available"
+      message: >-
+        {{ states('sensor.github_config_updates_available') }} new commit{{ 's' if states('sensor.github_config_updates_available') | int > 1 else '' }} available on GitHub. Use the GitHub Configuration Management panel to pull updates.
+      notification_id: "github_updates_available"
+  mode: single
+- id: handle_github_update_actions
+  alias: Handle GitHub Update Notification Actions
+  description: 'Handle actions from GitHub update notifications'
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: GITHUB_PULL_CONFIG
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: GITHUB_CHECK_STATUS
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.event.data.action == 'GITHUB_PULL_CONFIG' }}"
+      sequence:
+      - service: script.github_pull_config
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.event.data.action == 'GITHUB_CHECK_STATUS' }}"
+      sequence:
+      - service: script.github_status_check
+  mode: single

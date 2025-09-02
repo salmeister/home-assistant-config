@@ -442,3 +442,33 @@ github_status_check:
       message: "Repository status check completed. Check logs for details."
       notification_id: "github_status"
   mode: single
+
+github_check_updates:
+  alias: Check for GitHub Updates
+  sequence:
+  - service: persistent_notification.create
+    data:
+      title: "🔍 Checking for Updates"
+      message: "Checking GitHub repository for new commits..."
+      notification_id: "github_update_check"
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.github_config_updates_available
+  - delay: '00:00:03'
+  - service: persistent_notification.create
+    data:
+      title: >-
+        {% if states('sensor.github_config_updates_available') | int > 0 %}
+          🆕 Updates Available!
+        {% else %}
+          ✅ Up to Date
+        {% endif %}
+      message: >-
+        {% set updates = states('sensor.github_config_updates_available') | int %}
+        {% if updates > 0 %}
+          {{ updates }} new commit{{ 's' if updates > 1 else '' }} available on GitHub.
+        {% else %}
+          Your configuration is up to date with the GitHub repository.
+        {% endif %}
+      notification_id: "github_update_check"
+  mode: single

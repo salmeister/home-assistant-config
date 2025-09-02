@@ -4,6 +4,14 @@
       scan_interval: 900  # Every 15 minutes
       command_timeout: 15
   - sensor:
+      name: GitHub Config Updates Available
+      unique_id: 'github_config_updates_available'
+      command: 'cd /config && git fetch origin develop-ha >/dev/null 2>&1 && git rev-list HEAD...origin/develop-ha --count'
+      scan_interval: 1800  # Every 30 minutes
+      command_timeout: 30
+      value_template: '{{ value | int }}'
+      unit_of_measurement: 'commits'
+  - sensor:
       name: Frigate Healthcheck
       command: curl -s -o /dev/null -w "%{http_code}" http://192.168.1.3:5555/api/version | grep -q 200 && curl -m 10 --retry 5 https://healthchecks.salmeister.com/ping/5860584f-af0d-48ff-9e76-e9897bf1ea54 || echo "API is down or not responding with 200"
       scan_interval: 900  # Every 15 minutes
