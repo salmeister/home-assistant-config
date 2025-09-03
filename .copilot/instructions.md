@@ -1,0 +1,271 @@
+# GitHub Copilot Instructions for Home Assistant Configuration
+
+## Repository Overview
+
+This is a comprehensive Home Assistant configuration repository featuring advanced automation, security monitoring, intelligent lighting, and smart home integrations. The configuration has been refined over 3+ years and includes 60+ automations, Frigate camera integration with AI, actionable mobile notifications, and sophisticated garage door management.
+
+## Critical First Steps
+
+### 1. Always Review Entity Registry
+**ESSENTIAL**: Before making any changes or suggestions, ALWAYS review the `entity_registry_snapshot.json` file to understand:
+- All available sensors, switches, lights, and other entities
+- Area assignments for each entity (kitchen, garage, basement, etc.)
+- Entity states, capabilities, and device relationships
+- Platform integrations (Z-Wave, Frigate, Rachio, etc.)
+
+```bash
+# Always start with this command
+cat entity_registry_snapshot.json | jq '.data.entities[] | {entity_id, area_id, original_name, platform}'
+```
+
+This file is updated regularly and contains the authoritative source of truth for all Home Assistant entities and their locations.
+
+### 2. Memory Management System
+**REQUIRED**: This repository includes a memory system for maintaining context across interactions:
+
+- **Location**: `docs/memory.md` 
+- **Purpose**: Store ongoing context, task progress, entity relationships, and configuration decisions
+- **Usage**: Read from and write to this file throughout any multi-step process
+- **Management**: Create if missing, update regularly, delete obsolete information
+
+**Always**:
+1. Read `docs/memory.md` at the start of any substantial task
+2. Update memory with new findings, decisions, and progress
+3. Reference memory when making related changes
+4. Clean up completed tasks from memory
+
+## Repository Structure & Key Files
+
+### Core Configuration Files
+- `configuration.yaml` - Main configuration with includes and integrations
+- `automations.yaml` - 60+ smart home automations (primary logic)
+- `scripts.yaml` - Reusable action scripts and notifications
+- `sensors.yaml` - Custom sensors and device monitoring
+- `scenes.yaml` - Predefined lighting and security states
+- `entity_registry_snapshot.json` - **CRITICAL**: Complete entity inventory with areas
+
+### Specialized Directories
+- `blueprints/` - Community and custom automation blueprints
+- `python_scripts/` - Custom Python logic for light calculation and state management
+- `docs/` - Documentation and memory management
+- `scripts/` - Shell scripts for repository management
+
+### Area Mapping (from entity registry)
+Key areas in the home based on entity assignments:
+- `kitchen` - Kitchen appliances, dishwasher notifications
+- `garage` - Garage door security, person detection
+- `basement` - Water detection, temperature monitoring
+- `master_bedroom` - Bedroom lighting and controls
+- `laundry_room` - Laundry monitoring, water sensors
+- `porch` - Dog feeding automation
+- `back_entry` - Door locks and entry security
+
+## Advanced Features & Integrations
+
+### 🚗 Garage Door System (Priority Feature)
+- **Frigate Integration**: AI-powered person detection with face recognition
+- **Security Automation**: Different behaviors when armed vs. home
+- **Actionable Notifications**: Mobile alerts with video clips and garage control
+- **Voice Control**: Google Assistant integration
+- **Visual Indicators**: Back entry light status changes
+
+**Key Entities** (verify in entity_registry_snapshot.json):
+- Garage door sensors and controls
+- Frigate camera entities for garage
+- Person detection binary sensors
+- Mobile notification targets
+
+### 💡 Intelligent Lighting
+- **Zone-Based Control**: Area-specific lighting logic
+- **Scene Automation**: Dawn/Dusk settings with time-based triggers
+- **Always-On Management**: Z-Wave switches maintaining power for smart bulbs
+- **Presence Detection**: Motion-based activation
+
+### 📹 Frigate Camera Integration
+- **Multi-Camera Setup**: Front porch, garage, security cameras
+- **AI Notifications**: GenAI descriptions of detected activities
+- **Zone Filtering**: Area-specific detection logic
+- **Face Recognition**: Named person identification
+
+### 🔐 Security & Monitoring
+- **Tiered Security Modes**: External armed, full armed, home mode
+- **Water Detection**: Multiple sensors in basement, kitchen, laundry
+- **Temperature Monitoring**: Low temperature alerts
+- **Device Health**: Battery monitoring, connectivity status
+
+## Development Guidelines
+
+### Before Making Changes
+1. **Read Memory**: Check `docs/memory.md` for context
+2. **Review Entity Registry**: Understand available entities and their areas
+3. **Check Dependencies**: Understand automation relationships
+4. **Backup Approach**: Always maintain working configuration
+
+### Entity Management
+- Use entity registry to identify correct entity IDs
+- Respect area assignments when creating area-specific automations
+- Verify entity capabilities before referencing in automations
+- Consider platform limitations (Z-Wave, WiFi, etc.)
+
+### Automation Development
+- Follow existing patterns in `automations.yaml`
+- Use meaningful, descriptive automation names
+- Include proper conditions to prevent unwanted triggers
+- Test with Home Assistant's automation trace feature
+
+### Script Development
+- Store reusable logic in `scripts.yaml`
+- Use scripts for complex notification workflows
+- Parameterize scripts for flexibility across automations
+- Follow notification best practices for mobile apps
+
+### Blueprint Usage
+- Check existing blueprints in `blueprints/` before creating new automations
+- Customize blueprint inputs for specific use cases
+- Document blueprint modifications in memory
+
+## Integration-Specific Guidance
+
+### Frigate Camera System
+- Camera names must match Frigate configuration
+- Zone detection uses specific area names
+- Person detection requires proper entity mapping
+- Mobile notifications need device-specific targeting
+
+### Google Assistant SDK
+- Voice commands require proper device targeting
+- Hub names must match actual Google devices
+- Response feedback should be area-appropriate
+
+### Z-Wave Network
+- Always-on switches maintain power for smart bulbs
+- Z-Wave node management affects automation reliability
+- Consider mesh network topology for new devices
+
+### Mobile App Integration
+- Device IDs must match actual mobile app registrations
+- Rich notifications require proper media paths
+- Actionable notifications need corresponding scripts
+
+## Common Patterns
+
+### Notification Workflows
+```yaml
+# Standard notification pattern
+- service: notify.mobile_app_device
+  data:
+    title: "Descriptive Title"
+    message: "Clear, actionable message"
+    data:
+      image: "/path/to/image"
+      actions:
+        - action: "action_name"
+          title: "Action Button"
+```
+
+### Area-Based Automation
+```yaml
+# Use area_id from entity registry
+trigger:
+  - platform: state
+    entity_id: binary_sensor.area_specific_sensor
+condition:
+  - condition: state
+    entity_id: input_boolean.area_automation_enabled
+    state: 'on'
+```
+
+### Security Mode Logic
+```yaml
+# Respect security states
+condition:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: alarm_control_panel.home_security
+        state: 'armed_away'
+      - condition: state
+        entity_id: alarm_control_panel.home_security
+        state: 'armed_home'
+```
+
+## Troubleshooting Guidelines
+
+### Common Issues
+1. **Entity Not Found**: Always check entity_registry_snapshot.json for current entities
+2. **Area Mismatch**: Verify area assignments match actual home layout
+3. **Platform Conflicts**: Consider integration-specific limitations
+4. **Mobile Notifications**: Verify device IDs and notification permissions
+
+### Debugging Approach
+1. Use Home Assistant's automation trace feature
+2. Check Home Assistant logs for entity errors
+3. Verify entity states in Developer Tools
+4. Test changes incrementally
+
+### Memory Management
+- Update memory with successful solutions
+- Document common issues and resolutions
+- Track entity changes and their impacts
+- Maintain troubleshooting notes
+
+## Security & Best Practices
+
+### Sensitive Information
+- Use `secrets.yaml` for credentials (not committed to repo)
+- Avoid hardcoding personal information in configurations
+- Use device-agnostic naming where possible
+
+### Configuration Management
+- Git-based version control with develop-ha branch
+- Automated sync capabilities via shell commands
+- Regular entity registry updates
+- Backup strategies for critical configurations
+
+### Testing & Validation
+- Test new automations in safe conditions
+- Use automation trace for debugging
+- Validate entity states before deployment
+- Monitor system performance impact
+
+## Repository Maintenance
+
+### Regular Tasks
+1. Update `entity_registry_snapshot.json` after device changes
+2. Review and clean up `docs/memory.md`
+3. Test critical automations monthly
+4. Update documentation for major changes
+
+### Memory File Management
+The `docs/memory.md` file should contain:
+- Current project context and goals
+- Recent entity discoveries and changes
+- Automation relationships and dependencies
+- Troubleshooting notes and solutions
+- Configuration decisions and rationale
+
+### Version Control
+- Use meaningful commit messages
+- Branch strategy: develop-ha for testing, main for stable
+- Regular pushes to maintain backup
+- Document breaking changes
+
+## Support & Resources
+
+### Home Assistant Community
+- Reference existing blueprints and community solutions
+- Contribute improvements back to community
+- Document unique solutions for future reference
+
+### Integration Documentation
+- Always reference official integration documentation
+- Understand platform-specific limitations
+- Keep up with Home Assistant release notes
+
+### Performance Monitoring
+- Monitor automation execution times
+- Watch for entity state loops
+- Optimize based on system performance
+- Regular cleanup of unused entities
+
+Remember: This is a production smart home system. Changes should be tested carefully and documented thoroughly. Always maintain the balance between automation sophistication and system reliability.

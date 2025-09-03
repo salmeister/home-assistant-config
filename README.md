@@ -271,3 +271,59 @@ This configuration is shared under MIT License. Feel free to use, modify, and ad
 
 *This repository represents a real-world, production Home Assistant setup that balances automation sophistication with reliability and maintainability.*
 
+## 🔒 Security & Privacy (Public Repo)
+
+This is a public repository. Do not store sensitive information here.
+
+- Use `!secret` for all credentials and sensitive data (coordinates, tokens, API keys, webhook IDs, Wi‑Fi PSKs, service account files). Keep real values in `secrets.yaml` (already git‑ignored).
+- Avoid publishing exact addresses, GPS coordinates, precise schedules, or personally identifying details. Prefer area names and pseudonyms.
+- Never commit URLs with embedded credentials (RTSP/HTTP/MQTT). Use separate `!secret` entries for user, password, and hosts.
+- Before committing, scan changes for risky terms like: password, token, api_key, secret, webhook, bearer, authorization, latitude, longitude.
+- See `docs/memory.md` → Security & privacy guardrails for examples and redaction guidance.
+
+## 🧾 Entity Registry Snapshot (update-entity-registry.sh)
+
+Use this helper to create/update `entity_registry_snapshot.json` from Home Assistant’s live entity registry. This is useful for documentation and development context.
+
+### Where to run it
+- Run directly on the machine that runs Home Assistant, where the `/config` folder (and its `.storage` subfolder) exists.
+- If you run HA in Docker, execute the script inside the running container so it can read `/config/.storage/core.entity_registry`.
+
+### What it does
+- Copies `.storage/core.entity_registry` to `entity_registry_snapshot.json` in the repo root.
+- If `jq` is available, it prints the number of entities.
+- Sets file permissions to 644.
+
+### Steps
+1) Enter the Home Assistant environment (pick one):
+   - Docker (from your Windows PowerShell):
+     ```powershell
+     # Replace 'homeassistant' if your container name differs
+     docker exec -it homeassistant bash
+     ```
+   - HA OS/Supervised: Open a shell where `/config` is your HA config directory.
+
+2) Run the script from the HA config’s scripts folder:
+   ```bash
+   cd /config/scripts
+   bash update-entity-registry.sh
+   ```
+
+   Notes:
+   - The script assumes it is run from `/config/scripts` and writes to `../entity_registry_snapshot.json` (repo root).
+   - `jq` is optional; if present, an entity count will be displayed.
+
+3) Review the snapshot for privacy
+   - Ensure no sensitive data is exposed (tokens, webhook URLs, precise coordinates, device serials). See Security & Privacy guidance above.
+
+4) Commit and sync the updated snapshot to your branch
+   ```bash
+   cd /config
+   git add entity_registry_snapshot.json
+   git commit -m "chore: update entity registry snapshot"
+   # Push to your working branch (e.g., develop-ha)
+   git push origin $(git rev-parse --abbrev-ref HEAD)
+   ```
+
+   If `git` isn’t available in your HA environment, copy the updated `entity_registry_snapshot.json` to your development machine and commit/push from there.
+
