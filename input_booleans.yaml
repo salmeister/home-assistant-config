@@ -41,6 +41,6 @@ github_operation_error:
   name: GitHub Operation Error
   icon: mdi:alert-circle
   initial: false
-test_bool_sensor:
-  name: Test Bool Sensor
+test_bool_sensor_2:
+  name: Test Bool Sensor 2
   initial: false
