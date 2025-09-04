@@ -233,6 +233,19 @@
       session_tag: "garage_session_{{ now().strftime('%Y%m%d_%H%M') }}"
   # Wait to collect multiple people and AI data before sending notification
   - delay: "00:00:15"
+  # Wait for person occupancy to ensure we get a clear snapshot
+  - wait_for_trigger:
+    - entity_id:
+      - binary_sensor.garage_person_occupancy
+      to: 'on'
+      trigger: state
+    timeout:
+      hours: 0
+      minutes: 2
+      seconds: 0
+      milliseconds: 0
+    continue_on_timeout: true
+    alias: Wait up to 2 minutes for clear person detection
   - variables:
       # Collect all recent garage events to group people
       all_people: >-
@@ -256,7 +269,8 @@
         {% else %}
           {{ all_people[:-1] | join(', ') }}, and {{ all_people[-1] }}
         {% endif %}
-      snapshot_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/snapshot.jpg"
+      # Use Home Assistant image proxy for better snapshot quality
+      snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
       clip_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/clip.mp4"
   # Wait for potential GenAI description
   - wait_for_trigger:
@@ -273,64 +287,70 @@
         {% endif %}
   # Send single consolidated notification to both parents
   - parallel:
-    - action: notify.mobile_app_salmob1
-      data:
-        title: "🚗 Garage Entry Detected"
-        message: >-
-          {{ people_text }} entered the garage.
-          {% if ai_description != 'AI description not available' %}
-          
-          🤖 {{ ai_description }}
-          {% endif %}
-          
-          📍 Time: {{ now().strftime('%I:%M %p') }}
-        data:
-          tag: "{{ session_tag }}"
-          group: "garage_security"
-          sticky: true
-          channel: "garage_alerts"
-          importance: high
-          image: "{{ snapshot_url }}"
-          actions:
-          - action: "VIEW_GARAGE_CLIP"
-            title: "View Full Clip"
-            icon: "sli:video"
-            uri: "{{ clip_url }}"
-          - action: "close_garage_door"
-            title: "Close Garage"
-            icon: "sli:close"
-          - action: "DISMISS_GARAGE_ALERT"
-            title: "Dismiss"
-            icon: "sli:check"
-    - action: notify.mobile_app_salmob2
-      data:
-        title: "🚗 Garage Entry Detected"
-        message: >-
-          {{ people_text }} entered the garage.
-          {% if ai_description != 'AI description not available' %}
-          
-          🤖 {{ ai_description }}
-          {% endif %}
-          
-          📍 Time: {{ now().strftime('%I:%M %p') }}
-        data:
-          tag: "{{ session_tag }}"
-          group: "garage_security" 
-          sticky: true
-          channel: "garage_alerts"
-          importance: high
-          image: "{{ snapshot_url }}"
-          actions:
-          - action: "VIEW_GARAGE_CLIP"
-            title: "View Full Clip"
-            icon: "sli:video"
-            uri: "{{ clip_url }}"
-          - action: "close_garage_door"
-            title: "Close Garage"
-            icon: "sli:close"
-          - action: "DISMISS_GARAGE_ALERT"
-            title: "Dismiss"
-            icon: "sli:check"
+    # Send actionable notification to Andy if enabled
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: input_boolean.notify_fpm_andy
+          state: 'on'
+        sequence:
+        - action: notify.mobile_app_salmob1
+          data:
+            title: "🚗 Garage Entry Detected"
+            message: >-
+              {{ people_text }} entered the garage.
+              {% if ai_description != 'AI description not available' %}
+              
+              🤖 {{ ai_description }}
+              {% endif %}
+              
+              📍 Time: {{ now().strftime('%I:%M %p') }}
+            data:
+              tag: "{{ session_tag }}"
+              group: "garage_security"
+              sticky: true
+              channel: "garage_alerts"
+              importance: high
+              image: "{{ snapshot_url }}"
+              actions:
+              - action: "VIEW_GARAGE_CLIP"
+                title: "View"
+                icon: "sli:video"
+              - action: "DISMISS_GARAGE_ALERT"
+                title: "Dismiss"
+                icon: "sli:check"
+    # Send actionable notification to Katie if enabled
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: input_boolean.notify_fpm_katie
+          state: 'on'
+        sequence:
+        - action: notify.mobile_app_salmob2
+          data:
+            title: "🚗 Garage Entry Detected"
+            message: >-
+              {{ people_text }} entered the garage.
+              {% if ai_description != 'AI description not available' %}
+              
+              🤖 {{ ai_description }}
+              {% endif %}
+              
+              📍 Time: {{ now().strftime('%I:%M %p') }}
+            data:
+              tag: "{{ session_tag }}"
+              group: "garage_security" 
+              sticky: true
+              channel: "garage_alerts"
+              importance: high
+              image: "{{ snapshot_url }}"
+              actions:
+              - action: "VIEW_GARAGE_CLIP"
+                title: "View"
+                icon: "sli:video"
+              - action: "DISMISS_GARAGE_ALERT"
+                title: "Dismiss"
+                icon: "sli:check"
   mode: single
 
 - id: handle_enhanced_garage_actions
@@ -351,16 +371,19 @@
       - condition: template
         value_template: "{{ trigger.event.data.action == 'VIEW_GARAGE_CLIP' }}"
       sequence:
-      # The URI should be automatically handled by the mobile app
-      # But we can provide feedback that the action was received
+      - variables:
+          base_url: "https://ha.salmeister.com"
+          # Open Frigate web interface with garage camera filter and recent events
+          frigate_events_url: "{{ base_url }}:5000/events?cameras=garage&labels=person"
+      # Open the Frigate events page filtered for garage camera person events
       - action: notify.mobile_app_{{ trigger.event.data.sourceDeviceID.replace('mobile_app_', '') }}
         data:
-          title: "🎬 Opening Video"
-          message: "Opening garage video clip..."
+          title: "🎬 Opening Garage Events"
+          message: "Tap to view recent garage events in Frigate"
           data:
-            tag: "garage_video_opening"
-            timeout: 3
-            priority: low
+            tag: "garage_video_link"
+            url: "{{ frigate_events_url }}"
+            clickAction: "{{ frigate_events_url }}"
     - conditions:
       - condition: template
         value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
