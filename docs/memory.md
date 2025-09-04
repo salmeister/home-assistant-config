@@ -215,6 +215,16 @@ Based on entity_registry_snapshot.json review:
 - Rachio integration provides weather-aware irrigation
 - Google Assistant needs device-specific targeting
 
+### Frigate Integration Reference
+- **Reference Document**: `docs/frigate-reference.md` contains comprehensive MQTT topic documentation and Home Assistant integration details
+- **Available Topics**: Events, stats, camera controls, object counts, PTZ commands, notifications
+- **Home Assistant API**: Notification endpoints, entity types, media browser integration
+- **Usage**: Reference this document when creating Frigate-based automations, sensors, or controls
+- **Maintenance**: Update reference document after major Frigate releases to capture new/changed topics
+- **Event Structure**: Detailed JSON payloads for events, reviews, and tracked object updates
+- **Camera Controls**: Complete MQTT command set for enabling/disabling detection, recording, notifications
+- **⚠️ REMINDER**: Always update `docs/frigate-reference.md` when upgrading Frigate major versions
+
 ---
 
 **Note**: This memory file should be updated regularly with new discoveries, completed tasks, and ongoing context. Clear completed items and add new information as the configuration evolves.
