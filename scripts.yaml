@@ -432,7 +432,7 @@ github_pull_changes:
       - service: persistent_notification.create
         data:
           title: "✅ GitHub Sync Complete"
-          message: "Configuration successfully updated with {{ states('sensor.github_config_updates_available') }} updates from GitHub and Home Assistant has been reloaded!"
+          message: "Configuration successfully updated with updates from GitHub and Home Assistant has been reloaded!"
           notification_id: "github_sync_status"
     default:
     - service: persistent_notification.create
@@ -440,6 +440,45 @@ github_pull_changes:
         title: "ℹ️ No Updates Available"
         message: "Your configuration is already up to date with the GitHub repository."
         notification_id: "github_sync_status"
+  # Entity Registry Update Workflow
+  - service: persistent_notification.create
+    data:
+      title: "📝 Entity Registry Update"
+      message: "Checking for entity registry updates..."
+      notification_id: "entity_registry_status"
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.entity_registry_changes_available
+  - delay: '00:00:02'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ states('sensor.entity_registry_changes_available') | int > 0 }}"
+      sequence:
+      - service: persistent_notification.create
+        data:
+          title: "📤 Entity Registry Sync"
+          message: "Entity registry changes detected. Updating snapshot and syncing to Github..."
+          notification_id: "entity_registry_status"
+      - service: shell_command.update_entity_registry
+      - delay: '00:00:02'
+      - service: shell_command.git_stage_entity_registry
+      - delay: '00:00:02'
+      - service: shell_command.git_commit_entity_registry
+      - delay: '00:00:02'
+      - service: shell_command.git_push_entity_registry
+      - delay: '00:00:05'
+      - service: persistent_notification.create
+        data:
+          title: "✅ Entity Registry Synced"
+          message: "Entity registry snapshot has been successfully committed and pushed to Github!"
+          notification_id: "entity_registry_status"
+    default:
+    - service: persistent_notification.create
+      data:
+        title: "ℹ️ Entity Registry Up to Date"
+        message: "No changes detected in entity registry snapshot."
+        notification_id: "entity_registry_status"
   - choose:
     - conditions:
       - condition: template

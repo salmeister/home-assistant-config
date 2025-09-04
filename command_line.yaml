@@ -12,6 +12,14 @@
       value_template: '{{ value | int }}'
       unit_of_measurement: 'commits'
   - sensor:
+      name: Entity Registry Changes Available
+      unique_id: 'entity_registry_changes_available'
+      command: 'cd /config && ./scripts/update-entity-registry.sh >/dev/null 2>&1; if [ $? -eq 2 ]; then echo "1"; else echo "0"; fi'
+      scan_interval: 86,400
+      command_timeout: 15
+      value_template: '{{ value | int }}'
+      unit_of_measurement: 'changes'
+  - sensor:
       name: Frigate Healthcheck
       command: curl -s -o /dev/null -w "%{http_code}" http://192.168.1.3:5555/api/version | grep -q 200 && curl -m 10 --retry 5 https://healthchecks.salmeister.com/ping/5860584f-af0d-48ff-9e76-e9897bf1ea54 || echo "API is down or not responding with 200"
       scan_interval: 900  # Every 15 minutes
