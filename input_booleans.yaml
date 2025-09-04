@@ -37,10 +37,6 @@ garage_hub_notification_active:
   name: Garage Hub Notification Active
   icon: mdi:garage-alert
   initial: false
-github_config_sync_enabled:
-  name: GitHub Config Sync Enabled
-  icon: mdi:github
-  initial: true
 github_operation_error:
   name: GitHub Operation Error
   icon: mdi:alert-circle
