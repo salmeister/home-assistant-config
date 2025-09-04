@@ -7,7 +7,7 @@
       name: GitHub Config Updates Available
       unique_id: 'github_config_updates_available'
       command: 'cd /config && git fetch origin develop-ha >/dev/null 2>&1 && git rev-list HEAD...origin/develop-ha --count'
-      scan_interval: 1800  # Every 30 minutes
+      scan_interval: 14400  # Every 4 hours
       command_timeout: 30
       value_template: '{{ value | int }}'
       unit_of_measurement: 'commits'
