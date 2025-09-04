@@ -14,7 +14,7 @@
   - sensor:
       name: Entity Registry Changes Available
       unique_id: 'entity_registry_changes_available'
-      command: 'cd /config && ./scripts/update-entity-registry.sh >/dev/null 2>&1; echo $?'
+      command: 'cd /config && bash ./scripts/update-entity-registry.sh >/dev/null 2>&1; echo $?'
       scan_interval: 86400
       command_timeout: 15
       value_template: '{{ value | int }}'
