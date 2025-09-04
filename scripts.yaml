@@ -432,7 +432,7 @@ github_pull_changes:
       - service: persistent_notification.create
         data:
           title: "✅ GitHub Sync Complete"
-          message: "Configuration successfully updated from GitHub and reloaded!"
+          message: "Configuration successfully updated with {{ states('sensor.github_config_updates_available') }} updates from GitHub and Home Assistant has been reloaded!"
           notification_id: "github_sync_status"
     default:
     - service: persistent_notification.create
