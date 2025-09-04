@@ -5,8 +5,9 @@
 # Default paths - adjust if needed
 OUTPUT_FILE="${1:-entity_registry_snapshot.json}"
 
-SOURCE_FILE="../.storage/core.entity_registry"
-DEST_FILE="../$OUTPUT_FILE"
+# Use absolute paths to avoid working directory issues
+SOURCE_FILE="/config/.storage/core.entity_registry"
+DEST_FILE="/config/$OUTPUT_FILE"
 
 # Exit codes:
 # 0 = Success, no changes
