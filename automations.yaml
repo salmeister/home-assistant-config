@@ -115,10 +115,8 @@
                   actions:
                   - action: "close_garage_door"
                     title: "Close Garage"
-                    icon: "sli:home-garage"
                   - action: "ignore_garage_notification"
                     title: "Ignore"
-                    icon: "sli:close"
               action: notify.mobile_app_salmob1
         # Send actionable notification to Katie if enabled
         - choose:
@@ -136,10 +134,8 @@
                   actions:
                   - action: "close_garage_door"
                     title: "Close Garage"
-                    icon: "sli:home-garage"
                   - action: "ignore_garage_notification"
                     title: "Ignore"
-                    icon: "sli:close"
               action: notify.mobile_app_salmob2
     alias: Notify Garage Open
 - id: b903ec6aacd748959d03f2b1d38f2e2d
@@ -269,8 +265,8 @@
         {% else %}
           {{ all_people[:-1] | join(', ') }}, and {{ all_people[-1] }}
         {% endif %}
-      # Use Home Assistant image proxy for better snapshot quality
-      snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
+      # Use Frigate event snapshot for the actual detection image
+      snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
       clip_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/clip.mp4"
   # Wait for potential GenAI description
   - wait_for_trigger:
@@ -315,10 +311,8 @@
               actions:
               - action: "VIEW_GARAGE_CLIP"
                 title: "View"
-                icon: "sli:video"
               - action: "DISMISS_GARAGE_ALERT"
                 title: "Dismiss"
-                icon: "sli:check"
     # Send actionable notification to Katie if enabled
     - choose:
       - conditions:
@@ -347,10 +341,8 @@
               actions:
               - action: "VIEW_GARAGE_CLIP"
                 title: "View"
-                icon: "sli:video"
               - action: "DISMISS_GARAGE_ALERT"
                 title: "Dismiss"
-                icon: "sli:check"
   mode: single
 
 - id: handle_enhanced_garage_actions
@@ -3116,18 +3108,18 @@
             action: cover.close_cover
           - data:
               message: "Garage door is closing..."
-            action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+            action: "notify.{{ trigger.event.data.sourceDeviceID }}"
         # If already closed, just acknowledge
         default:
         - data:
             message: "Garage door is already closed."
-          action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+          action: "notify.{{ trigger.event.data.sourceDeviceID }}"
       # Clear the notification
       - data:
           message: "clear_notification"
           data:
             tag: "garage_open_dark"
-        action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+        action: "notify.{{ trigger.event.data.sourceDeviceID }}"
     # Handle ignore action
     - conditions:
       - condition: template
@@ -3137,7 +3129,7 @@
           message: "clear_notification"
           data:
             tag: "garage_open_dark"
-        action: "notify.{{ trigger.event.data.device_id.split('_')[0] }}"
+        action: "notify.{{ trigger.event.data.sourceDeviceID }}"
     # Auto-clear when garage closes
     - conditions:
       - condition: template

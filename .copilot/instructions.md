@@ -48,6 +48,9 @@ This file is updated regularly and contains the authoritative source of truth fo
 - `blueprints/` - Community and custom automation blueprints
 - `python_scripts/` - Custom Python logic for light calculation and state management
 - `docs/` - Documentation and memory management
+  - `frigate-reference.md` - Frigate integration patterns and MQTT topics
+  - `companion-app-reference.md` - Mobile app notifications and actionable patterns
+  - `memory.md` - Context and task tracking
 - `scripts/` - Shell scripts for repository management
 
 ### Area Mapping (from entity registry)
@@ -65,7 +68,7 @@ Key areas in the home based on entity assignments:
 ### 🚗 Garage Door System (Priority Feature)
 - **Frigate Integration**: AI-powered person detection with face recognition
 - **Security Automation**: Different behaviors when armed vs. home
-- **Actionable Notifications**: Mobile alerts with video clips and garage control
+- **Actionable Notifications**: Mobile alerts with video clips and garage control using companion app
 - **Voice Control**: Google Assistant integration
 - **Visual Indicators**: Back entry light status changes
 
@@ -73,7 +76,7 @@ Key areas in the home based on entity assignments:
 - Garage door sensors and controls
 - Frigate camera entities for garage
 - Person detection binary sensors
-- Mobile notification targets
+- Mobile notification targets (SALMOB1, SALMOB2 for parents)
 
 ### 💡 Intelligent Lighting
 - **Zone-Based Control**: Area-specific lighting logic
@@ -99,7 +102,9 @@ Key areas in the home based on entity assignments:
 1. **Read Memory**: Check `docs/memory.md` for context
 2. **Review Entity Registry**: Understand available entities and their areas
 3. **Check Dependencies**: Understand automation relationships
-4. **Backup Approach**: Always maintain working configuration
+4. **Reference Documentation**: Use `docs/frigate-reference.md` for camera/MQTT integrations and `docs/companion-app-reference.md` for mobile notifications
+5. **Consult HA Documentation**: For integration-specific features, configuration syntax, or new functionality, search the official [Home Assistant documentation](https://www.home-assistant.io/docs/) 
+6. **Backup Approach**: Always maintain working configuration
 
 ### Entity Management
 - Use entity registry to identify correct entity IDs
@@ -117,20 +122,77 @@ Key areas in the home based on entity assignments:
 - Store reusable logic in `scripts.yaml`
 - Use scripts for complex notification workflows
 - Parameterize scripts for flexibility across automations
-- Follow notification best practices for mobile apps
+- Follow notification best practices for mobile apps (see `docs/companion-app-reference.md`)
+- Implement proper `mobile_app_notification_action` event handling for actionable notifications
 
 ### Blueprint Usage
 - Check existing blueprints in `blueprints/` before creating new automations
 - Customize blueprint inputs for specific use cases
 - Document blueprint modifications in memory
 
+## Home Assistant Documentation Strategy
+
+### When to Create Local References
+Create reference documents for:
+- **Stable Integration Patterns**: Systems heavily used in this configuration (Frigate, Companion App)
+- **Complex Implementations**: Multi-step processes with system-specific customizations
+- **Cross-Reference Needs**: Information that combines multiple HA integrations
+- **Troubleshooting Patterns**: Common issues and solutions specific to this setup
+
+### When to Search Official HA Documentation  
+Search [Home Assistant docs](https://www.home-assistant.io/docs/) directly for:
+- **New Integration Features**: Recently added capabilities or configuration options
+- **Syntax Changes**: Updated YAML formats, action names, or parameters
+- **Entity Types**: New entity domains or state/attribute definitions
+- **Platform Updates**: Changes in core functionality or breaking changes
+- **Integration Specifics**: Detailed configuration for integrations not heavily customized here
+
+### Documentation Search Strategy
+1. **Start with [HA Glossary](https://www.home-assistant.io/docs/glossary/)** for core concept clarification
+2. **Use Integration Pages** (`/integrations/<name>`) for specific device/service configuration
+3. **Check [Automation](https://www.home-assistant.io/docs/automation/) and [Scripts](https://www.home-assistant.io/docs/scripts/)** for action syntax and trigger patterns
+4. **Reference [Templates](https://www.home-assistant.io/docs/configuration/templating/)** for Jinja2 syntax and functions
+5. **Search Release Notes** for breaking changes and new features affecting existing configurations
+
+### Key HA Documentation Sections
+- **Configuration**: Entity management, YAML structure, packages
+- **Automations**: Triggers, conditions, actions, and templating
+- **Dashboards**: UI configuration and card types
+- **Integrations**: Platform-specific setup and configuration
+- **Organization**: Areas, labels, floors, and device management
+
+### Quick Reference Links
+- [HA Glossary](https://www.home-assistant.io/docs/glossary/) - Core concepts and terminology
+- [Automation Actions](https://www.home-assistant.io/docs/automation/action/) - Action syntax and examples
+- [Templating](https://www.home-assistant.io/docs/configuration/templating/) - Jinja2 templates and functions
+- [Entity Organization](https://www.home-assistant.io/docs/organizing/) - Areas, labels, floors
+- [YAML Configuration](https://www.home-assistant.io/docs/configuration/yaml/) - YAML syntax and best practices
+- [Release Notes](https://www.home-assistant.io/blog/categories/release-notes/) - Monthly updates and breaking changes
+
 ## Integration-Specific Guidance
+
+### Companion App Mobile Notifications
+- **Device Awareness**: 4 Android devices (SALMOB1, SALMOB2, SALMOB4, SALMOB5) + 1 iOS device (SALMOB3 - Karlee)
+- **Action Limits**: Android max 3 actions, iOS max ~10 actions
+- **Platform Features**: iOS supports SF Symbols icons and destructive actions; Android requires `action: URI` for URIs
+- **Notification Groups**: Use `parent_mobile_devices` for security alerts, `all_android_devices`/`all_apple_devices` for platform-specific features
+- **Event Handling**: All actionable notifications must have corresponding `mobile_app_notification_action` event automation
+- **Best Practices**: Use unique action IDs with context to prevent conflicts, implement timeouts for temporary notifications
+- **Reference**: See `docs/companion-app-reference.md` for complete implementation patterns and examples
 
 ### Frigate Camera System
 - Camera names must match Frigate configuration
 - Zone detection uses specific area names
 - Person detection requires proper entity mapping
 - Mobile notifications need device-specific targeting
+
+### Home Assistant Companion App
+- **4 Android devices** (SALMOB1, SALMOB2, SALMOB4, SALMOB5) + **1 iOS device** (SALMOB3 - Karlee)
+- Android notifications limited to 3 actions; iOS supports ~10 actions
+- Use notification groups: `all_android_devices`, `all_apple_devices`, `all_mobile_devices`, `parent_mobile_devices`
+- Actionable notifications require `mobile_app_notification_action` event handling
+- iOS supports SF Symbols icons (`sfsymbols:icon`); Android URI actions need `action: URI`
+- Reference `docs/companion-app-reference.md` for detailed implementation patterns
 
 ### Google Assistant SDK
 - Voice commands require proper device targeting
@@ -145,22 +207,35 @@ Key areas in the home based on entity assignments:
 ### Mobile App Integration
 - Device IDs must match actual mobile app registrations
 - Rich notifications require proper media paths
-- Actionable notifications need corresponding scripts
+- Actionable notifications need corresponding automation event handlers
+- Platform differences: Android (3 actions max) vs iOS (10 actions, SF Symbols)
+- Use notification groups to target appropriate devices efficiently
 
 ## Common Patterns
 
 ### Notification Workflows
 ```yaml
-# Standard notification pattern
+# Standard notification pattern with companion app actions
 - service: notify.mobile_app_device
   data:
     title: "Descriptive Title"
     message: "Clear, actionable message"
     data:
+      tag: "unique_identifier"
+      group: "category_name"
+      persistent: true
       image: "/path/to/image"
       actions:
-        - action: "action_name"
+        - action: "ACTION_IDENTIFIER"
           title: "Action Button"
+          # Platform-specific options
+```
+
+# Companion app event handling
+- platform: event
+  event_type: mobile_app_notification_action
+  event_data:
+    action: "ACTION_IDENTIFIER"
 ```
 
 ### Area-Based Automation
@@ -196,12 +271,18 @@ condition:
 2. **Area Mismatch**: Verify area assignments match actual home layout
 3. **Platform Conflicts**: Consider integration-specific limitations
 4. **Mobile Notifications**: Verify device IDs and notification permissions
+5. **Actionable Notification Issues**: Check `mobile_app_notification_action` event handlers exist for all notification actions
+6. **Platform-Specific Features**: Verify Android (3 actions max) vs iOS (SF Symbols, destructive actions) capabilities
+7. **Syntax Changes**: When automations fail, check HA documentation for updated action/trigger syntax
+8. **Integration Updates**: Verify configuration still matches current integration requirements
 
 ### Debugging Approach
 1. Use Home Assistant's automation trace feature
 2. Check Home Assistant logs for entity errors
 3. Verify entity states in Developer Tools
 4. Test changes incrementally
+5. **Check HA Documentation**: For new error messages or unexpected behavior, search recent HA release notes and integration docs
+6. **Validate Configuration**: Use HA's configuration check tools before committing changes
 
 ### Memory Management
 - Update memory with successful solutions
@@ -235,6 +316,9 @@ condition:
 2. Review and clean up `docs/memory.md`
 3. Test critical automations monthly
 4. Update documentation for major changes
+5. **Check HA Release Notes**: Review monthly releases for breaking changes affecting this configuration
+6. **Validate Integration Updates**: Test automations after major integration updates
+7. **Documentation Sync**: Update local references when HA docs show significant changes to heavily-used integrations
 
 ### Memory File Management
 The `docs/memory.md` file should contain:
