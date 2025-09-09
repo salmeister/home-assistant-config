@@ -365,7 +365,7 @@
   # Log the action for debugging
   - action: system_log.write
     data:
-      message: "Garage action received: {{ trigger.event.data.action }} from {{ trigger.event.data.sourceDeviceID }}"
+      message: "Garage action received: {{ trigger.event.data.action }} from {{ trigger.event.data.sourceDeviceID }}, tag: {{ trigger.event.data.tag | default('no tag') }}"
       level: info
   - choose:
     - conditions:
@@ -376,62 +376,64 @@
           base_url: "https://ha.salmeister.com"
           # Open Frigate web interface with garage camera filter and recent events
           frigate_events_url: "{{ base_url }}:5000/events?cameras=garage&labels=person"
-      # Send confirmation first for debugging
-      - action: notify.{{ trigger.event.data.sourceDeviceID }}
-        data:
-          title: "Opening Garage Events"
-          message: "Loading Frigate events page..."
-          data:
-            tag: "garage_loading"
-            timeout: 3
-      # Open the Frigate events page filtered for garage camera person events
+      # Send a notification with URI action to open Frigate
       - action: notify.{{ trigger.event.data.sourceDeviceID }}
         data:
           title: "🎬 Opening Garage Events"
           message: "Tap to view recent garage events in Frigate"
           data:
             tag: "garage_video_link"
-            url: "{{ frigate_events_url }}"
-            clickAction: "{{ frigate_events_url }}"
+            actions:
+            - action: "URI"
+              title: "Open Frigate"
+              uri: "{{ frigate_events_url }}"
     - conditions:
       - condition: template
         value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
       sequence:
-      # Send confirmation first for debugging
-      - action: notify.{{ trigger.event.data.sourceDeviceID }}
-        data:
-          title: "Dismissing Alert"
-          message: "Garage alert is being dismissed..."
-          data:
-            tag: "garage_dismissing"
-            timeout: 2
       # Clear the notification using the original tag
       - action: notify.{{ trigger.event.data.sourceDeviceID }}
         data:
           message: "clear_notification"
           data:
             tag: "{{ trigger.event.data.tag | default('') }}"
+      # Send confirmation
+      - action: notify.{{ trigger.event.data.sourceDeviceID }}
+        data:
+          title: "✅ Alert Dismissed"
+          message: "Garage security alert has been dismissed"
+          data:
+            tag: "garage_dismiss_confirm"
+            timeout: 3
   mode: parallel
 
-# DEBUG: Test automation to catch all mobile app notification actions
-- id: debug_mobile_app_actions
-  alias: Debug Mobile App Notification Actions
-  description: 'Catch all mobile app notification actions for debugging'
+# DEBUG: Test automation to catch garage-specific mobile app notification actions
+- id: debug_garage_mobile_app_actions
+  alias: Debug Garage Mobile App Notification Actions
+  description: 'Catch garage-related mobile app notification actions for debugging'
   triggers:
   - trigger: event
     event_type: mobile_app_notification_action
+    event_data:
+      action: VIEW_GARAGE_CLIP
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: DISMISS_GARAGE_ALERT
   actions:
   - action: system_log.write
     data:
-      message: "Mobile app action debug: {{ trigger.event.data }}"
+      message: "DEBUG: Garage action detected: {{ trigger.event.data }}"
       level: warning
-  - action: notify.mobile_app_salmob1
+  - action: persistent_notification.create
     data:
-      title: "DEBUG: Action Detected"
-      message: "Action: {{ trigger.event.data.action }} from {{ trigger.event.data.sourceDeviceID }}"
-      data:
-        tag: "debug_action"
-        timeout: 10
+      title: "🔧 DEBUG: Garage Action Detected"
+      message: |
+        Action: {{ trigger.event.data.action }}
+        Device: {{ trigger.event.data.sourceDeviceID }}
+        Tag: {{ trigger.event.data.tag | default('none') }}
+        Time: {{ now().strftime('%H:%M:%S') }}
+      notification_id: "debug_garage_action"
   mode: parallel
 
 - id: af0c4a0821ad44af8e99ac7e98e28964
