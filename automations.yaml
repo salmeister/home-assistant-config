@@ -308,6 +308,8 @@
               channel: "garage_alerts"
               importance: high
               image: "{{ snapshot_url }}"
+              clickAction: "{{ snapshot_url }}"
+              url: "{{ snapshot_url }}"
               actions:
               - action: "VIEW_GARAGE_CLIP"
                 title: "View"
@@ -338,6 +340,8 @@
               channel: "garage_alerts"
               importance: high
               image: "{{ snapshot_url }}"
+              clickAction: "{{ snapshot_url }}"
+              url: "{{ snapshot_url }}"
               actions:
               - action: "VIEW_GARAGE_CLIP"
                 title: "View"
@@ -358,6 +362,11 @@
     event_data:
       action: DISMISS_GARAGE_ALERT
   actions:
+  # Log the action for debugging
+  - action: system_log.write
+    data:
+      message: "Garage action received: {{ trigger.event.data.action }} from {{ trigger.event.data.sourceDeviceID }}"
+      level: info
   - choose:
     - conditions:
       - condition: template
@@ -367,8 +376,16 @@
           base_url: "https://ha.salmeister.com"
           # Open Frigate web interface with garage camera filter and recent events
           frigate_events_url: "{{ base_url }}:5000/events?cameras=garage&labels=person"
+      # Send confirmation first for debugging
+      - action: notify.{{ trigger.event.data.sourceDeviceID }}
+        data:
+          title: "Opening Garage Events"
+          message: "Loading Frigate events page..."
+          data:
+            tag: "garage_loading"
+            timeout: 3
       # Open the Frigate events page filtered for garage camera person events
-      - action: notify.mobile_app_{{ trigger.event.data.sourceDeviceID.replace('mobile_app_', '') }}
+      - action: notify.{{ trigger.event.data.sourceDeviceID }}
         data:
           title: "🎬 Opening Garage Events"
           message: "Tap to view recent garage events in Frigate"
@@ -380,11 +397,41 @@
       - condition: template
         value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
       sequence:
-      - action: notify.mobile_app_{{ trigger.event.data.sourceDeviceID.replace('mobile_app_', '') }}
+      # Send confirmation first for debugging
+      - action: notify.{{ trigger.event.data.sourceDeviceID }}
+        data:
+          title: "Dismissing Alert"
+          message: "Garage alert is being dismissed..."
+          data:
+            tag: "garage_dismissing"
+            timeout: 2
+      # Clear the notification using the original tag
+      - action: notify.{{ trigger.event.data.sourceDeviceID }}
         data:
           message: "clear_notification"
           data:
-            tag: "{{ trigger.event.data.tag }}"
+            tag: "{{ trigger.event.data.tag | default('') }}"
+  mode: parallel
+
+# DEBUG: Test automation to catch all mobile app notification actions
+- id: debug_mobile_app_actions
+  alias: Debug Mobile App Notification Actions
+  description: 'Catch all mobile app notification actions for debugging'
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+  actions:
+  - action: system_log.write
+    data:
+      message: "Mobile app action debug: {{ trigger.event.data }}"
+      level: warning
+  - action: notify.mobile_app_salmob1
+    data:
+      title: "DEBUG: Action Detected"
+      message: "Action: {{ trigger.event.data.action }} from {{ trigger.event.data.sourceDeviceID }}"
+      data:
+        tag: "debug_action"
+        timeout: 10
   mode: parallel
 
 - id: af0c4a0821ad44af8e99ac7e98e28964
