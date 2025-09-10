@@ -362,20 +362,10 @@
     event_data:
       action: DISMISS_GARAGE_ALERT
   actions:
-  # Determine the correct device ID
-  - variables:
-      device_id: >-
-        {% if trigger.event.data.sourceDeviceID %}
-          {{ trigger.event.data.sourceDeviceID }}
-        {% elif trigger.event.data.device_id %}
-          {{ trigger.event.data.device_id }}
-        {% else %}
-          mobile_app_salmob1
-        {% endif %}
   # Log the action for debugging
   - action: system_log.write
     data:
-      message: "Garage action received: {{ trigger.event.data.action }} from {{ device_id }}, tag: {{ trigger.event.data.tag | default('no tag') }}"
+      message: "Garage action received: {{ trigger.event.data.action }} from device {{ device_id }}, tag: {{ trigger.event.data.tag | default('no tag') }}"
       level: info
   - choose:
     - conditions:
@@ -387,7 +377,7 @@
           # Open Frigate web interface with garage camera filter and recent events
           frigate_events_url: "{{ base_url }}:5000/events?cameras=garage&labels=person"
       # Send a notification with URI action to open Frigate
-      - action: notify.{{ device_id }}
+      - action: notify.mobile_app_salmob1
         data:
           title: "🎬 Opening Garage Events"
           message: "Tap to view recent garage events in Frigate"
@@ -402,13 +392,13 @@
         value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
       sequence:
       # Clear the notification using the original tag
-      - action: notify.{{ device_id }}
+      - action: notify.mobile_app_salmob1
         data:
           message: "clear_notification"
           data:
             tag: "{{ trigger.event.data.tag | default('') }}"
       # Send confirmation
-      - action: notify.{{ device_id }}
+      - action: notify.mobile_app_salmob1
         data:
           title: "✅ Alert Dismissed"
           message: "Garage security alert has been dismissed"
