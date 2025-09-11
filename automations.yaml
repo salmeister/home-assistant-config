@@ -190,255 +190,154 @@
       alias: Garage Light
 - id: enhanced_garage_door_person_detection
   alias: Enhanced Garage Door Person Detection
-  description: 'Smart notifications using Frigate events with GenAI summaries and face recognition. Handles all garage security notifications when door is open and person detected.'
+  description: 'Simplified garage security notifications using Frigate Notification API. Notifies when garage door opens and person detected in Interior Garage zone.'
   triggers:
-  - trigger: mqtt
-    topic: frigate/events
+  - entity_id: cover.garage_doors
+    from: closed
+    to: open
+    trigger: state
   conditions:
-  - condition: template
-    value_template: >-
-      {{ trigger.payload_json.after.camera == 'garage' and 
-         trigger.payload_json.after.label == 'person' and
-         trigger.payload_json.type == 'new' and
-         trigger.payload_json.after.has_snapshot == true }}
-  - condition: state
-    entity_id: cover.garage_doors
-    state: 'open'
   - condition: or
     conditions:
-    - condition: state
-      entity_id: input_boolean.external_armed_mode
-      state: 'on'
-    - condition: state
-      entity_id: input_boolean.bedtime
-      state: 'on'
     - condition: and
       conditions:
-      - condition: template
-        value_template: '{{states(''person.andy'') != ''home''}}'
-      - condition: template
-        value_template: '{{states(''person.katie'') != ''home''}}'
+      - condition: state
+        entity_id: input_boolean.notify_fpm_andy
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: template
+          value_template: '{{ states("person.andy") != "home" }}'
+        - condition: state
+          entity_id: input_boolean.bedtime
+          state: 'on'
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_katie
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: template
+          value_template: '{{ states("person.katie") != "home" }}'
+        - condition: state
+          entity_id: input_boolean.bedtime
+          state: 'on'
   actions:
-  - variables:
-      camera_name: "{{ trigger.payload_json.after.camera }}"
-      event_id: "{{ trigger.payload_json.after.id }}"
-      event_label: "{{ trigger.payload_json.after.label }}"
-      sub_labels: "{{ trigger.payload_json.after.sub_label | default([]) if trigger.payload_json.after.sub_label is not none else [] }}"
-      base_url: "https://ha.salmeister.com"
-      client_id: ""
-      session_tag: "garage_session_{{ now().strftime('%Y%m%d_%H%M') }}"
-  # Wait to collect multiple people and AI data before sending notification
-  - delay: "00:00:15"
-  # Wait for person occupancy to ensure we get a clear snapshot
+  # Wait for new or recent person to be detected in Interior Garage zone
   - wait_for_trigger:
-    - entity_id:
-      - binary_sensor.garage_person_occupancy
-      to: 'on'
-      trigger: state
-    timeout:
-      hours: 0
-      minutes: 2
-      seconds: 0
-      milliseconds: 0
-    continue_on_timeout: true
-    alias: Wait up to 2 minutes for clear person detection
+    - trigger: mqtt
+      topic: frigate/events
+    timeout: "00:05:00"
+    continue_on_timeout: false
+  - condition: template
+    value_template: >-
+      {{ wait.trigger.payload_json.after.camera == 'garage' and 
+         wait.trigger.payload_json.after.label == 'person' and
+         wait.trigger.payload_json.type in ['new', 'update'] and
+         wait.trigger.payload_json.after.has_snapshot == true and
+         'interior_garage' in (wait.trigger.payload_json.after.current_zones | default([])) }}
   - variables:
-      # Collect all recent garage events to group people
-      all_people: >-
-        {% set ns = namespace(people=[]) %}
+      event_id: "{{ wait.trigger.payload_json.after.id }}"
+      sub_labels: "{{ wait.trigger.payload_json.after.sub_label | default([]) if wait.trigger.payload_json.after.sub_label is not none else [] }}"
+      base_url: !secret base_url
+      # Determine person name from sub_labels or use 'Unknown Person'
+      person_name: >-
+        {% set recognized_people = [] %}
         {% if sub_labels is not none and sub_labels | length > 0 %}
           {% for label in sub_labels %}
             {% if label not in ['person', 'unknown'] %}
-              {% set ns.people = ns.people + [label | title] %}
+              {% set recognized_people = recognized_people + [label | title] %}
             {% endif %}
           {% endfor %}
         {% endif %}
-        {% if ns.people | length == 0 %}
-          {% set ns.people = ['Unknown Person'] %}
-        {% endif %}
-        {{ ns.people | unique | list }}
-      people_text: >-
-        {% if all_people | length == 1 %}
-          {{ all_people[0] }}
-        {% elif all_people | length == 2 %}
-          {{ all_people[0] }} and {{ all_people[1] }}
+        {% if recognized_people | length > 0 %}
+          {{ recognized_people[0] }}
         {% else %}
-          {{ all_people[:-1] | join(', ') }}, and {{ all_people[-1] }}
+          Unknown Person
         {% endif %}
-      # Use Frigate event snapshot for the actual detection image
+      # Use Frigate Notification API endpoints
       snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-      clip_url: "{{ base_url }}/api/frigate{{ client_id }}/notifications/{{ event_id }}/{{ camera_name }}/clip.mp4"
-  # Wait for potential GenAI description
+      clip_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4"
+      detection_time: "{{ now().strftime('%I:%M %p') }}"
+  # Wait briefly for potential AI description
   - wait_for_trigger:
     - trigger: mqtt
       topic: frigate/tracked_object_update
     timeout: "00:00:05"
     continue_on_timeout: true
   - variables:
-      ai_description: >-
+      ai_summary: >-
         {% if wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
           {{ wait.trigger.payload_json.description }}
         {% else %}
-          AI description not available
+          No AI summary available
         {% endif %}
-  # Send single consolidated notification to both parents
+  # Send notifications in parallel
   - parallel:
-    # Send actionable notification to Andy if enabled
+    # Notify Andy if enabled and conditions met
     - choose:
       - conditions:
         - condition: state
           entity_id: input_boolean.notify_fpm_andy
           state: 'on'
+        - condition: or
+          conditions:
+          - condition: template
+            value_template: '{{ states("person.andy") != "home" }}'
+          - condition: state
+            entity_id: input_boolean.bedtime
+            state: 'on'
         sequence:
         - action: notify.mobile_app_salmob1
           data:
             title: "🚗 Garage Entry Detected"
             message: >-
-              {{ people_text }} entered the garage.
-              {% if ai_description != 'AI description not available' %}
+              {{ person_name }} entered the garage at {{ detection_time }}.
+              {% if ai_summary != 'No AI summary available' %}
               
-              🤖 {{ ai_description }}
+              🤖 {{ ai_summary }}
               {% endif %}
-              
-              📍 Time: {{ now().strftime('%I:%M %p') }}
             data:
-              tag: "{{ session_tag }}"
-              group: "garage_security"
-              sticky: true
-              channel: "garage_alerts"
-              importance: high
               image: "{{ snapshot_url }}"
-              clickAction: "{{ snapshot_url }}"
-              url: "{{ snapshot_url }}"
+              clickAction: "{{ clip_url }}"
               actions:
-              - action: "VIEW_GARAGE_CLIP"
-                title: "View"
-              - action: "DISMISS_GARAGE_ALERT"
-                title: "Dismiss"
-    # Send actionable notification to Katie if enabled
+              - action: "URI"
+                title: "View Video"
+                uri: "{{ clip_url }}"
+    # Notify Katie if enabled and conditions met
     - choose:
       - conditions:
         - condition: state
           entity_id: input_boolean.notify_fpm_katie
           state: 'on'
+        - condition: or
+          conditions:
+          - condition: template
+            value_template: '{{ states("person.katie") != "home" }}'
+          - condition: state
+            entity_id: input_boolean.bedtime
+            state: 'on'
         sequence:
         - action: notify.mobile_app_salmob2
           data:
             title: "🚗 Garage Entry Detected"
             message: >-
-              {{ people_text }} entered the garage.
-              {% if ai_description != 'AI description not available' %}
+              {{ person_name }} entered the garage at {{ detection_time }}.
+              {% if ai_summary != 'No AI summary available' %}
               
-              🤖 {{ ai_description }}
+              🤖 {{ ai_summary }}
               {% endif %}
-              
-              📍 Time: {{ now().strftime('%I:%M %p') }}
             data:
-              tag: "{{ session_tag }}"
-              group: "garage_security" 
-              sticky: true
-              channel: "garage_alerts"
-              importance: high
               image: "{{ snapshot_url }}"
-              clickAction: "{{ snapshot_url }}"
-              url: "{{ snapshot_url }}"
+              clickAction: "{{ clip_url }}"
               actions:
-              - action: "VIEW_GARAGE_CLIP"
-                title: "View"
-              - action: "DISMISS_GARAGE_ALERT"
-                title: "Dismiss"
+              - action: "URI"
+                title: "View Video"
+                uri: "{{ clip_url }}"
   mode: single
 
-- id: handle_enhanced_garage_actions
-  alias: Handle Enhanced Garage Actions
-  description: 'Handle all garage notification actions including video viewing'
-  triggers:
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: VIEW_GARAGE_CLIP
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: DISMISS_GARAGE_ALERT
-  actions:
-  # Log the action for debugging
-  - action: system_log.write
-    data:
-      message: "Garage action received: {{ trigger.event.data.action }} from device {{ device_id }}, tag: {{ trigger.event.data.tag | default('no tag') }}"
-      level: info
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ trigger.event.data.action == 'VIEW_GARAGE_CLIP' }}"
-      sequence:
-      - variables:
-          base_url: "https://ha.salmeister.com"
-          # Open Frigate web interface with garage camera filter and recent events
-          frigate_events_url: "{{ base_url }}:5000/events?cameras=garage&labels=person"
-      # Send a notification with URI action to open Frigate
-      - action: notify.mobile_app_salmob1
-        data:
-          title: "🎬 Opening Garage Events"
-          message: "Tap to view recent garage events in Frigate"
-          data:
-            tag: "garage_video_link"
-            actions:
-            - action: "URI"
-              title: "Open Frigate"
-              uri: "{{ frigate_events_url }}"
-    - conditions:
-      - condition: template
-        value_template: "{{ trigger.event.data.action == 'DISMISS_GARAGE_ALERT' }}"
-      sequence:
-      # Clear the notification using the original tag
-      - action: notify.mobile_app_salmob1
-        data:
-          message: "clear_notification"
-          data:
-            tag: "{{ trigger.event.data.tag | default('') }}"
-      # Send confirmation
-      - action: notify.mobile_app_salmob1
-        data:
-          title: "✅ Alert Dismissed"
-          message: "Garage security alert has been dismissed"
-          data:
-            tag: "garage_dismiss_confirm"
-            timeout: 3
-  mode: parallel
 
-# DEBUG: Test automation to catch garage-specific mobile app notification actions
-- id: debug_garage_mobile_app_actions
-  alias: Debug Garage Mobile App Notification Actions
-  description: 'Catch garage-related mobile app notification actions for debugging'
-  triggers:
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: VIEW_GARAGE_CLIP
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: DISMISS_GARAGE_ALERT
-  actions:
-  - action: system_log.write
-    data:
-      message: "DEBUG: Full garage event data: {{ trigger.event }}"
-      level: warning
-  - action: persistent_notification.create
-    data:
-      title: "🔧 DEBUG: Garage Action Detailed"
-      message: |
-        Full Event Data: {{ trigger.event.data }}
-        
-        Action: {{ trigger.event.data.action }}
-        Device: {{ trigger.event.data.sourceDeviceID | default('missing sourceDeviceID') }}
-        Alt Device: {{ trigger.event.data.device_id | default('missing device_id') }}
-        Tag: {{ trigger.event.data.tag | default('none') }}
-        Context: {{ trigger.event.context }}
-        Time: {{ now().strftime('%H:%M:%S') }}
-      notification_id: "debug_garage_action_detailed"
-  mode: parallel
 
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
