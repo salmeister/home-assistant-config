@@ -71,7 +71,6 @@ logger:
 #  #username: hass
 #  #password: !secret influxdb_psswd
 #  #max_retries: 3
-  
 
 # View all events in a logbook
 logbook:

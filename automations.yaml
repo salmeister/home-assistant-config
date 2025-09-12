@@ -188,176 +188,176 @@
         - entity_id: switch.garage_lights
           action: switch.turn_on
       alias: Garage Light
-- id: 34d19e4e28744d10bf2eeba67c8c8735
-  alias: Enhanced Garage Door Person Detection
-  description: 'Simplified garage security notifications using Frigate Notification API. Notifies when garage door opens and person detected in Interior Garage zone.'
-  triggers:
-  - entity_id: cover.garage_doors
-    from: closed
-    to: open
-    trigger: state
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_andy
-        state: 'on'
-      - condition: or
-        conditions:
-        - condition: template
-          value_template: '{{ states("person.andy") != "home" }}'
-        - condition: state
-          entity_id: input_boolean.bedtime
-          state: 'on'
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_katie
-        state: 'on'
-      - condition: or
-        conditions:
-        - condition: template
-          value_template: '{{ states("person.katie") != "home" }}'
-        - condition: state
-          entity_id: input_boolean.bedtime
-          state: 'on'
-  actions:
-  # Wait for new or recent person to be detected in Interior Garage zone
-  - wait_for_trigger:
-    - trigger: mqtt
-      topic: frigate/events
-    timeout: "00:05:00"
-    continue_on_timeout: true
-  - variables:
-      # Check if a person was detected or if we timed out
-      person_detected: >-
-        {{ wait.trigger is not none and 
-           wait.trigger.payload_json.after.camera == 'garage' and 
-           wait.trigger.payload_json.after.label == 'person' and
-           wait.trigger.payload_json.type in ['new', 'update'] and
-           wait.trigger.payload_json.after.has_snapshot == true and
-           'interior_garage' in (wait.trigger.payload_json.after.current_zones | default([])) }}
-      event_id: "{{ wait.trigger.payload_json.after.id if person_detected else 'no_detection_' ~ now().strftime('%Y%m%d_%H%M%S') }}"
-      sub_labels: "{{ wait.trigger.payload_json.after.sub_label | default([]) if person_detected and wait.trigger.payload_json.after.sub_label is not none else [] }}"
-      base_url: !secret base_url
-      # Determine person name from sub_labels or use appropriate message
-      person_name: >-
-        {% if person_detected %}
-          {% set recognized_people = [] %}
-          {% if sub_labels is not none and sub_labels | length > 0 %}
-            {% for label in sub_labels %}
-              {% if label not in ['person', 'unknown'] %}
-                {% set recognized_people = recognized_people + [label | title] %}
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-          {% if recognized_people | length > 0 %}
-            {{ recognized_people[0] }}
-          {% else %}
-            Unknown Person
-          {% endif %}
-        {% else %}
-          No Person Detected
-        {% endif %}
-      # Use Frigate Notification API endpoints (only if person detected)
-      snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg" if person_detected else ""
-      clip_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4" if person_detected else ""
-      detection_time: "{{ now().strftime('%I:%M %p') }}"
-  # Wait briefly for potential AI description (only if person detected)
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ person_detected }}"
-      sequence:
-      - wait_for_trigger:
-        - trigger: mqtt
-          topic: frigate/tracked_object_update
-        timeout: "00:00:05"
-        continue_on_timeout: true
-  - variables:
-      ai_summary: >-
-        {% if person_detected and wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
-          {{ wait.trigger.payload_json.description }}
-        {% else %}
-          No AI summary available
-        {% endif %}
-  # Send notifications in parallel
-  - parallel:
-    # Notify Andy if enabled and conditions met
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: input_boolean.notify_fpm_andy
-          state: 'on'
-        - condition: or
-          conditions:
-          - condition: template
-            value_template: '{{ states("person.andy") != "home" }}'
-          - condition: state
-            entity_id: input_boolean.bedtime
-            state: 'on'
-        sequence:
-        - action: notify.mobile_app_salmob1
-          data:
-            title: "🚗 Garage Entry Detected"
-            message: >-
-              {% if person_detected %}
-                {{ person_name }} entered the garage at {{ detection_time }}.
-                {% if ai_summary != 'No AI summary available' %}
-                
-                🤖 {{ ai_summary }}
-                {% endif %}
-              {% else %}
-                Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
-              {% endif %}
-            data:
-              {% if person_detected %}
-              image: "{{ snapshot_url }}"
-              clickAction: "{{ clip_url }}"
-              actions:
-              - action: "URI"
-                title: "View Video"
-                uri: "{{ clip_url }}"
-              {% endif %}
-    # Notify Katie if enabled and conditions met
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: input_boolean.notify_fpm_katie
-          state: 'on'
-        - condition: or
-          conditions:
-          - condition: template
-            value_template: '{{ states("person.katie") != "home" }}'
-          - condition: state
-            entity_id: input_boolean.bedtime
-            state: 'on'
-        sequence:
-        - action: notify.mobile_app_salmob2
-          data:
-            title: "🚗 Garage Entry Detected"
-            message: >-
-              {% if person_detected %}
-                {{ person_name }} entered the garage at {{ detection_time }}.
-                {% if ai_summary != 'No AI summary available' %}
-                
-                🤖 {{ ai_summary }}
-                {% endif %}
-              {% else %}
-                Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
-              {% endif %}
-            data:
-              {% if person_detected %}
-              image: "{{ snapshot_url }}"
-              clickAction: "{{ clip_url }}"
-              actions:
-              - action: "URI"
-                title: "View Video"
-                uri: "{{ clip_url }}"
-              {% endif %}
-  mode: single
+#- id: 34d19e4e28744d10bf2eeba67c8c8735
+#  alias: Enhanced Garage Door Person Detection
+#  description: 'Simplified garage security notifications using Frigate Notification API. Notifies when garage door opens and person detected in Interior Garage zone.'
+#  triggers:
+#  - entity_id: cover.garage_doors
+#    from: closed
+#    to: open
+#    trigger: state
+#  conditions:
+#  - condition: or
+#    conditions:
+#    - condition: and
+#      conditions:
+#      - condition: state
+#        entity_id: input_boolean.notify_fpm_andy
+#        state: 'on'
+#      - condition: or
+#        conditions:
+#        - condition: template
+#          value_template: '{{ states("person.andy") != "home" }}'
+#        - condition: state
+#          entity_id: input_boolean.bedtime
+#          state: 'on'
+#    - condition: and
+#      conditions:
+#      - condition: state
+#        entity_id: input_boolean.notify_fpm_katie
+#        state: 'on'
+#      - condition: or
+#        conditions:
+#        - condition: template
+#          value_template: '{{ states("person.katie") != "home" }}'
+#        - condition: state
+#          entity_id: input_boolean.bedtime
+#          state: 'on'
+#  actions:
+#  # Wait for new or recent person to be detected in Interior Garage zone
+#  - wait_for_trigger:
+#    - trigger: mqtt
+#      topic: frigate/events
+#    timeout: "00:05:00"
+#    continue_on_timeout: true
+#  - variables:
+#      # Check if a person was detected or if we timed out
+#      person_detected: >-
+#        {{ wait.trigger is not none and 
+#           wait.trigger.payload_json.after.camera == 'garage' and 
+#           wait.trigger.payload_json.after.label == 'person' and
+#           wait.trigger.payload_json.type in ['new', 'update'] and
+#           wait.trigger.payload_json.after.has_snapshot == true and
+#           'interior_garage' in (wait.trigger.payload_json.after.current_zones | default([])) }}
+#      event_id: "{{ wait.trigger.payload_json.after.id if person_detected else 'no_detection_' ~ now().strftime('%Y%m%d_%H%M%S') }}"
+#      sub_labels: "{{ wait.trigger.payload_json.after.sub_label | default([]) if person_detected and wait.trigger.payload_json.after.sub_label is not none else [] }}"
+#      base_url: !secret base_url
+#      # Determine person name from sub_labels or use appropriate message
+#      person_name: >-
+#        {% if person_detected %}
+#          {% set recognized_people = [] %}
+#         {% if sub_labels is not none and sub_labels | length > 0 %}
+#            {% for label in sub_labels %}
+#              {% if label not in ['person', 'unknown'] %}
+#                {% set recognized_people = recognized_people + [label | title] %}
+#              {% endif %}
+#            {% endfor %}
+#          {% endif %}
+#          {% if recognized_people | length > 0 %}
+#            {{ recognized_people[0] }}
+#          {% else %}
+#            Unknown Person
+#          {% endif %}
+#        {% else %}
+#          No Person Detected
+#        {% endif %}
+#      # Use Frigate Notification API endpoints (only if person detected)
+#      snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg" if person_detected else ""
+#      clip_url: "{{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4" if person_detected else ""
+#      detection_time: "{{ now().strftime('%I:%M %p') }}"
+#  # Wait briefly for potential AI description (only if person detected)
+#  - choose:
+#    - conditions:
+#      - condition: template
+#        value_template: "{{ person_detected }}"
+#      sequence:
+#      - wait_for_trigger:
+#        - trigger: mqtt
+#          topic: frigate/tracked_object_update
+#        timeout: "00:00:05"
+#        continue_on_timeout: true
+#  - variables:
+#      ai_summary: >-
+#        {% if person_detected and wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
+#          {{ wait.trigger.payload_json.description }}
+#        {% else %}
+#          No AI summary available
+#        {% endif %}
+#  # Send notifications in parallel
+#  - parallel:
+#    # Notify Andy if enabled and conditions met
+#    - choose:
+#      - conditions:
+#        - condition: state
+#          entity_id: input_boolean.notify_fpm_andy
+#          state: 'on'
+#        - condition: or
+#          conditions:
+#          - condition: template
+#            value_template: '{{ states("person.andy") != "home" }}'
+#          - condition: state
+#            entity_id: input_boolean.bedtime
+#            state: 'on'
+#        sequence:
+#        - action: notify.mobile_app_salmob1
+#          data:
+#            title: "🚗 Garage Entry Detected"
+#            message: >-
+#              {% if person_detected %}
+#                {{ person_name }} entered the garage at {{ detection_time }}.
+#                {% if ai_summary != 'No AI summary available' %}
+#                
+#                🤖 {{ ai_summary }}
+#                {% endif %}
+#              {% else %}
+#                Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
+#              {% endif %}
+#            data:
+#              {% if person_detected %}
+#              image: "{{ snapshot_url }}"
+#              clickAction: "{{ clip_url }}"
+#              actions:
+#              - action: "URI"
+#                title: "View Video"
+#                uri: "{{ clip_url }}"
+#              {% endif %}
+#    # Notify Katie if enabled and conditions met
+#    - choose:
+#      - conditions:
+#        - condition: state
+#          entity_id: input_boolean.notify_fpm_katie
+#          state: 'on'
+#        - condition: or
+#          conditions:
+#          - condition: template
+#            value_template: '{{ states("person.katie") != "home" }}'
+#          - condition: state
+#            entity_id: input_boolean.bedtime
+#            state: 'on'
+#        sequence:
+#        - action: notify.mobile_app_salmob2
+#          data:
+#            title: "🚗 Garage Entry Detected"
+#            message: >-
+#              {% if person_detected %}
+#                {{ person_name }} entered the garage at {{ detection_time }}.
+#                {% if ai_summary != 'No AI summary available' %}
+#                
+#                🤖 {{ ai_summary }}
+#                {% endif %}
+#              {% else %}
+#                Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
+#              {% endif %}
+#            data:
+#              {% if person_detected %}
+#              image: "{{ snapshot_url }}"
+#              clickAction: "{{ clip_url }}"
+#              actions:
+#              - action: "URI"
+#                title: "View Video"
+#                uri: "{{ clip_url }}"
+#              {% endif %}
+#  mode: single
 
 
 
