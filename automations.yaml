@@ -332,14 +332,21 @@
               {% else %}
                 Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
               {% endif %}
-            data:
+            data: >-
               {% if person_detected %}
-              image: "{{ snapshot_url }}"
-              clickAction: "{{ clip_url }}"
-              actions:
-              - action: "URI"
-                title: "View Video"
-                uri: "{{ clip_url }}"
+                {
+                  "image": "{{ snapshot_url }}",
+                  "clickAction": "{{ clip_url }}",
+                  "actions": [
+                    {
+                      "action": "URI",
+                      "title": "View Video",
+                      "uri": "{{ clip_url }}"
+                    }
+                  ]
+                }
+              {% else %}
+                {}
               {% endif %}
     # Notify Katie if enabled and conditions met
     - choose:
@@ -368,14 +375,21 @@
               {% else %}
                 Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
               {% endif %}
-            data:
+            data: >-
               {% if person_detected %}
-              image: "{{ snapshot_url }}"
-              clickAction: "{{ clip_url }}"
-              actions:
-              - action: "URI"
-                title: "View Video"
-                uri: "{{ clip_url }}"
+                {
+                  "image": "{{ snapshot_url }}",
+                  "clickAction": "{{ clip_url }}",
+                  "actions": [
+                    {
+                      "action": "URI",
+                      "title": "View Video",
+                      "uri": "{{ clip_url }}"
+                    }
+                  ]
+                }
+              {% else %}
+                {}
               {% endif %}
   mode: single
 
