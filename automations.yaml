@@ -188,7 +188,7 @@
         - entity_id: switch.garage_lights
           action: switch.turn_on
       alias: Garage Light
-- id: enhanced_garage_door_person_detection
+- id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Person Detection
   description: 'Simplified garage security notifications using Frigate Notification API. Notifies when garage door opens and person detected in Interior Garage zone.'
   triggers:
