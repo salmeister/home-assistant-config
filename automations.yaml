@@ -276,7 +276,7 @@
         {% if person_detected %}
           {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg
         {% else %}
-          {{ base_url }}/api/camera_proxy/camera.garage
+          /api/camera_proxy/camera.garage
         {% endif %}
       clip_url: >-
         {% if person_detected %}
@@ -337,6 +337,7 @@
                 {
                   "image": "{{ snapshot_url }}",
                   "clickAction": "{{ clip_url }}",
+                  "persistent": true,
                   "actions": [
                     {
                       "action": "URI",
@@ -347,7 +348,8 @@
                 }
               {% else %}
                 {
-                  "image": "{{ snapshot_url }}"
+                  "image": "{{ snapshot_url }}",
+                  "persistent": true
                 }
               {% endif %}
     # Notify Katie if enabled and conditions met
@@ -382,6 +384,7 @@
                 {
                   "image": "{{ snapshot_url }}",
                   "clickAction": "{{ clip_url }}",
+                  "persistent": true,
                   "actions": [
                     {
                       "action": "URI",
@@ -392,7 +395,8 @@
                 }
               {% else %}
                 {
-                  "image": "{{ snapshot_url }}"
+                  "image": "{{ snapshot_url }}",
+                  "persistent": true
                 }
               {% endif %}
   mode: single
