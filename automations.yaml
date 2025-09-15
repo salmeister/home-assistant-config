@@ -271,12 +271,12 @@
         {% else %}
           No Person Detected
         {% endif %}
-      # Use Frigate Notification API endpoints (only if person detected)
+      # Use Frigate Notification API endpoints or general camera snapshot
       snapshot_url: >-
         {% if person_detected %}
           {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg
         {% else %}
-          
+          {{ base_url }}/api/camera_proxy/camera.garage
         {% endif %}
       clip_url: >-
         {% if person_detected %}
@@ -321,7 +321,7 @@
         sequence:
         - action: notify.mobile_app_salmob1
           data:
-            title: "🚗 Garage Entry Detected"
+            title: "🚗 Garage Door Opened"
             message: >-
               {% if person_detected %}
                 {{ person_name }} entered the garage at {{ detection_time }}.
@@ -330,7 +330,7 @@
                 🤖 {{ ai_summary }}
                 {% endif %}
               {% else %}
-                Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
+                🕐 {{ detection_time }} no person was detected within 5 minutes.
               {% endif %}
             data: >-
               {% if person_detected %}
@@ -346,7 +346,9 @@
                   ]
                 }
               {% else %}
-                {}
+                {
+                  "image": "{{ snapshot_url }}"
+                }
               {% endif %}
     # Notify Katie if enabled and conditions met
     - choose:
@@ -364,7 +366,7 @@
         sequence:
         - action: notify.mobile_app_salmob2
           data:
-            title: "🚗 Garage Entry Detected"
+            title: "🚗 Garage Door Opened"
             message: >-
               {% if person_detected %}
                 {{ person_name }} entered the garage at {{ detection_time }}.
@@ -373,7 +375,7 @@
                 🤖 {{ ai_summary }}
                 {% endif %}
               {% else %}
-                Garage door opened at {{ detection_time }} but no person was detected in the Interior Garage zone within 5 minutes.
+                🕐 {{ detection_time }} no person was detected within 5 minutes.
               {% endif %}
             data: >-
               {% if person_detected %}
@@ -389,7 +391,9 @@
                   ]
                 }
               {% else %}
-                {}
+                {
+                  "image": "{{ snapshot_url }}"
+                }
               {% endif %}
   mode: single
 

@@ -96,6 +96,31 @@ Key areas in the home based on entity assignments:
 - **Temperature Monitoring**: Low temperature alerts
 - **Device Health**: Battery monitoring, connectivity status
 
+## Home Assistant Core Technologies
+
+Home Assistant primarily uses three key technologies for configuration and operation:
+
+### 🔧 Jinja2 Templating
+- **Documentation**: https://www.home-assistant.io/docs/configuration/templating/
+- **Purpose**: Dynamic configuration, conditions, and data processing
+- **Usage**: State templates, conditional logic, data transformation in automations and scripts
+- **Key Features**: State access, time functions, mathematical operations, string manipulation
+- **Common Patterns**: `{{ states('entity_id') }}`, `{{ state_attr('entity_id', 'attribute') }}`, `{% if condition %}...{% endif %}`
+
+### 📝 YAML Configuration
+- **Documentation**: https://www.home-assistant.io/docs/configuration/yaml/
+- **Purpose**: Primary configuration language for all Home Assistant components
+- **Critical Rules**: Indentation-sensitive, case-sensitive, supports includes and packages
+- **Best Practices**: Use consistent indentation (2 spaces), avoid tabs, validate syntax regularly
+- **Advanced Features**: Anchors and references, multi-line strings, includes, packages
+
+### 🖥️ Lovelace Dashboards
+- **Documentation**: https://www.home-assistant.io/dashboards/
+- **Purpose**: Frontend UI configuration for user interfaces
+- **Configuration**: YAML-based dashboard definitions with card-based layout
+- **Features**: Custom cards, themes, responsive design, mobile optimization
+- **Storage**: Can be configured via UI (stored in `.storage/`) or YAML files
+
 ## Development Guidelines
 
 ### Before Making Changes
@@ -103,8 +128,12 @@ Key areas in the home based on entity assignments:
 2. **Review Entity Registry**: Understand available entities and their areas
 3. **Check Dependencies**: Understand automation relationships
 4. **Reference Documentation**: Use `docs/frigate-reference.md` for camera/MQTT integrations and `docs/companion-app-reference.md` for mobile notifications
-5. **Consult HA Documentation**: For integration-specific features, configuration syntax, or new functionality, search the official [Home Assistant documentation](https://www.home-assistant.io/docs/) 
-6. **Backup Approach**: Always maintain working configuration
+5. **Consult Core Technologies**: 
+   - **Jinja2 Templates**: https://www.home-assistant.io/docs/configuration/templating/
+   - **YAML Configuration**: https://www.home-assistant.io/docs/configuration/yaml/
+   - **Lovelace Dashboards**: https://www.home-assistant.io/dashboards/
+6. **Consult HA Documentation**: For integration-specific features, configuration syntax, or new functionality, search the official [Home Assistant documentation](https://www.home-assistant.io/docs/) 
+7. **Backup Approach**: Always maintain working configuration
 
 ### Entity Management
 - Use entity registry to identify correct entity IDs
@@ -162,11 +191,16 @@ Search [Home Assistant docs](https://www.home-assistant.io/docs/) directly for:
 - **Organization**: Areas, labels, floors, and device management
 
 ### Quick Reference Links
+
+#### Home Assistant Core Technologies
+- **[Jinja2 Templating](https://www.home-assistant.io/docs/configuration/templating/)** - Dynamic templates, conditions, and data processing
+- **[YAML Configuration](https://www.home-assistant.io/docs/configuration/yaml/)** - Primary configuration syntax and best practices
+- **[Lovelace Dashboards](https://www.home-assistant.io/dashboards/)** - Frontend UI configuration and card-based layouts
+
+#### General Documentation
 - [HA Glossary](https://www.home-assistant.io/docs/glossary/) - Core concepts and terminology
 - [Automation Actions](https://www.home-assistant.io/docs/automation/action/) - Action syntax and examples
-- [Templating](https://www.home-assistant.io/docs/configuration/templating/) - Jinja2 templates and functions
 - [Entity Organization](https://www.home-assistant.io/docs/organizing/) - Areas, labels, floors
-- [YAML Configuration](https://www.home-assistant.io/docs/configuration/yaml/) - YAML syntax and best practices
 - [Release Notes](https://www.home-assistant.io/blog/categories/release-notes/) - Monthly updates and breaking changes
 
 ## Integration-Specific Guidance
@@ -212,6 +246,78 @@ Search [Home Assistant docs](https://www.home-assistant.io/docs/) directly for:
 - Use notification groups to target appropriate devices efficiently
 
 ## Common Patterns
+
+### Jinja2 Template Patterns
+```yaml
+# State checks and conditional logic
+condition:
+  - condition: template
+    value_template: "{{ states('sensor.temperature') | float > 70 }}"
+
+# Time-based conditions
+condition:
+  - condition: template
+    value_template: "{{ now().hour >= 8 and now().hour <= 22 }}"
+
+# Entity attribute access
+value_template: "{{ state_attr('climate.thermostat', 'current_temperature') }}"
+
+# Mathematical operations
+value_template: "{{ (states('sensor.power') | float * 0.001) | round(2) }}"
+
+# String manipulation and filtering
+message: "{{ states.sensor | selectattr('state', 'eq', 'on') | list | count }} sensors are active"
+```
+
+### YAML Configuration Patterns
+```yaml
+# Using anchors and references for reusable configs
+common_notification: &notification_base
+  service: notify.mobile_app_device
+  data:
+    title: "Home Assistant Alert"
+
+# Include files for organization
+automation: !include automations.yaml
+script: !include scripts.yaml
+sensor: !include_dir_merge_list sensors/
+
+# Multi-line strings
+message: |
+  This is a multi-line message
+  that preserves line breaks
+  for better readability.
+
+# Conditional includes
+automation: !include_dir_merge_list automations/
+```
+
+### Lovelace Dashboard Patterns
+```yaml
+# Card-based layout
+type: vertical-stack
+cards:
+  - type: entities
+    title: "Climate Control"
+    entities:
+      - climate.thermostat
+      - sensor.temperature
+      
+  - type: glance
+    title: "Quick Controls"
+    entities:
+      - light.living_room
+      - switch.fan
+
+# Conditional cards
+type: conditional
+conditions:
+  - entity: binary_sensor.motion
+    state: "on"
+card:
+  type: picture-entity
+  entity: camera.front_door
+```
 
 ### Notification Workflows
 ```yaml
