@@ -251,7 +251,7 @@
         {% else %}
           []
         {% endif %}
-      base_url: !secret base_url
+      base_url: https://ha.salmeister.com
       # Determine person name from sub_labels or use appropriate message
       person_name: >-
         {% if person_detected %}
