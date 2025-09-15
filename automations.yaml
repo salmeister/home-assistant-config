@@ -332,25 +332,15 @@
               {% else %}
                 🕐 {{ detection_time }} no person was detected within 5 minutes.
               {% endif %}
-            data: >-
+            data:
+              image: "{{ snapshot_url }}"
+              persistent: true
               {% if person_detected %}
-                {
-                  "image": "{{ snapshot_url }}",
-                  "clickAction": "{{ clip_url }}",
-                  "persistent": true,
-                  "actions": [
-                    {
-                      "action": "URI",
-                      "title": "View Video",
-                      "uri": "{{ clip_url }}"
-                    }
-                  ]
-                }
-              {% else %}
-                {
-                  "image": "{{ snapshot_url }}",
-                  "persistent": true
-                }
+              clickAction: "{{ clip_url }}"
+              actions:
+                - action: "URI"
+                  title: "View Video"
+                  uri: "{{ clip_url }}"
               {% endif %}
     # Notify Katie if enabled and conditions met
     - choose:
@@ -379,25 +369,15 @@
               {% else %}
                 🕐 {{ detection_time }} no person was detected within 5 minutes.
               {% endif %}
-            data: >-
+            data:
+              image: "{{ snapshot_url }}"
+              persistent: true
               {% if person_detected %}
-                {
-                  "image": "{{ snapshot_url }}",
-                  "clickAction": "{{ clip_url }}",
-                  "persistent": true,
-                  "actions": [
-                    {
-                      "action": "URI",
-                      "title": "View Video",
-                      "uri": "{{ clip_url }}"
-                    }
-                  ]
-                }
-              {% else %}
-                {
-                  "image": "{{ snapshot_url }}",
-                  "persistent": true
-                }
+              clickAction: "{{ clip_url }}"
+              actions:
+                - action: "URI"
+                  title: "View Video"
+                  uri: "{{ clip_url }}"
               {% endif %}
   mode: single
 
