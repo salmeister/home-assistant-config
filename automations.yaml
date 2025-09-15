@@ -335,13 +335,17 @@
             data:
               image: "{{ snapshot_url }}"
               persistent: true
-              {% if person_detected %}
-              clickAction: "{{ clip_url }}"
-              actions:
-                - action: "URI"
-                  title: "View Video"
-                  uri: "{{ clip_url }}"
-              {% endif %}
+              clickAction: "{% if person_detected %}{{ clip_url }}{% endif %}"
+              actions: >
+                {% if person_detected %}
+                  [{
+                    "action": "URI",
+                    "title": "View Video",
+                    "uri": "{{ clip_url }}"
+                  }]
+                {% else %}
+                  []
+                {% endif %}
     # Notify Katie if enabled and conditions met
     - choose:
       - conditions:
@@ -372,13 +376,17 @@
             data:
               image: "{{ snapshot_url }}"
               persistent: true
-              {% if person_detected %}
-              clickAction: "{{ clip_url }}"
-              actions:
-                - action: "URI"
-                  title: "View Video"
-                  uri: "{{ clip_url }}"
-              {% endif %}
+              clickAction: "{% if person_detected %}{{ clip_url }}{% endif %}"
+              actions: >
+                {% if person_detected %}
+                  [{
+                    "action": "URI",
+                    "title": "View Video",
+                    "uri": "{{ clip_url }}"
+                  }]
+                {% else %}
+                  []
+                {% endif %}
   mode: single
 
 
