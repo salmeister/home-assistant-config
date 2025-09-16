@@ -476,3 +476,4 @@ git_sync_changes:
         message: "Configuration successfully synced with GitHub. No entity registry changes detected. Next step, reload YAML."
         notification_id: "git_sync_status"
   mode: single
+  
