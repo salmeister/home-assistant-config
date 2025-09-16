@@ -35,7 +35,7 @@
 - name: all_apple_devices
   platform: group
   services:
-    - service: mobile_app_salmob3
+    - service: mobile_app_karlees_iphone_16
 
 - name: all_mobile_devices
   platform: group

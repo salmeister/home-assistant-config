@@ -206,7 +206,7 @@ Search [Home Assistant docs](https://www.home-assistant.io/docs/) directly for:
 ## Integration-Specific Guidance
 
 ### Companion App Mobile Notifications
-- **Device Awareness**: 4 Android devices (SALMOB1, SALMOB2, SALMOB4, SALMOB5) + 1 iOS device (SALMOB3 - Karlee)
+- **Device Awareness**: 4 Android devices (SALMOB1, SALMOB2, SALMOB4, SALMOB5) + 1 iOS device (SALMOB3)
 - **Action Limits**: Android max 3 actions, iOS max ~10 actions
 - **Platform Features**: iOS supports SF Symbols icons and destructive actions; Android requires `action: URI` for URIs
 - **Notification Groups**: Use `parent_mobile_devices` for security alerts, `all_android_devices`/`all_apple_devices` for platform-specific features
@@ -221,7 +221,7 @@ Search [Home Assistant docs](https://www.home-assistant.io/docs/) directly for:
 - Mobile notifications need device-specific targeting
 
 ### Home Assistant Companion App
-- **4 Android devices** (SALMOB1, SALMOB2, SALMOB4, SALMOB5) + **1 iOS device** (SALMOB3 - Karlee)
+- **4 Android devices** (SALMOB1, SALMOB2, SALMOB4, SALMOB5) + **1 iOS device** (SALMOB3)
 - Android notifications limited to 3 actions; iOS supports ~10 actions
 - Use notification groups: `all_android_devices`, `all_apple_devices`, `all_mobile_devices`, `parent_mobile_devices`
 - Actionable notifications require `mobile_app_notification_action` event handling

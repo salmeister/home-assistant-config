@@ -14,7 +14,7 @@ Based on current system configuration:
 |--------|----------|-----------|--------------|-------|
 | SALMOB1 | Android | `mobile_app_salmob1` | Andy | Primary Android device |
 | SALMOB2 | Android | `mobile_app_salmob2` | Katie | Primary Android device |
-| SALMOB3 | iOS | `mobile_app_salmob3` | Karlee | **Only iOS device** |
+| SALMOB3 | iOS | `mobile_app_karlees_iphone_16` | Karlee | **Only iOS device** |
 | SALMOB4 | Android | `mobile_app_salmob4` | [User] | Secondary Android device |
 | SALMOB5 | Android | `mobile_app_salmob5` | [User] | Secondary Android device |
 
@@ -339,7 +339,7 @@ Given the 4 Android + 1 iOS device setup:
           title: "Dismiss"
 
 # iOS-specific notification (SALMOB3 only)
-- action: notify.mobile_app_salmob3
+- action: notify.mobile_app_karlees_iphone_16
   data:
     title: "iOS Notification" 
     data:
