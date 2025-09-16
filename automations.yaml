@@ -3219,4 +3219,3 @@
   - entity_id: switch.garage_lights
     action: switch.turn_off
   mode: single
-  

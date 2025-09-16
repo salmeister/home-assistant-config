@@ -441,13 +441,13 @@ git_sync_changes:
   # Step 7: Update entity registry
   - service: homeassistant.update_entity
     target:
-      entity_id: sensor.entity_registry_changes_available
+      entity_id: sensor.sensor.config_snapshots_changes_available
   - delay: '00:00:05'
   # Step 8: Conditional stage, commit, push if changes detected
   - choose:
     - conditions:
       - condition: template
-        value_template: "{{ states('sensor.entity_registry_changes_available') | int == 2 }}"
+        value_template: "{{ states('sensor.config_snapshots_changes_available') | int == 2 }}"
       sequence:
       - service: persistent_notification.create
         data:
