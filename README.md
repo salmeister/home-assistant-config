@@ -281,7 +281,7 @@ This is a public repository. Do not store sensitive information here.
 - Before committing, scan changes for risky terms like: password, token, api_key, secret, webhook, bearer, authorization, latitude, longitude.
 - See `docs/memory.md` → Security & privacy guardrails for examples and redaction guidance.
 
-## 🧾 Entity Registry Snapshot (update-entity-registry.sh)
+## 🧾 Entity Registry Snapshot (update-config-snapshots.sh)
 
 Use this helper to create/update `entity_registry_snapshot.json` from Home Assistant’s live entity registry. This is useful for documentation and development context.
 
@@ -306,7 +306,7 @@ Use this helper to create/update `entity_registry_snapshot.json` from Home Assis
 2) Run the script from the HA config’s scripts folder:
    ```bash
    cd /config/scripts
-   bash update-entity-registry.sh
+   bash update-config-snapshots.sh
    ```
 
    Notes:

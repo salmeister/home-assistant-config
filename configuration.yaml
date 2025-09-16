@@ -19,7 +19,6 @@ python_script:
 shell_command:
   git_pull_config: 'cd /config && git pull origin develop-ha'
   git_status_config: 'cd /config && git status && git log --oneline -5'
-  update_entity_registry: 'cd /config && ./scripts/update-entity-registry.sh'
   git_stage_entity_registry: 'cd /config && git add entity_registry_snapshot.json'
   git_commit_entity_registry: 'cd /config && git commit -m "Update entity registry snapshot"'
   git_push_entity_registry: 'cd /config && git push https://salmeister:${GITHUB_TOKEN}@github.com/salmeister/home-assistant-config.git develop-ha'
