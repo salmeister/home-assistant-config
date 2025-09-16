@@ -440,11 +440,11 @@ git_sync_changes:
       notification_id: "git_sync_status"
   # Step 7: Update entity registry
   - service: shell_command.update_entity_registry
-  - delay: '00:00:02'
+  - delay: '00:00:05'
   - service: homeassistant.update_entity
     target:
       entity_id: sensor.entity_registry_changes_available
-  - delay: '00:00:02'
+  - delay: '00:00:05'
   # Step 8: Conditional stage, commit, push if changes detected
   - choose:
     - conditions:
