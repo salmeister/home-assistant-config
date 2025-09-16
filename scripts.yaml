@@ -415,7 +415,7 @@ git_sync_changes:
   - service: persistent_notification.create
     data:
       title: "🔄 Git Sync"
-      message: "Syncing configuration changes from GitHub repository..."
+      message: "Syncing configuration changes with GitHub repository..."
       notification_id: "git_sync_status"
   - service: shell_command.git_pull_config
   - delay: '00:00:10'
@@ -466,13 +466,13 @@ git_sync_changes:
       - service: persistent_notification.create
         data:
           title: "✅ Git Sync Complete"
-          message: "Configuration successfully synced from GitHub. Entity registry changes committed and pushed back to repository!"
+          message: "Configuration successfully synced with GitHub. Entity registry changes committed and pushed back to repository. Next step, reload YAML."
           notification_id: "git_sync_status"
     default:
     # Step 9: Final notification - no entity registry changes
     - service: persistent_notification.create
       data:
         title: "✅ Git Sync Complete"
-        message: "Configuration successfully synced from GitHub. No entity registry changes detected."
+        message: "Configuration successfully synced with GitHub. No entity registry changes detected. Next step, reload YAML."
         notification_id: "git_sync_status"
   mode: single
