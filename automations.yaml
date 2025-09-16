@@ -190,7 +190,7 @@
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Person Detection
-  description: 'Simplified garage security notifications using Frigate Notification API. Notifies when garage door opens and person detected in Interior Garage zone.'
+  description: 'Improved garage security notifications using Frigate events with better person detection and debugging capabilities.'
   triggers:
   - entity_id: cover.garage_doors
     from: closed
@@ -224,34 +224,112 @@
           entity_id: input_boolean.bedtime
           state: 'on'
   actions:
-  # Wait for new or recent person to be detected in Interior Garage zone
-  - wait_for_trigger:
-    - trigger: mqtt
-      topic: frigate/events
-    timeout: "00:05:00"
-    continue_on_timeout: true
   - variables:
-      # Check if a person was detected or if we timed out
+      garage_opened_time: "{{ now() }}"
+      detection_timeout: "00:03:00"  # Reduced timeout for faster response
+      base_url: https://ha.salmeister.com
+  
+  # Debug log the garage door opening
+  - alias: "Log garage door opening"
+    action: system_log.write
+    data:
+      message: "Garage door opened - Starting person detection wait"
+      level: info
+      logger: automation.enhanced_garage_door_person_detection
+  
+  # Wait for person detection events - try multiple approaches
+  - parallel:
+    # Method 1: Wait for frigate/events (new approach with relaxed conditions)
+    - sequence:
+      - wait_for_trigger:
+        - trigger: mqtt
+          topic: frigate/events
+        timeout: "{{ detection_timeout }}"
+        continue_on_timeout: true
+      - if:
+        - condition: template
+          value_template: >-
+            {{ wait.trigger is not none and
+               wait.trigger.payload_json.after is defined and
+               wait.trigger.payload_json.after.camera == 'garage' and 
+               wait.trigger.payload_json.after.label == 'person' and
+               wait.trigger.payload_json.type in ['new', 'update'] }}
+        then:
+        - variables:
+            person_detected_events: true
+            event_id_events: "{{ wait.trigger.payload_json.after.id }}"
+            event_zones_events: "{{ wait.trigger.payload_json.after.current_zones | default([]) }}"
+            event_snapshot_events: "{{ wait.trigger.payload_json.after.has_snapshot | default(false) }}"
+        - action: system_log.write
+          data:
+            message: >-
+              Person detected via frigate/events: {{ event_id_events }}, 
+              zones: {{ event_zones_events }}, 
+              has_snapshot: {{ event_snapshot_events }}
+            level: info
+            logger: automation.enhanced_garage_door_person_detection
+        else:
+        - variables:
+            person_detected_events: false
+            event_id_events: ""
+        - if:
+          - condition: template
+            value_template: "{{ wait.trigger is not none }}"
+          then:
+          - action: system_log.write
+            data:
+              message: >-
+                Frigate event received but not person: camera={{ wait.trigger.payload_json.after.camera | default('unknown') }}, 
+                label={{ wait.trigger.payload_json.after.label | default('unknown') }}, 
+                type={{ wait.trigger.payload_json.type | default('unknown') }}
+              level: info
+              logger: automation.enhanced_garage_door_person_detection
+          else:
+          - action: system_log.write
+            data:
+              message: "No frigate/events received within {{ detection_timeout }}"
+              level: warning
+              logger: automation.enhanced_garage_door_person_detection
+    
+    # Method 2: Wait for occupancy sensor (if available)
+    - sequence:
+      - wait_for_trigger:
+        - trigger: state
+          entity_id: binary_sensor.garage_person_occupancy
+          to: 'on'
+        timeout: "{{ detection_timeout }}"
+        continue_on_timeout: true
+      - if:
+        - condition: template
+          value_template: "{{ wait.trigger is not none }}"
+        then:
+        - variables:
+            person_detected_occupancy: true
+        - action: system_log.write
+          data:
+            message: "Person detected via occupancy sensor"
+            level: info
+            logger: automation.enhanced_garage_door_person_detection
+        else:
+        - variables:
+            person_detected_occupancy: false
+
+  # Determine final detection result
+  - variables:
       person_detected: >-
-        {{ wait.trigger is not none and 
-           wait.trigger.payload_json.after.camera == 'garage' and 
-           wait.trigger.payload_json.after.label == 'person' and
-           wait.trigger.payload_json.type in ['new', 'update'] and
-           wait.trigger.payload_json.after.has_snapshot == true and
-           'interior_garage' in (wait.trigger.payload_json.after.current_zones | default([])) }}
+        {{ person_detected_events | default(false) or person_detected_occupancy | default(false) }}
       event_id: >-
-        {% if wait.trigger and person_detected %}
-          {{ wait.trigger.payload_json.after.id }}
+        {% if person_detected_events | default(false) %}
+          {{ event_id_events }}
         {% else %}
           no_detection_{{ now().strftime('%Y%m%d_%H%M%S') }}
         {% endif %}
       sub_labels: >-
-        {% if wait.trigger and person_detected and wait.trigger.payload_json.after.sub_label is not none %}
+        {% if person_detected_events | default(false) and wait.trigger.payload_json.after.sub_label is defined and wait.trigger.payload_json.after.sub_label is not none %}
           {{ wait.trigger.payload_json.after.sub_label | default([]) }}
         {% else %}
           []
         {% endif %}
-      base_url: https://ha.salmeister.com
       # Determine person name from sub_labels or use appropriate message
       person_name: >-
         {% if person_detected %}
@@ -273,23 +351,35 @@
         {% endif %}
       # Use Frigate Notification API endpoints or general camera snapshot
       snapshot_url: >-
-        {% if person_detected %}
+        {% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S') %}
           {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg
         {% else %}
           /api/camera_proxy/camera.garage
         {% endif %}
       clip_url: >-
-        {% if person_detected %}
+        {% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S') %}
           {{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4
         {% else %}
           
         {% endif %}
       detection_time: "{{ now().strftime('%I:%M %p') }}"
-  # Wait briefly for potential AI description (only if person detected)
+
+  # Log final detection result
+  - action: system_log.write
+    data:
+      message: >-
+        Final detection result: person_detected={{ person_detected }}, 
+        person_name={{ person_name }}, 
+        event_id={{ event_id }},
+        elapsed_time={{ (now() - garage_opened_time).total_seconds() }}s
+      level: info
+      logger: automation.enhanced_garage_door_person_detection
+
+  # Wait briefly for potential AI description (only if person detected via events)
   - choose:
     - conditions:
       - condition: template
-        value_template: "{{ person_detected }}"
+        value_template: "{{ person_detected_events | default(false) }}"
       sequence:
       - wait_for_trigger:
         - trigger: mqtt
@@ -298,7 +388,7 @@
         continue_on_timeout: true
   - variables:
       ai_summary: >-
-        {% if person_detected and wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
+        {% if person_detected_events | default(false) and wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
           {{ wait.trigger.payload_json.description }}
         {% else %}
           No AI summary available
