@@ -13,17 +13,7 @@ views:
             cards:
               - type: custom:mushroom-template-card
                 entity: binary_sensor.empty_house
-                icon_color: |-
-                  {% if is_state("binary_sensor.empty_house", "on") %}
-                  red
-                  {% elif is_state("binary_sensor.full_house", "on") %}
-                  green
-                  {% else %}
-                  orange
-                  {% endif %}
                 icon: ''
-                secondary_info: none
-                primary_info: none
                 badge_color: |-
                   {% if is_state("binary_sensor.empty_house", "on") %}
                   red
@@ -38,14 +28,22 @@ views:
                   {% else %}
                   mdi:home-export-outline
                   {% endif %}
-                picture: local/pictures/Louisiana.jpg
+                picture: /api/image/serve/b148a8568136417a8490d4fee234c2e7/512x512
                 tap_action:
                   action: more-info
                 hold_action:
                   action: none
                 double_tap_action:
                   action: none
-                fill_container: false
+                color: |-
+                  {% if is_state("binary_sensor.empty_house", "on") %}
+                  red
+                  {% elif is_state("binary_sensor.full_house", "on") %}
+                  green
+                  {% else %}
+                  orange
+                  {% endif %}
+                features_position: bottom
               - type: tile
                 entity: person.andy
                 name: ' '
@@ -413,6 +411,12 @@ views:
                       action: none
                     icon: mdi:silverware-fork-knife
                     content: ➔
+                  - type: template
+                    icon: mdi:grill
+                    tap_action:
+                      action: navigate
+                      navigation_path: /lovelace/grill
+                    content: ➔
                 alignment: center
               - type: horizontal-stack
                 cards:
@@ -587,20 +591,22 @@ views:
           - type: heading
             heading: Basement
             heading_style: title
-          - type: horizontal-stack
-            cards:
-              - type: area
-                area: basement
-                navigation_path: /lovelace/down
-                show_camera: false
-                card_mod:
-                  style: |
-                    div.buttons {
-                      display: none;
-                    }
-                    div.name {
-                      display: none;
-                    }
+          - features:
+              - type: area-controls
+                controls:
+                  - light
+            alert_classes: []
+            sensor_classes:
+              - temperature
+            features_position: inline
+            display_type: picture
+            type: area
+            area: basement
+            navigation_path: /lovelace/down
+            grid_options:
+              columns: 12
+              rows: 4
+            name: ' '
       - type: grid
         cards:
           - type: heading
@@ -770,19 +776,6 @@ views:
               action: none
         title: Next Alarm
         type: vertical-stack
-      - type: horizontal-stack
-        title: System
-        cards:
-          - type: tile
-            entity: binary_sensor.home_assistant_website_update_available
-            vertical: true
-            name: ' '
-            icon: mdi:home-assistant
-          - type: tile
-            entity: sensor.last_boot
-            vertical: true
-            icon: mdi:server
-            name: Last Boot
       - cards:
           - show_name: true
             show_icon: true
@@ -843,6 +836,73 @@ views:
         type: grid
         title: More Info
         columns: 3
+      - type: horizontal-stack
+        title: System
+        cards:
+          - type: tile
+            entity: binary_sensor.home_assistant_website_update_available
+            vertical: true
+            name: ' '
+            icon: mdi:home-assistant
+            features_position: bottom
+          - type: custom:mushroom-template-card
+            entity: sensor.github_config_updates_available
+            icon: mdi:download
+            icon_color: >-
+              {% if states('sensor.github_config_updates_available') | int > 0
+              %}
+
+              orange
+
+              {% else %}
+
+              var(--primary-text-color)
+
+              {% endif %}
+            primary: Pull Config
+            badge_icon: >-
+              {% if states('sensor.github_config_updates_available') | int > 0
+              %}
+
+              {% if states('sensor.github_config_updates_available') | int < 10
+              %}
+
+              {{ states('sensor.github_config_updates_available') }}
+
+              {% else %}
+
+              mdi:bell
+
+              {% endif %}
+
+              {% endif %}
+            badge_color: >-
+              {% if states('sensor.github_config_updates_available') | int > 0
+              %}
+
+              red
+
+              {% endif %}
+            tap_action:
+              action: perform-action
+              target: {}
+              perform_action: script.github_pull_changes
+            hold_action:
+              action: none
+            double_tap_action:
+              action: perform-action
+              perform_action: homeassistant.update_entity
+              target: {}
+              data:
+                entity_id:
+                  - sensor.github_config_updates_available
+            layout: vertical
+            fill_container: true
+          - type: tile
+            entity: sensor.last_boot
+            vertical: true
+            icon: mdi:server
+            name: Last Boot
   - icon: mdi:weather-lightning-rainy
     title: Weather
     subview: true
@@ -1226,11 +1286,18 @@ views:
       - type: entity
         entity: switch.water_valve
         icon: mdi:valve-open
-      - entities:
-          - entity: input_boolean.unload_dishwasher
-        show_header_toggle: false
+      - square: false
+        type: grid
+        columns: 2
+        cards:
+          - type: tile
+            entity: sensor.dishwasher_state
+            icon: mdi:dishwasher
+            name: State
+          - type: tile
+            entity: input_boolean.unload_dishwasher
+            name: Needs Unloading
         title: Dishwasher
-        type: entities
       - type: entities
         entities:
           - entity: sensor.washer_deltaenergy
@@ -1277,6 +1344,10 @@ views:
           - entity: sensor.dryer_powerenergy
             name: PowerEnergy
         title: Dryer
+      - type: entities
+        entities:
+          - sensor.smarthub_energy_sensor
+        title: Electrical
   - theme: Backend-selected
     title: Batteries
     path: batteries
@@ -2186,3 +2257,207 @@ views:
             group_by:
               func: max
               duration: 1d
+  - type: sections
+    max_columns: 2
+    title: Grill
+    path: grill
+    icon: mdi:grill
+    sections:
+      - type: grid
+        cards:
+          - type: tile
+            entity: switch.pbc_09f0b88_module_power
+            features_position: bottom
+            vertical: false
+            name: Power
+            grid_options:
+              columns: 6
+              rows: 1
+          - clock_size: small
+            show_seconds: false
+            type: clock
+          - type: thermostat
+            entity: climate.pbc_09f0b88_grill_temperature
+            name: Grill Temp
+      - type: grid
+        cards:
+          - type: tile
+            entity: sensor.pbc_09f0b88_probe_1
+            features_position: bottom
+            vertical: false
+            name: Probe 1
+            state_content:
+              - state
+              - last_changed
+          - type: tile
+            entity: sensor.pbc_09f0b88_probe_2
+            features_position: bottom
+            vertical: false
+            name: Probe 2
+            state_content:
+              - state
+              - last_changed
+          - type: custom:mushroom-number-card
+            entity: input_number.probe_1_target
+          - type: custom:mushroom-number-card
+            entity: input_number.probe_2_target
+      - type: grid
+        cards:
+          - type: heading
+            heading: Diagnostics
+            heading_style: title
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_startup_error
+            features_position: bottom
+            vertical: false
+            name: Startup
+            hide_state: true
+            icon: mdi:check-circle
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_startup_error', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_high_temperature_error
+            features_position: bottom
+            vertical: false
+            name: Temp Range
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_high_temperature_error', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_auger_error
+            features_position: bottom
+            vertical: false
+            name: Auger
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_auger_error', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_no_pellets
+            features_position: bottom
+            vertical: false
+            name: Pellets
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_no_pellets', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_fan_error
+            features_position: bottom
+            vertical: false
+            name: Fan
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_fan_error', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_probe_1_error
+            features_position: bottom
+            vertical: false
+            name: Probe 1
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_probe_1_error', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_igniter_error
+            features_position: bottom
+            vertical: false
+            name: Igniter
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_igniter_error', 'on') else 'green' }};
+                  }
+          - type: tile
+            entity: binary_sensor.pbc_09f0b88_probe_2_error
+            features_position: bottom
+            vertical: false
+            name: Probe 2
+            hide_state: true
+            card_mod:
+              style: |
+                ha-state-icon {
+                  color:  {{ 'red' if is_state('binary_sensor.pbc_09f0b88_probe_2_error', 'on') else 'green' }};
+                  }
+    subview: true
+    cards: []
+  - title: Garage Control
+    path: garage-control
+    icon: mdi:garage
+    panel: true
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entity
+            entity: cover.garage_doors
+            name: Garage Door Status
+            icon: mdi:garage-variant
+          - type: conditional
+            conditions:
+              - entity: cover.garage_doors
+                state: open
+            card:
+              type: button
+              name: Close Garage Door
+              icon: mdi:garage-alert-variant
+              tap_action:
+                action: call-service
+                service: cover.close_cover
+                service_data:
+                  entity_id: cover.garage_doors
+              hold_action:
+                action: none
+              style: |
+                ha-card {
+                  background-color: #ff4444;
+                  color: white;
+                  font-size: 24px;
+                  height: 120px;
+                }
+          - type: conditional
+            conditions:
+              - entity: cover.garage_doors
+                state: closed
+            card:
+              type: markdown
+              content: |
+                # ✅ Garage Door is Closed
+
+                The garage door has been successfully closed.
+              style: |
+                ha-card {
+                  background-color: #44ff44;
+                  color: #333;
+                  text-align: center;
+                  font-size: 18px;
+                }
+          - type: button
+            name: Back to Dashboard
+            icon: mdi:home
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace/0
+            style: |
+              ha-card {
+                background-color: #2196F3;
+                color: white;
+                margin-top: 20px;
+              }
+    type: panel
+    subview: true
