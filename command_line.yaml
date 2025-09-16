@@ -59,11 +59,3 @@
       command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
       scan_interval: 20000
       command_timeout: 45
-  - binary_sensor:
-      name: Config Check
-      unique_id: 'config_check'
-      command: 'hass --script check_config > /dev/null 2>&1; echo $?'
-      payload_on: "0"
-      payload_off: "1"
-      scan_interval: 3600
-      command_timeout: 60

@@ -403,66 +403,49 @@ close_garage_from_google:
       action: notify.google_assistant_sdk
   mode: single
 
-github_pull_changes:
-  alias: Pull Latest Configuration Changes from GitHub
+git_sync_changes:
+  alias: Git Sync Changes
   sequence:
+  # Step 1: Check for updates (sensor handles this automatically)
+  # Step 2: Begin sync process
   - service: input_boolean.turn_off
     target:
       entity_id: input_boolean.github_operation_error
+  # Step 3: Create sync in progress notification
   - service: persistent_notification.create
     data:
-      title: "🔄 GitHub Sync"
-      message: "Starting configuration update from GitHub repository..."
-      notification_id: "github_sync_status"
-  - service: shell_command.git_status_config
+      title: "🔄 Git Sync"
+      message: "Syncing configuration changes from GitHub repository..."
+      notification_id: "git_sync_status"
+  - service: shell_command.git_pull_config
+  - delay: '00:00:10'
+  # Step 4: Notify git pull result
+  - service: persistent_notification.create
+    data:
+      title: "📥 Git Pull Complete"
+      message: "Git pull completed. Validating configuration..."
+      notification_id: "git_sync_status"
+  # Step 5: Update github_config_updates_available sensor state
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.github_config_updates_available
   - delay: '00:00:02'
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ states('sensor.github_config_updates_available') | int > 0 }}"
-      sequence:
-      - service: shell_command.git_pull_config
-      - delay: '00:00:10'
-      - service: homeassistant.check_config
-      - delay: '00:00:05'
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: "{{ is_state('binary_sensor.config_check', 'on') }}"
-          sequence:
-          - service: persistent_notification.create
-            data:
-              title: "✅ GitHub Sync Complete"
-              message: "Configuration successfully updated with {{ states('sensor.github_config_updates_available') }} update(s) from GitHub. Config validation passed - it is safe to reload Home Assistant!"
-              notification_id: "github_sync_status"
-        default:
-        - service: persistent_notification.create
-          data:
-            title: "❌ Config Check Failed"
-            message: "Configuration validation failed after pull. Check the Home Assistant logs for detailed error information."
-            notification_id: "github_sync_status"
-        - service: input_boolean.turn_on
-          target:
-            entity_id: input_boolean.github_operation_error
-      - service: homeassistant.update_entity
-        target:
-          entity_id: sensor.github_config_updates_available
-    default:
-    - service: persistent_notification.create
-      data:
-        title: "ℹ️ No Updates Available"
-        message: "Your configuration is already up to date with the GitHub repository."
-        notification_id: "github_sync_status"
-  # Entity Registry Update Workflow
+  # Step 6: Check config - stop if error, proceed if success
+  - service: homeassistant.check_config
+  - delay: '00:00:05'
   - service: persistent_notification.create
     data:
-      title: "📝 Entity Registry Update"
-      message: "Checking for entity registry updates..."
-      notification_id: "entity_registry_status"
+      title: "✅ Configuration Valid"
+      message: "Configuration validation passed. Updating entity registry..."
+      notification_id: "git_sync_status"
+  # Step 7: Update entity registry
+  - service: shell_command.update_entity_registry
+  - delay: '00:00:02'
   - service: homeassistant.update_entity
     target:
       entity_id: sensor.entity_registry_changes_available
   - delay: '00:00:02'
+  # Step 8: Conditional stage, commit, push if changes detected
   - choose:
     - conditions:
       - condition: template
@@ -470,34 +453,26 @@ github_pull_changes:
       sequence:
       - service: persistent_notification.create
         data:
-          title: "📤 Entity Registry Sync"
-          message: "Entity registry changes detected. Updating snapshot and syncing to Github..."
-          notification_id: "entity_registry_status"
-      - service: shell_command.update_entity_registry
-      - delay: '00:00:02'
+          title: "📤 Pushing Changes"
+          message: "Entity registry changes detected. Staging, committing and pushing to GitHub..."
+          notification_id: "git_sync_status"
       - service: shell_command.git_stage_entity_registry
       - delay: '00:00:02'
       - service: shell_command.git_commit_entity_registry
       - delay: '00:00:02'
       - service: shell_command.git_push_entity_registry
       - delay: '00:00:05'
+      # Step 9: Final notification - with changes pushed
       - service: persistent_notification.create
         data:
-          title: "✅ Entity Registry Synced"
-          message: "Entity registry snapshot has been successfully committed and pushed to Github!"
-          notification_id: "entity_registry_status"
+          title: "✅ Git Sync Complete"
+          message: "Configuration successfully synced from GitHub. Entity registry changes committed and pushed back to repository!"
+          notification_id: "git_sync_status"
     default:
+    # Step 9: Final notification - no entity registry changes
     - service: persistent_notification.create
       data:
-        title: "ℹ️ Entity Registry Up to Date"
-        message: "No changes detected in entity registry snapshot."
-        notification_id: "entity_registry_status"
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ states('sensor.github_config_updates_available') == 'unavailable' or states('sensor.github_config_updates_available') == 'unknown' }}"
-      sequence:
-      - service: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.github_operation_error
+        title: "✅ Git Sync Complete"
+        message: "Configuration successfully synced from GitHub. No entity registry changes detected."
+        notification_id: "git_sync_status"
   mode: single
