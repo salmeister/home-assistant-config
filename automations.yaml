@@ -1215,7 +1215,7 @@
   triggers:
   - type: opened
     device_id: 310cbb462be7d0c4fffd3314321c711c
-    entity_id: ce2b6e85fd594e1990af0bfbd940f8bd
+    entity_id: binary_sensor.left_liquor_cabinet_contact
     domain: binary_sensor
     trigger: device
   - type: opened
@@ -1224,6 +1224,8 @@
     domain: binary_sensor
     trigger: device
   conditions:
+  - condition: template
+    value_template: "{{ (now() - states.sensor.uptime.last_changed).total_seconds() > 300 }}"
   - condition: not
     conditions:
     - condition: zone
