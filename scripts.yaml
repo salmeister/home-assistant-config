@@ -466,6 +466,9 @@ git_sync_changes:
           title: "✅ Git Sync Complete"
           message: "Configuration successfully synced with GitHub. Entity registry changes committed and pushed back to repository. Next step, reload YAML."
           notification_id: "git_sync_status"
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.config_snapshots_changes_available
     default:
     # Step 9: Final notification - no entity registry changes
     - service: persistent_notification.create
