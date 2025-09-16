@@ -335,7 +335,7 @@
             data:
               image: "{{ snapshot_url }}"
               persistent: true
-              clickAction: "{% if person_detected %}{{ clip_url }}{% endif %}"
+              clickAction: "{{ snapshot_url }}"
               actions: >
                 {% if person_detected %}
                   [{
@@ -376,7 +376,7 @@
             data:
               image: "{{ snapshot_url }}"
               persistent: true
-              clickAction: "{% if person_detected %}{{ clip_url }}{% endif %}"
+              clickAction: "{{ snapshot_url }}"
               actions: >
                 {% if person_detected %}
                   [{
@@ -801,13 +801,13 @@
   actions:
   - entity_id: input_boolean.bedtime
     action: "{% set minutes = ((now().strftime('%H') | int) * 60) + (now().strftime('%M')
-      | int) %} {% if (360 <= minutes < 1410) and (is_state('sensor.dayoftheweek',
-      'Friday')) %}\n  input_boolean.turn_off\n{% elif (480 <= minutes < 1410) and
-      (is_state('sensor.dayoftheweek', 'Saturday')) %}\n  input_boolean.turn_off \n{%
-      elif (480 <= minutes < 1350) and (is_state('sensor.dayoftheweek', 'Sunday'))
-      %}\n  input_boolean.turn_off \n{% elif (360 <= minutes < 1350) and ((is_state('sensor.dayoftheweek',
-      'Monday')) or (is_state('sensor.dayoftheweek', 'Tuesday')) or (is_state('sensor.dayoftheweek',
-      'Wednesday')) or (is_state('sensor.dayoftheweek', 'Thursday'))) %}\n  input_boolean.turn_off
+      | int) %} {% if (360 <= minutes < 1410) and (is_state(''sensor.dayoftheweek'',
+      ''Friday'')) %}\n  input_boolean.turn_off\n{% elif (480 <= minutes < 1410) and
+      (is_state(''sensor.dayoftheweek'', ''Saturday'')) %}\n  input_boolean.turn_off \n{%
+      elif (480 <= minutes < 1350) and (is_state(''sensor.dayoftheweek'', ''Sunday''))
+      %}\n  input_boolean.turn_off \n{% elif (360 <= minutes < 1350) and ((is_state(''sensor.dayoftheweek'',
+      ''Monday'')) or (is_state(''sensor.dayoftheweek'', ''Tuesday'')) or (is_state(''sensor.dayoftheweek'',
+      ''Wednesday'')) or (is_state(''sensor.dayoftheweek'', ''Thursday''))) %}\n  input_boolean.turn_off
       \n{% else %}\n  input_boolean.turn_on\n{% endif %}\n"
 - id: c7208b98b0e9474a97ccbe9bd71d8473
   alias: Crock-Pot On
@@ -1808,8 +1808,7 @@
       - service: light.turn_on
         data: {}
         target:
-          entity_id:
-          - light.basement_tv_lower_lights
+          entity_id: light.basement_tv_lower_lights
       already_on_already_bright_1x: []
       already_on_not_bright_1x: []
       on_2x: []
@@ -1817,8 +1816,7 @@
       - service: light.turn_off
         data: {}
         target:
-          entity_id:
-          - light.basement_tv_lower_lights
+          entity_id: light.basement_tv_lower_lights
       off_2x: []
 - id: '1659646178142'
   alias: 'Bar Lights: Zooz Zen76 Control Smart Light Configuration'
@@ -3074,144 +3072,6 @@
           entity_id: switch.piano_room_lamp
         action: switch.toggle
     default: []
-  mode: single
-- id: 'garage_door_actionable_notifications'
-  alias: Handle Garage Door Actionable Notifications
-  description: Handle actionable notifications for garage door being open after dark
-  triggers:
-  # Handle notification actions
-  - event_type: mobile_app_notification_action
-    event_data:
-      action: "close_garage_door"
-    trigger: event
-  - event_type: mobile_app_notification_action
-    event_data:
-      action: "ignore_garage_notification"
-    trigger: event
-  # Auto-clear notifications when garage door closes
-  - entity_id: cover.garage_doors
-    to: 'closed'
-    trigger: state
-  actions:
-  - choose:
-    # Handle close garage action
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.event.data.action == "close_garage_door" }}'
-      sequence:
-      - choose:
-        # Only close if garage is still open
-        - conditions:
-          - condition: state
-            entity_id: cover.garage_doors
-            state: 'open'
-          sequence:
-          - data: {}
-            target:
-              entity_id: cover.garage_doors
-            action: cover.close_cover
-          - data:
-              message: "Garage door is closing..."
-            action: "notify.{{ trigger.event.data.sourceDeviceID }}"
-        # If already closed, just acknowledge
-        default:
-        - data:
-            message: "Garage door is already closed."
-          action: "notify.{{ trigger.event.data.sourceDeviceID }}"
-      # Clear the notification
-      - data:
-          message: "clear_notification"
-          data:
-            tag: "garage_open_dark"
-        action: "notify.{{ trigger.event.data.sourceDeviceID }}"
-    # Handle ignore action
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.event.data.action == "ignore_garage_notification" }}'
-      sequence:
-      - data:
-          message: "clear_notification"
-          data:
-            tag: "garage_open_dark"
-        action: "notify.{{ trigger.event.data.sourceDeviceID }}"
-    # Auto-clear when garage closes
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.entity_id == "cover.garage_doors" }}'
-      sequence:
-      # Clear notifications from both parents' devices
-      - parallel:
-        - choose:
-          - conditions:
-            - condition: state
-              entity_id: input_boolean.notify_fpm_andy
-              state: 'on'
-            sequence:
-            - data:
-                message: "clear_notification"
-                data:
-                  tag: "garage_open_dark"
-              action: notify.mobile_app_salmob1
-        - choose:
-          - conditions:
-            - condition: state
-              entity_id: input_boolean.notify_fpm_katie
-              state: 'on'
-            sequence:
-            - data:
-                message: "clear_notification"
-                data:
-                  tag: "garage_open_dark"
-              action: notify.mobile_app_salmob2
-        # Clear Google Hub notification
-        - sequence:
-          - data: {}
-            target:
-              entity_id: input_boolean.garage_hub_notification_active
-            action: input_boolean.turn_off
-          # - data:
-          #     message: "Garage door is now closed."
-          #     target:
-          #     - kitchen
-          #   action: notify.google_assistant_sdk
-  mode: single
-- id: 'google_assistant_garage_voice_control'
-  alias: Google Assistant Garage Voice Control
-  description: Handle voice commands to close garage door when notification is active
-  triggers:
-  - event_type: google_assistant_command
-    event_data:
-      command: "close the garage door"
-    trigger: event
-  - event_type: google_assistant_command
-    event_data:
-      command: "close garage door"
-    trigger: event
-  - event_type: google_assistant_command
-    event_data:
-      command: "shut the garage door"
-    trigger: event
-  conditions:
-  - condition: state
-    entity_id: input_boolean.garage_hub_notification_active
-    state: 'on'
-  - condition: state
-    entity_id: cover.garage_doors
-    state: 'open'
-  actions:
-  - data: {}
-    target:
-      entity_id: cover.garage_doors
-    action: cover.close_cover
-  - data:
-      message: "Closing the garage door now."
-      target:
-      - kitchen
-    action: notify.google_assistant_sdk
-  - data: {}
-    target:
-      entity_id: input_boolean.garage_hub_notification_active
-    action: input_boolean.turn_off
   mode: single
 - id: garage_lights_auto_off
   alias: Auto Turn Off Garage Lights When Empty
