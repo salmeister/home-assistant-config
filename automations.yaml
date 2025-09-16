@@ -799,16 +799,53 @@
   - event: start
     trigger: homeassistant
   actions:
-  - entity_id: input_boolean.bedtime
-    action: "{% set minutes = ((now().strftime('%H') | int) * 60) + (now().strftime('%M')
-      | int) %} {% if (360 <= minutes < 1410) and (is_state(''sensor.dayoftheweek'',
-      ''Friday'')) %}\n  input_boolean.turn_off\n{% elif (480 <= minutes < 1410) and
-      (is_state(''sensor.dayoftheweek'', ''Saturday'')) %}\n  input_boolean.turn_off \n{%
-      elif (480 <= minutes < 1350) and (is_state(''sensor.dayoftheweek'', ''Sunday''))
-      %}\n  input_boolean.turn_off \n{% elif (360 <= minutes < 1350) and ((is_state(''sensor.dayoftheweek'',
-      ''Monday'')) or (is_state(''sensor.dayoftheweek'', ''Tuesday'')) or (is_state(''sensor.dayoftheweek'',
-      ''Wednesday'')) or (is_state(''sensor.dayoftheweek'', ''Thursday''))) %}\n  input_boolean.turn_off
-      \n{% else %}\n  input_boolean.turn_on\n{% endif %}\n"
+  - variables:
+      minutes: "{{ ((now().strftime('%H') | int) * 60) + (now().strftime('%M') | int) }}"
+      day_of_week: "{{ states('sensor.dayoftheweek') }}"
+  - choose:
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: "{{ (360 <= minutes | int < 1410) }}"
+        - condition: template
+          value_template: "{{ day_of_week == 'Friday' }}"
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: "{{ (480 <= minutes | int < 1410) }}"
+        - condition: template
+          value_template: "{{ day_of_week == 'Saturday' }}"
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: "{{ (480 <= minutes | int < 1350) }}"
+        - condition: template
+          value_template: "{{ day_of_week == 'Sunday' }}"
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: "{{ (360 <= minutes | int < 1350) }}"
+        - condition: template
+          value_template: "{{ day_of_week in ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] }}"
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    default:
+    - entity_id: input_boolean.bedtime
+      action: input_boolean.turn_on
 - id: c7208b98b0e9474a97ccbe9bd71d8473
   alias: Crock-Pot On
   triggers:
