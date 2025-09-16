@@ -24,7 +24,7 @@ shell_command:
   check_entity_registry_changes: 'cd /config && ./scripts/update-entity-registry.sh >/dev/null 2>&1; if [ $? -eq 2 ]; then echo "1"; else echo "0"; fi'
   git_stage_entity_registry: 'cd /config && git add entity_registry_snapshot.json'
   git_commit_entity_registry: 'cd /config && git commit -m "Update entity registry snapshot"'
-  git_push_entity_registry: 'cd /config && git push https://${GITHUB_TOKEN}@github.com/salmeister/home-assistant-config.git develop-ha'
+  git_push_entity_registry: 'cd /config && git push https://salmeister:${GITHUB_TOKEN}@github.com/salmeister/home-assistant-config.git develop-ha'
 
 tts:
   - platform: google_translate
