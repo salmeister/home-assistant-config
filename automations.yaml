@@ -174,12 +174,11 @@
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Person Detection
-  description: Improved garage security notifications using Frigate events with better
-    person detection and debugging capabilities.
+  description: Simplified garage security notifications using interior occupancy sensor and face recognition
   triggers:
-  - entity_id: cover.garage_doors
-    from: closed
-    to: open
+  - entity_id: binary_sensor.interior_garage_person_occupancy
+    from: 'off'
+    to: 'on'
     trigger: state
   conditions:
   - condition: or
@@ -196,6 +195,9 @@
         - condition: state
           entity_id: input_boolean.bedtime
           state: 'on'
+        - condition: state
+          entity_id: input_boolean.external_armed_mode
+          state: 'on'
     - condition: and
       conditions:
       - condition: state
@@ -208,137 +210,31 @@
         - condition: state
           entity_id: input_boolean.bedtime
           state: 'on'
+        - condition: state
+          entity_id: input_boolean.external_armed_mode
+          state: 'on'
   actions:
   - variables:
-      garage_opened_time: "{{ now().timestamp() }}"
-      detection_timeout: "00:03:00"  # Reduced timeout for faster response
+      detection_start_time: "{{ now().timestamp() }}"
+      detection_timeout: "00:05:00"
       base_url: "{{ states('input_text.baseurl') }}"
+      initial_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
   
-  # Debug log the garage door opening
-  - alias: "Log garage door opening"
-    action: system_log.write
-    data:
-      message: Garage door opened - Starting person detection wait
-      level: info
-      logger: automation.enhanced_garage_door_person_detection
-  - parallel:
-    - sequence:
-      - wait_for_trigger:
-        - trigger: mqtt
-          topic: frigate/events
-        timeout: '{{ detection_timeout }}'
-        continue_on_timeout: true
-      - if:
-        - condition: template
-          value_template: "{{ wait.trigger is not none and\n   wait.trigger.payload_json.after
-            is defined and\n   wait.trigger.payload_json.after.camera == 'garage'
-            and \n   wait.trigger.payload_json.after.label == 'person' and\n   wait.trigger.payload_json.type
-            in ['new', 'update'] }}"
-        then:
-        - variables:
-            person_detected_events: true
-            event_id_events: '{{ wait.trigger.payload_json.after.id }}'
-            event_zones_events: '{{ wait.trigger.payload_json.after.current_zones
-              | default([]) }}'
-            event_snapshot_events: '{{ wait.trigger.payload_json.after.has_snapshot
-              | default(false) }}'
-        - action: system_log.write
-          data:
-            message: 'Person detected via frigate/events: {{ event_id_events }},  zones:
-              {{ event_zones_events }},  has_snapshot: {{ event_snapshot_events }}'
-            level: info
-            logger: automation.enhanced_garage_door_person_detection
-        else:
-        - variables:
-            person_detected_events: false
-            event_id_events: ''
-        - if:
-          - condition: template
-            value_template: '{{ wait.trigger is not none }}'
-          then:
-          - action: system_log.write
-            data:
-              message: 'Frigate event received but not person: camera={{ wait.trigger.payload_json.after.camera
-                | default(''unknown'') }},  label={{ wait.trigger.payload_json.after.label
-                | default(''unknown'') }},  type={{ wait.trigger.payload_json.type
-                | default(''unknown'') }}'
-              level: info
-              logger: automation.enhanced_garage_door_person_detection
-          else:
-          - action: system_log.write
-            data:
-              message: No frigate/events received within {{ detection_timeout }}
-              level: warning
-              logger: automation.enhanced_garage_door_person_detection
-    - sequence:
-      - wait_for_trigger:
-        - trigger: state
-          entity_id: binary_sensor.garage_person_occupancy
-          to: 'on'
-        timeout: '{{ detection_timeout }}'
-        continue_on_timeout: true
-      - if:
-        - condition: template
-          value_template: '{{ wait.trigger is not none }}'
-        then:
-        - variables:
-            person_detected_occupancy: true
-        - action: system_log.write
-          data:
-            message: Person detected via occupancy sensor
-            level: info
-            logger: automation.enhanced_garage_door_person_detection
-        else:
-        - variables:
-            person_detected_occupancy: false
+  # Wait for face recognition sensor to change or timeout
+  - wait_for_trigger:
+    - trigger: state
+      entity_id: sensor.garage_last_recognized_face
+      from: "{{ initial_face_value }}"
+    timeout: '{{ detection_timeout }}'
+    continue_on_timeout: true
+  
   - variables:
-      person_detected: '{{ person_detected_events | default(false) or person_detected_occupancy
-        | default(false) }}'
-      event_id: "{% if person_detected_events | default(false) %}\n  {{ event_id_events
-        }}\n{% else %}\n  no_detection_{{ now().strftime('%Y%m%d_%H%M%S') }}\n{% endif
-        %}"
-      sub_labels: "{% if person_detected_events | default(false) and wait.trigger.payload_json.after.sub_label
-        is defined and wait.trigger.payload_json.after.sub_label is not none %}\n
-        \ {{ wait.trigger.payload_json.after.sub_label | default([]) }}\n{% else %}\n
-        \ []\n{% endif %}"
-      person_name: "{% if person_detected %}\n  {% set recognized_people = [] %}\n
-        \ {% if sub_labels is not none and sub_labels | length > 0 %}\n    {% for
-        label in sub_labels %}\n      {% if label not in ['person', 'unknown'] %}\n
-        \       {% set recognized_people = recognized_people + [label | title] %}\n
-        \     {% endif %}\n    {% endfor %}\n  {% endif %}\n  {% if recognized_people
-        | length > 0 %}\n    {{ recognized_people[0] }}\n  {% else %}\n    Unknown
-        Person\n  {% endif %}\n{% else %}\n  No Person Detected\n{% endif %}"
-      snapshot_url: "{% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S')
-        %}\n  {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg\n{%
-        else %}\n  /api/camera_proxy/camera.garage\n{% endif %}"
-      clip_url: "{% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S')
-        %}\n  {{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4\n{%
-        else %}\n  \n{% endif %}"
+      face_detected: '{{ wait.trigger is not none }}'
+      recognized_face: "{% if face_detected %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ states('sensor.garage_last_recognized_face') }}\n{% endif %}"
+      person_name: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ recognized_face }}\n{% else %}\n  Unknown Person\n{% endif %}"
       detection_time: '{{ now().strftime(''%I:%M %p'') }}'
-  - action: system_log.write
-    data:
-      message: >-
-        Final detection result: person_detected={{ person_detected }}, 
-        person_name={{ person_name }}, 
-        event_id={{ event_id }},
-        elapsed_time={{ (now().timestamp() - garage_opened_time | float) | round(1) }}s
-      level: info
-      logger: automation.enhanced_garage_door_person_detection
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: '{{ person_detected_events | default(false) }}'
-      sequence:
-      - wait_for_trigger:
-        - trigger: mqtt
-          topic: frigate/tracked_object_update
-        timeout: 00:00:05
-        continue_on_timeout: true
-  - variables:
-      ai_summary: "{% if person_detected_events | default(false) and wait.trigger
-        and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type
-        == 'description' %}\n  {{ wait.trigger.payload_json.description }}\n{% else
-        %}\n  No AI summary available\n{% endif %}"
+      snapshot_url: "/api/camera_proxy/camera.garage"
+  
   - parallel:
     - choose:
       - conditions:
@@ -352,22 +248,18 @@
           - condition: state
             entity_id: input_boolean.bedtime
             state: 'on'
+          - condition: state
+            entity_id: input_boolean.external_armed_mode
+            state: 'on'
         sequence:
         - action: notify.mobile_app_salmob1
           data:
-            title: "\U0001F697 Garage Door Opened"
-            message: "{% if person_detected %}\n  {{ person_name }} entered the garage
-              at {{ detection_time }}.\n  {% if ai_summary != 'No AI summary available'
-              %}\n  \n  \U0001F916 {{ ai_summary }}\n  {% endif %}\n{% else %}\n  \U0001F550
-              {{ detection_time }} no person was detected within 5 minutes.\n{% endif
-              %}"
+            title: "🚗 Person Detected in Garage"
+            message: "{{ person_name }} detected in garage at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
-              actions: "{% if person_detected %}\n  [{\n    \"action\": \"URI\",\n
-                \   \"title\": \"View Video\",\n    \"uri\": \"{{ clip_url }}\"\n
-                \ }]\n{% else %}\n  []\n{% endif %}\n"
     - choose:
       - conditions:
         - condition: state
@@ -380,22 +272,19 @@
           - condition: state
             entity_id: input_boolean.bedtime
             state: 'on'
+          - condition: state
+            entity_id: input_boolean.external_armed_mode
+            state: 'on'
         sequence:
         - action: notify.mobile_app_salmob2
           data:
-            title: "\U0001F697 Garage Door Opened"
-            message: "{% if person_detected %}\n  {{ person_name }} entered the garage
-              at {{ detection_time }}.\n  {% if ai_summary != 'No AI summary available'
-              %}\n  \n  \U0001F916 {{ ai_summary }}\n  {% endif %}\n{% else %}\n  \U0001F550
-              {{ detection_time }} no person was detected within 5 minutes.\n{% endif
-              %}"
+            title: "🚗 Person Detected in Garage"
+            message: "{{ person_name }} detected in garage at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
-              actions: "{% if person_detected %}\n  [{\n    \"action\": \"URI\",\n
-                \   \"title\": \"View Video\",\n    \"uri\": \"{{ clip_url }}\"\n
-                \ }]\n{% else %}\n  []\n{% endif %}\n"
+  mode: single
   mode: single
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
