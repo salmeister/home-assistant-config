@@ -218,19 +218,35 @@
       detection_start_time: "{{ now().timestamp() }}"
       detection_timeout: "00:05:00"
       base_url: "{{ states('input_text.baseurl') }}"
-      initial_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
+      current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
+      face_last_changed: "{{ state_attr('sensor.garage_last_recognized_face', 'last_changed') }}"
   
-  # Wait for face recognition sensor to change or timeout
-  - wait_for_trigger:
-    - trigger: state
-      entity_id: sensor.garage_last_recognized_face
-      from: "{{ initial_face_value }}"
-    timeout: '{{ detection_timeout }}'
-    continue_on_timeout: true
+  # Check if face recognition sensor changed recently (within 2 minutes before automation start)
+  # or wait for it to change from current value
+  - if:
+    - condition: template
+      value_template: >
+        {{ face_last_changed is not none and 
+           (detection_start_time - as_timestamp(face_last_changed)) < 120 and
+           current_face_value not in ['None', 'unavailable', 'unknown'] }}
+    then:
+    # Face was recognized recently, use current value
+    - variables:
+        face_detected: true
+        recognized_face: "{{ current_face_value }}"
+    else:
+    # Face not recently recognized, wait for it to change
+    - wait_for_trigger:
+      - trigger: state
+        entity_id: sensor.garage_last_recognized_face
+        from: "{{ current_face_value }}"
+      timeout: '{{ detection_timeout }}'
+      continue_on_timeout: true
+    - variables:
+        face_detected: '{{ wait.trigger is not none }}'
+        recognized_face: "{% if wait.trigger is not none %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ current_face_value }}\n{% endif %}"
   
   - variables:
-      face_detected: '{{ wait.trigger is not none }}'
-      recognized_face: "{% if face_detected %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ states('sensor.garage_last_recognized_face') }}\n{% endif %}"
       person_name: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ recognized_face }}\n{% else %}\n  Unknown Person\n{% endif %}"
       detection_time: '{{ now().strftime(''%I:%M %p'') }}'
       snapshot_url: "/api/camera_proxy/camera.garage"
