@@ -82,21 +82,6 @@
           message: It is getting dark and the garage door is still open.
           target:
           - kitchen
-          - basement
-          - entryway
-        action: notify.google_assistant_sdk
-      # Create a helper for Google Hub interaction
-      - data: {}
-        target:
-          entity_id: input_boolean.garage_hub_notification_active
-        action: input_boolean.turn_on
-      # Send visual notification to kitchen hub with action
-      - data:
-          message: "Garage door is open. Say 'Hey Google, close the garage door' or use the dashboard."
-          data:
-            display_url: "https://ha.salmeister.com/lovelace/garage-control"
-          target:
-          - kitchen
         action: notify.google_assistant_sdk
       - parallel:
         # Send actionable notification to Andy if enabled
@@ -225,9 +210,9 @@
           state: 'on'
   actions:
   - variables:
-      garage_opened_time: "{{ now() }}"
+      garage_opened_time: "{{ now().timestamp() }}"
       detection_timeout: "00:03:00"  # Reduced timeout for faster response
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
   
   # Debug log the garage door opening
   - alias: "Log garage door opening"
@@ -371,7 +356,7 @@
         Final detection result: person_detected={{ person_detected }}, 
         person_name={{ person_name }}, 
         event_id={{ event_id }},
-        elapsed_time={{ (now() - garage_opened_time).total_seconds() }}s
+        elapsed_time={{ (now().timestamp() - garage_opened_time | float) | round(1) }}s
       level: info
       logger: automation.enhanced_garage_door_person_detection
 
@@ -1529,7 +1514,7 @@
       camera: camera.kitchen
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       alert_once: true
       update_thumbnail: true
@@ -1760,7 +1745,7 @@
       camera:
       - camera.front_porch
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       alert_once: true
       update_thumbnail: true
@@ -1819,7 +1804,7 @@
       camera: camera.driveway
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       zone_filter: true
       zones:
@@ -1837,7 +1822,7 @@
       camera: camera.front_porch
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       alert_once: true
       update_thumbnail: true
@@ -3135,9 +3120,7 @@
           \         {%- for battery in battery_levels -%}\n            <li>{{ battery.type
           | upper }} - {{ battery.name }}: {{ battery.value }}%</li>\n          {%-
           else -%}\n            <li>No devices with low battery levels found.</li>\n
-          \         {%- endfor -%}\n          </ul>\n          <p>\n            Review
-          more at:\n            <a href=\"intent://lovelace/batteries#Intent;scheme=homeassistant;package=io.homeassistant.companion.android;end;fallback_url=https://ha.salmeister.com/lovelace/batteries\">Home
-          Assistant</a>\n          </p>\n        </div>\n      </div>\n    </div>\n
+          \         {%- endfor -%}\n          </ul>\n</div>\n      </div>\n    </div>\n
           \ </body>\n</html>\n"
     action: notify.gmail_email_andy
   mode: single

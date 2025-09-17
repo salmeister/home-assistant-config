@@ -33,10 +33,6 @@ maggie_absent:
   name: Maggie Absent
 guest_mode:
   name: Guest Mode
-garage_hub_notification_active:
-  name: Garage Hub Notification Active
-  icon: mdi:garage-alert
-  initial: false
 github_operation_error:
   name: GitHub Operation Error
   icon: mdi:alert-circle
