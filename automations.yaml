@@ -285,7 +285,6 @@
               persistent: true
               clickAction: '{{ snapshot_url }}'
   mode: single
-  mode: single
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
