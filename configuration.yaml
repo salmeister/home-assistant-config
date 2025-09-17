@@ -7,6 +7,7 @@ homeassistant:
 automation: !include automations.yaml
 binary_sensor: !include binary_sensors.yaml
 input_boolean: !include input_booleans.yaml
+input_text: !include input_text.yaml
 light: !include lights.yml
 notify: !include notify.yaml
 scene: !include scenes.yaml

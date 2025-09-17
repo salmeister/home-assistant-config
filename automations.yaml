@@ -85,21 +85,19 @@
           - basement
           - entryway
         action: notify.google_assistant_sdk
-      # Create a helper for Google Hub interaction
       - data: {}
         target:
           entity_id: input_boolean.garage_hub_notification_active
         action: input_boolean.turn_on
-      # Send visual notification to kitchen hub with action
       - data:
-          message: "Garage door is open. Say 'Hey Google, close the garage door' or use the dashboard."
+          message: Garage door is open. Say 'Hey Google, close the garage door' or
+            use the dashboard.
           data:
-            display_url: "https://ha.salmeister.com/lovelace/garage-control"
+            display_url: https://ha.salmeister.com/lovelace/garage-control
           target:
           - kitchen
         action: notify.google_assistant_sdk
       - parallel:
-        # Send actionable notification to Andy if enabled
         - choose:
           - conditions:
             - condition: state
@@ -107,18 +105,17 @@
               state: 'on'
             sequence:
             - data:
-                title: "Garage Door Open"
-                message: "It's getting dark and the garage door is still open."
+                title: Garage Door Open
+                message: It's getting dark and the garage door is still open.
                 data:
-                  tag: "garage_open_dark"
+                  tag: garage_open_dark
                   persistent: true
                   actions:
-                  - action: "close_garage_door"
-                    title: "Close Garage"
-                  - action: "ignore_garage_notification"
-                    title: "Ignore"
+                  - action: close_garage_door
+                    title: Close Garage
+                  - action: ignore_garage_notification
+                    title: Ignore
               action: notify.mobile_app_salmob1
-        # Send actionable notification to Katie if enabled
         - choose:
           - conditions:
             - condition: state
@@ -126,21 +123,22 @@
               state: 'on'
             sequence:
             - data:
-                title: "Garage Door Open"
-                message: "It's getting dark and the garage door is still open."
+                title: Garage Door Open
+                message: It's getting dark and the garage door is still open.
                 data:
-                  tag: "garage_open_dark"
+                  tag: garage_open_dark
                   persistent: true
                   actions:
-                  - action: "close_garage_door"
-                    title: "Close Garage"
-                  - action: "ignore_garage_notification"
-                    title: "Ignore"
+                  - action: close_garage_door
+                    title: Close Garage
+                  - action: ignore_garage_notification
+                    title: Ignore
               action: notify.mobile_app_salmob2
     alias: Notify Garage Open
 - id: b903ec6aacd748959d03f2b1d38f2e2d
   alias: Garage Door Basic Controls
-  description: 'Handle immediate physical responses when garage door opens - lights, status indicators, location updates'
+  description: Handle immediate physical responses when garage door opens - lights,
+    status indicators, location updates
   triggers:
   - entity_id:
     - cover.garage_doors
@@ -190,7 +188,8 @@
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Person Detection
-  description: 'Improved garage security notifications using Frigate events with better person detection and debugging capabilities.'
+  description: Improved garage security notifications using Frigate events with better
+    person detection and debugging capabilities.
   triggers:
   - entity_id: cover.garage_doors
     from: closed
@@ -225,177 +224,132 @@
           state: 'on'
   actions:
   - variables:
-      garage_opened_time: "{{ now() }}"
-      detection_timeout: "00:03:00"  # Reduced timeout for faster response
+      garage_opened_time: '{{ now() }}'
+      detection_timeout: 00:03:00
       base_url: https://ha.salmeister.com
-  
-  # Debug log the garage door opening
-  - alias: "Log garage door opening"
+  - alias: Log garage door opening
     action: system_log.write
     data:
-      message: "Garage door opened - Starting person detection wait"
+      message: Garage door opened - Starting person detection wait
       level: info
       logger: automation.enhanced_garage_door_person_detection
-  
-  # Wait for person detection events - try multiple approaches
   - parallel:
-    # Method 1: Wait for frigate/events (new approach with relaxed conditions)
     - sequence:
       - wait_for_trigger:
         - trigger: mqtt
           topic: frigate/events
-        timeout: "{{ detection_timeout }}"
+        timeout: '{{ detection_timeout }}'
         continue_on_timeout: true
       - if:
         - condition: template
-          value_template: >-
-            {{ wait.trigger is not none and
-               wait.trigger.payload_json.after is defined and
-               wait.trigger.payload_json.after.camera == 'garage' and 
-               wait.trigger.payload_json.after.label == 'person' and
-               wait.trigger.payload_json.type in ['new', 'update'] }}
+          value_template: "{{ wait.trigger is not none and\n   wait.trigger.payload_json.after
+            is defined and\n   wait.trigger.payload_json.after.camera == 'garage'
+            and \n   wait.trigger.payload_json.after.label == 'person' and\n   wait.trigger.payload_json.type
+            in ['new', 'update'] }}"
         then:
         - variables:
             person_detected_events: true
-            event_id_events: "{{ wait.trigger.payload_json.after.id }}"
-            event_zones_events: "{{ wait.trigger.payload_json.after.current_zones | default([]) }}"
-            event_snapshot_events: "{{ wait.trigger.payload_json.after.has_snapshot | default(false) }}"
+            event_id_events: '{{ wait.trigger.payload_json.after.id }}'
+            event_zones_events: '{{ wait.trigger.payload_json.after.current_zones
+              | default([]) }}'
+            event_snapshot_events: '{{ wait.trigger.payload_json.after.has_snapshot
+              | default(false) }}'
         - action: system_log.write
           data:
-            message: >-
-              Person detected via frigate/events: {{ event_id_events }}, 
-              zones: {{ event_zones_events }}, 
-              has_snapshot: {{ event_snapshot_events }}
+            message: 'Person detected via frigate/events: {{ event_id_events }},  zones:
+              {{ event_zones_events }},  has_snapshot: {{ event_snapshot_events }}'
             level: info
             logger: automation.enhanced_garage_door_person_detection
         else:
         - variables:
             person_detected_events: false
-            event_id_events: ""
+            event_id_events: ''
         - if:
           - condition: template
-            value_template: "{{ wait.trigger is not none }}"
+            value_template: '{{ wait.trigger is not none }}'
           then:
           - action: system_log.write
             data:
-              message: >-
-                Frigate event received but not person: camera={{ wait.trigger.payload_json.after.camera | default('unknown') }}, 
-                label={{ wait.trigger.payload_json.after.label | default('unknown') }}, 
-                type={{ wait.trigger.payload_json.type | default('unknown') }}
+              message: 'Frigate event received but not person: camera={{ wait.trigger.payload_json.after.camera
+                | default(''unknown'') }},  label={{ wait.trigger.payload_json.after.label
+                | default(''unknown'') }},  type={{ wait.trigger.payload_json.type
+                | default(''unknown'') }}'
               level: info
               logger: automation.enhanced_garage_door_person_detection
           else:
           - action: system_log.write
             data:
-              message: "No frigate/events received within {{ detection_timeout }}"
+              message: No frigate/events received within {{ detection_timeout }}
               level: warning
               logger: automation.enhanced_garage_door_person_detection
-    
-    # Method 2: Wait for occupancy sensor (if available)
     - sequence:
       - wait_for_trigger:
         - trigger: state
           entity_id: binary_sensor.garage_person_occupancy
           to: 'on'
-        timeout: "{{ detection_timeout }}"
+        timeout: '{{ detection_timeout }}'
         continue_on_timeout: true
       - if:
         - condition: template
-          value_template: "{{ wait.trigger is not none }}"
+          value_template: '{{ wait.trigger is not none }}'
         then:
         - variables:
             person_detected_occupancy: true
         - action: system_log.write
           data:
-            message: "Person detected via occupancy sensor"
+            message: Person detected via occupancy sensor
             level: info
             logger: automation.enhanced_garage_door_person_detection
         else:
         - variables:
             person_detected_occupancy: false
-
-  # Determine final detection result
   - variables:
-      person_detected: >-
-        {{ person_detected_events | default(false) or person_detected_occupancy | default(false) }}
-      event_id: >-
-        {% if person_detected_events | default(false) %}
-          {{ event_id_events }}
-        {% else %}
-          no_detection_{{ now().strftime('%Y%m%d_%H%M%S') }}
-        {% endif %}
-      sub_labels: >-
-        {% if person_detected_events | default(false) and wait.trigger.payload_json.after.sub_label is defined and wait.trigger.payload_json.after.sub_label is not none %}
-          {{ wait.trigger.payload_json.after.sub_label | default([]) }}
-        {% else %}
-          []
-        {% endif %}
-      # Determine person name from sub_labels or use appropriate message
-      person_name: >-
-        {% if person_detected %}
-          {% set recognized_people = [] %}
-          {% if sub_labels is not none and sub_labels | length > 0 %}
-            {% for label in sub_labels %}
-              {% if label not in ['person', 'unknown'] %}
-                {% set recognized_people = recognized_people + [label | title] %}
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-          {% if recognized_people | length > 0 %}
-            {{ recognized_people[0] }}
-          {% else %}
-            Unknown Person
-          {% endif %}
-        {% else %}
-          No Person Detected
-        {% endif %}
-      # Use Frigate Notification API endpoints or general camera snapshot
-      snapshot_url: >-
-        {% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S') %}
-          {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg
-        {% else %}
-          /api/camera_proxy/camera.garage
-        {% endif %}
-      clip_url: >-
-        {% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S') %}
-          {{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4
-        {% else %}
-          
-        {% endif %}
-      detection_time: "{{ now().strftime('%I:%M %p') }}"
-
-  # Log final detection result
+      person_detected: '{{ person_detected_events | default(false) or person_detected_occupancy
+        | default(false) }}'
+      event_id: "{% if person_detected_events | default(false) %}\n  {{ event_id_events
+        }}\n{% else %}\n  no_detection_{{ now().strftime('%Y%m%d_%H%M%S') }}\n{% endif
+        %}"
+      sub_labels: "{% if person_detected_events | default(false) and wait.trigger.payload_json.after.sub_label
+        is defined and wait.trigger.payload_json.after.sub_label is not none %}\n
+        \ {{ wait.trigger.payload_json.after.sub_label | default([]) }}\n{% else %}\n
+        \ []\n{% endif %}"
+      person_name: "{% if person_detected %}\n  {% set recognized_people = [] %}\n
+        \ {% if sub_labels is not none and sub_labels | length > 0 %}\n    {% for
+        label in sub_labels %}\n      {% if label not in ['person', 'unknown'] %}\n
+        \       {% set recognized_people = recognized_people + [label | title] %}\n
+        \     {% endif %}\n    {% endfor %}\n  {% endif %}\n  {% if recognized_people
+        | length > 0 %}\n    {{ recognized_people[0] }}\n  {% else %}\n    Unknown
+        Person\n  {% endif %}\n{% else %}\n  No Person Detected\n{% endif %}"
+      snapshot_url: "{% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S')
+        %}\n  {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg\n{%
+        else %}\n  /api/camera_proxy/camera.garage\n{% endif %}"
+      clip_url: "{% if person_detected and event_id != 'no_detection_' + now().strftime('%Y%m%d_%H%M%S')
+        %}\n  {{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4\n{%
+        else %}\n  \n{% endif %}"
+      detection_time: '{{ now().strftime(''%I:%M %p'') }}'
   - action: system_log.write
     data:
-      message: >-
-        Final detection result: person_detected={{ person_detected }}, 
-        person_name={{ person_name }}, 
-        event_id={{ event_id }},
-        elapsed_time={{ (now() - garage_opened_time).total_seconds() }}s
+      message: 'Final detection result: person_detected={{ person_detected }},  person_name={{
+        person_name }},  event_id={{ event_id }}, elapsed_time={{ (now() - garage_opened_time).total_seconds()
+        }}s'
       level: info
       logger: automation.enhanced_garage_door_person_detection
-
-  # Wait briefly for potential AI description (only if person detected via events)
   - choose:
     - conditions:
       - condition: template
-        value_template: "{{ person_detected_events | default(false) }}"
+        value_template: '{{ person_detected_events | default(false) }}'
       sequence:
       - wait_for_trigger:
         - trigger: mqtt
           topic: frigate/tracked_object_update
-        timeout: "00:00:05"
+        timeout: 00:00:05
         continue_on_timeout: true
   - variables:
-      ai_summary: >-
-        {% if person_detected_events | default(false) and wait.trigger and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type == 'description' %}
-          {{ wait.trigger.payload_json.description }}
-        {% else %}
-          No AI summary available
-        {% endif %}
-  # Send notifications in parallel
+      ai_summary: "{% if person_detected_events | default(false) and wait.trigger
+        and wait.trigger.payload_json.id == event_id and wait.trigger.payload_json.type
+        == 'description' %}\n  {{ wait.trigger.payload_json.description }}\n{% else
+        %}\n  No AI summary available\n{% endif %}"
   - parallel:
-    # Notify Andy if enabled and conditions met
     - choose:
       - conditions:
         - condition: state
@@ -411,32 +365,19 @@
         sequence:
         - action: notify.mobile_app_salmob1
           data:
-            title: "🚗 Garage Door Opened"
-            message: >-
-              {% if person_detected %}
-                {{ person_name }} entered the garage at {{ detection_time }}.
-                {% if ai_summary != 'No AI summary available' %}
-                
-                🤖 {{ ai_summary }}
-                {% endif %}
-              {% else %}
-                🕐 {{ detection_time }} no person was detected within 5 minutes.
-              {% endif %}
+            title: "\U0001F697 Garage Door Opened"
+            message: "{% if person_detected %}\n  {{ person_name }} entered the garage
+              at {{ detection_time }}.\n  {% if ai_summary != 'No AI summary available'
+              %}\n  \n  \U0001F916 {{ ai_summary }}\n  {% endif %}\n{% else %}\n  \U0001F550
+              {{ detection_time }} no person was detected within 5 minutes.\n{% endif
+              %}"
             data:
-              image: "{{ snapshot_url }}"
+              image: '{{ snapshot_url }}'
               persistent: true
-              clickAction: "{{ snapshot_url }}"
-              actions: >
-                {% if person_detected %}
-                  [{
-                    "action": "URI",
-                    "title": "View Video",
-                    "uri": "{{ clip_url }}"
-                  }]
-                {% else %}
-                  []
-                {% endif %}
-    # Notify Katie if enabled and conditions met
+              clickAction: '{{ snapshot_url }}'
+              actions: "{% if person_detected %}\n  [{\n    \"action\": \"URI\",\n
+                \   \"title\": \"View Video\",\n    \"uri\": \"{{ clip_url }}\"\n
+                \ }]\n{% else %}\n  []\n{% endif %}\n"
     - choose:
       - conditions:
         - condition: state
@@ -452,35 +393,20 @@
         sequence:
         - action: notify.mobile_app_salmob2
           data:
-            title: "🚗 Garage Door Opened"
-            message: >-
-              {% if person_detected %}
-                {{ person_name }} entered the garage at {{ detection_time }}.
-                {% if ai_summary != 'No AI summary available' %}
-                
-                🤖 {{ ai_summary }}
-                {% endif %}
-              {% else %}
-                🕐 {{ detection_time }} no person was detected within 5 minutes.
-              {% endif %}
+            title: "\U0001F697 Garage Door Opened"
+            message: "{% if person_detected %}\n  {{ person_name }} entered the garage
+              at {{ detection_time }}.\n  {% if ai_summary != 'No AI summary available'
+              %}\n  \n  \U0001F916 {{ ai_summary }}\n  {% endif %}\n{% else %}\n  \U0001F550
+              {{ detection_time }} no person was detected within 5 minutes.\n{% endif
+              %}"
             data:
-              image: "{{ snapshot_url }}"
+              image: '{{ snapshot_url }}'
               persistent: true
-              clickAction: "{{ snapshot_url }}"
-              actions: >
-                {% if person_detected %}
-                  [{
-                    "action": "URI",
-                    "title": "View Video",
-                    "uri": "{{ clip_url }}"
-                  }]
-                {% else %}
-                  []
-                {% endif %}
+              clickAction: '{{ snapshot_url }}'
+              actions: "{% if person_detected %}\n  [{\n    \"action\": \"URI\",\n
+                \   \"title\": \"View Video\",\n    \"uri\": \"{{ clip_url }}\"\n
+                \ }]\n{% else %}\n  []\n{% endif %}\n"
   mode: single
-
-
-
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
@@ -890,16 +816,17 @@
     trigger: homeassistant
   actions:
   - variables:
-      minutes: "{{ ((now().strftime('%H') | int) * 60) + (now().strftime('%M') | int) }}"
-      day_of_week: "{{ states('sensor.dayoftheweek') }}"
+      minutes: '{{ ((now().strftime(''%H'') | int) * 60) + (now().strftime(''%M'')
+        | int) }}'
+      day_of_week: '{{ states(''sensor.dayoftheweek'') }}'
   - choose:
     - conditions:
       - condition: and
         conditions:
         - condition: template
-          value_template: "{{ (360 <= minutes | int < 1410) }}"
+          value_template: '{{ (360 <= minutes | int < 1410) }}'
         - condition: template
-          value_template: "{{ day_of_week == 'Friday' }}"
+          value_template: '{{ day_of_week == ''Friday'' }}'
       sequence:
       - entity_id: input_boolean.bedtime
         action: input_boolean.turn_off
@@ -907,9 +834,9 @@
       - condition: and
         conditions:
         - condition: template
-          value_template: "{{ (480 <= minutes | int < 1410) }}"
+          value_template: '{{ (480 <= minutes | int < 1410) }}'
         - condition: template
-          value_template: "{{ day_of_week == 'Saturday' }}"
+          value_template: '{{ day_of_week == ''Saturday'' }}'
       sequence:
       - entity_id: input_boolean.bedtime
         action: input_boolean.turn_off
@@ -917,9 +844,9 @@
       - condition: and
         conditions:
         - condition: template
-          value_template: "{{ (480 <= minutes | int < 1350) }}"
+          value_template: '{{ (480 <= minutes | int < 1350) }}'
         - condition: template
-          value_template: "{{ day_of_week == 'Sunday' }}"
+          value_template: '{{ day_of_week == ''Sunday'' }}'
       sequence:
       - entity_id: input_boolean.bedtime
         action: input_boolean.turn_off
@@ -927,9 +854,10 @@
       - condition: and
         conditions:
         - condition: template
-          value_template: "{{ (360 <= minutes | int < 1350) }}"
+          value_template: '{{ (360 <= minutes | int < 1350) }}'
         - condition: template
-          value_template: "{{ day_of_week in ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] }}"
+          value_template: '{{ day_of_week in [''Monday'', ''Tuesday'', ''Wednesday'',
+            ''Thursday''] }}'
       sequence:
       - entity_id: input_boolean.bedtime
         action: input_boolean.turn_off
@@ -1225,7 +1153,8 @@
     trigger: device
   conditions:
   - condition: template
-    value_template: "{{ (now() - states.sensor.uptime.last_changed).total_seconds() > 300 }}"
+    value_template: '{{ (now() - states.sensor.uptime.last_changed).total_seconds()
+      > 300 }}'
   - condition: not
     conditions:
     - condition: zone
@@ -2633,7 +2562,7 @@
   mode: parallel
 - id: '1674942127235'
   alias: Garage Door Closed
-  description: 'Reset back entry light from red to warm white when garage closes'
+  description: Reset back entry light from red to warm white when garage closes
   triggers:
   - entity_id:
     - cover.garage_doors
@@ -2652,9 +2581,11 @@
   - condition: or
     conditions:
     - condition: template
-      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [250, 0, 0] }}'
+      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [250,
+        0, 0] }}'
     - condition: template
-      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [255, 0, 0] }}'
+      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [255,
+        0, 0] }}'
   actions:
   - data: {}
     target:
@@ -3204,13 +3135,14 @@
   mode: single
 - id: garage_lights_auto_off
   alias: Auto Turn Off Garage Lights When Empty
-  description: 'Turn off garage lights when no person is detected for 15 minutes and lights are on'
+  description: Turn off garage lights when no person is detected for 15 minutes and
+    lights are on
   triggers:
   - entity_id: binary_sensor.garage_person_occupancy
     from: 'on'
     to: 'off'
     trigger: state
-    for: '00:15:00'  # Wait 15 minutes before turning off lights
+    for: 00:15:00
   conditions:
   - condition: state
     entity_id: switch.garage_lights
@@ -3219,4 +3151,3 @@
   - entity_id: switch.garage_lights
     action: switch.turn_off
   mode: single
-  
