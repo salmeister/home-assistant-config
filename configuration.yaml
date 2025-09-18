@@ -3,7 +3,6 @@ cloud:
 
 homeassistant:
   packages: !include_dir_named packages
-  customize: !include customize.yaml
 
 automation: !include automations.yaml
 binary_sensor: !include binary_sensors.yaml

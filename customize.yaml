@@ -1,5 +1,0 @@
-sensor.healthcheck:
-  url: !secret healthcheck_url
-
-sensor.frigate_healthcheck:
-  url: !secret frigate_healthcheck_url
