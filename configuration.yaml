@@ -3,6 +3,7 @@ cloud:
 
 homeassistant:
   packages: !include_dir_named packages
+  customize: !include customize.yaml
 
 automation: !include automations.yaml
 binary_sensor: !include binary_sensors.yaml
@@ -14,7 +15,6 @@ scene: !include scenes.yaml
 script: !include scripts.yaml
 sensor: !include sensors.yaml
 command_line: !include command_line.yaml
-customize: !include customize.yaml
 zone: !include zones.yaml
 python_script:
 
