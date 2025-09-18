@@ -20,7 +20,7 @@
       value_template: '{{ value | int }}'
   - sensor:
       name: Frigate Healthcheck
-      command: !secret frigate_healthcheck_command"
+      command: !secret frigate_healthcheck_command
       scan_interval: 900  # Every 15 minutes
       command_timeout: 15
   - sensor:
