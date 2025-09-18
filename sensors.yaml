@@ -197,29 +197,6 @@
         icon_template: mdi:thermometer
         friendly_name: 'Main Temp'
 
-  - platform: template
-    sensors:
-      moon_phases:
-        friendly_name: 'Moon'
-        value_template: '{{ states.sensor.moon.state }}'
-        entity_picture_template: >-
-          {% if is_state('sensor.moon', 'new_moon') %}
-            /local/moonPhases/NNewMoon.jpg
-          {% elif is_state('sensor.moon', 'waxing_crescent') %}
-            /local/moonPhases/NWaxingCrescent.jpg
-          {% elif is_state('sensor.moon', 'first_quarter') %}
-            /local/moonPhases/NFirstQuarter.jpg
-          {% elif is_state('sensor.moon', 'waxing_gibbous') %}
-            /local/moonPhases/NWaxingGibbous.jpg
-          {% elif is_state('sensor.moon', 'full_moon') %}
-            /local/moonPhases/NFullMoon.jpg
-          {% elif is_state('sensor.moon', 'waning_gibbous') %}
-            /local/moonPhases/NWaningGibbous.jpg
-          {% elif is_state('sensor.moon', 'last_quarter') %}
-            /local/moonPhases/NLastQuarter.jpg
-          {% elif is_state('sensor.moon', 'waning_crescent') %}
-            /local/moonPhases/NWaningCrescent.jpg
-          {% endif %}
 
   # - platform: mqtt
   #   name: Odometer
