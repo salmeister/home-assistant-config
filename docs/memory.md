@@ -2,9 +2,14 @@
 
 **Purpose**: This file serves as persistent memory for GitHub Copilot to maintain context across conversations and development sessions.
 
-**Last Updated**: September 3, 2025  
+**Last Updated**: September 18, 2025  
 **Current Branch**: develop-ha  
 **Repository**: salmeister/home-assistant-config
+
+## Recent Updates (September 18, 2025)
+- ✅ Updated `.copilot/instructions.md` to make memory file reading MANDATORY first step
+- ✅ Verified Copilot instructions are properly configured and accessible
+- 📋 Instructions now enforce: Memory → Entity Registry → Task execution workflow
 
 ## Security & privacy guardrails (public repo)
 

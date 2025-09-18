@@ -6,21 +6,31 @@ This is a comprehensive Home Assistant configuration repository featuring advanc
 
 ## Critical First Steps
 
-### 1. Always Review Entity Registry
-**ESSENTIAL**: Before making any changes or suggestions, ALWAYS review the `entity_registry_snapshot.json` file to understand:
+### 1. ALWAYS Read Memory File First
+**MANDATORY**: Before any task, question, or suggestion, ALWAYS read `docs/memory.md` to understand:
+- Latest chat history and ongoing context
+- Recent discoveries and completed tasks
+- Current project state and active issues
+- Existing entity relationships and automation patterns
+- Previously documented solutions and approaches
+
+This prevents repetitive work, maintains continuity, and leverages previous insights.
+
+### 2. Always Review Entity Registry
+**ESSENTIAL**: After reading memory, review the `entity_registry_snapshot.json` file to understand:
 - All available sensors, switches, lights, and other entities
 - Area assignments for each entity (kitchen, garage, basement, etc.)
 - Entity states, capabilities, and device relationships
 - Platform integrations (Z-Wave, Frigate, Rachio, etc.)
 
 ```bash
-# Always start with this command
+# Always start with this command after reading memory
 cat entity_registry_snapshot.json | jq '.data.entities[] | {entity_id, area_id, original_name, platform}'
 ```
 
 This file is updated regularly and contains the authoritative source of truth for all Home Assistant entities and their locations.
 
-### 2. Memory Management System
+### 3. Memory Management System
 **REQUIRED**: This repository includes a memory system for maintaining context across interactions:
 
 - **Location**: `docs/memory.md` 

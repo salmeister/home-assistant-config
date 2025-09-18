@@ -1,3 +1,7 @@
 baseurl:
   name: Base URL
   initial: !secret base_url
+
+domain:
+  name: Domain
+  initial: !secret domain

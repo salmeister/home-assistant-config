@@ -1,0 +1,2 @@
+sensor.healthcheck:
+  url: "https://healthchecks.!secret domain/ping/9076adc4-c928-4892-af0b-45f2b2887569"
