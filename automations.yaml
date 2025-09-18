@@ -283,7 +283,7 @@
       # Enhanced URL logic: Prefer Frigate event-based URLs when available
       snapshot_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  /api/camera_proxy/image.garage_person\n{% else %}\n  /api/camera_proxy/camera.garage\n{% endif %}"
       
-      video_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/clip.mp4\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/clip.mp4\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
+      video_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/garage/clip.mp4\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/garage/clip.mp4\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
   
   - parallel:
     - choose:
