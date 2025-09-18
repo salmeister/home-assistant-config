@@ -180,6 +180,12 @@
     from: 'off'
     to: 'on'
     trigger: state
+    id: motion-sensor
+  - trigger: mqtt
+    topic: frigate/reviews
+    value_template: '{{ value_json["after"]["camera"] }}'
+    payload: garage
+    id: frigate-event
   conditions:
   - condition: or
     conditions:
@@ -221,13 +227,29 @@
       current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
       face_last_changed: "{{ state_attr('sensor.garage_last_recognized_face', 'last_changed') }}"
       garage_door_last_changed: "{{ state_attr('cover.garage_doors', 'last_changed') }}"
+      
+      # Frigate event data (available when trigger.id == 'frigate-event')
+      frigate_event: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json }}{% else %}{% endif %}"
+      frigate_event_id: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.id }}{% else %}{% endif %}"
+      frigate_review_id: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.id }}{% else %}{% endif %}"
+      frigate_detections: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.data.detections }}{% else %}[]{% endif %}"
+      frigate_detection_id: "{% if trigger.id == 'frigate-event' and trigger.payload_json.after.data.detections|length > 0 %}{{ trigger.payload_json.after.data.detections[0] }}{% else %}{% endif %}"
   
   # Only proceed if garage door was recently opened (within 5 minutes)
   # This prevents false positives from movement when door hasn't actually opened
-  - condition: template
-    value_template: >
-      {{ garage_door_last_changed is not none and 
-         (detection_start_time - as_timestamp(garage_door_last_changed)) < 300 }}
+  # Skip this check for Frigate events as they are inherently valid detections
+  - condition: or
+    conditions:
+    - condition: template
+      value_template: "{{ trigger.id == 'frigate-event' }}"
+    - condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ trigger.id == 'motion-sensor' }}"
+      - condition: template
+        value_template: >
+          {{ garage_door_last_changed is not none and 
+             (detection_start_time - as_timestamp(garage_door_last_changed)) < 300 }}
   
   # Check if face recognition sensor changed recently (within 2 minutes before automation start)
   # or wait for it to change from current value
@@ -257,8 +279,11 @@
   - variables:
       person_name: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ recognized_face }}\n{% else %}\n  Unknown Person\n{% endif %}"
       detection_time: '{{ now().strftime(''%I:%M %p'') }}'
-      snapshot_url: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  /api/camera_proxy/image.garage_person\n{% else %}\n  /api/camera_proxy/camera.garage\n{% endif %}"
-      video_url: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
+      
+      # Enhanced URL logic: Prefer Frigate event-based URLs when available
+      snapshot_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  /api/camera_proxy/image.garage_person\n{% else %}\n  /api/camera_proxy/camera.garage\n{% endif %}"
+      
+      video_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/clip.mp4\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/clip.mp4\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
   
   - parallel:
     - choose:
@@ -285,7 +310,7 @@
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
-              actions: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] and video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Video\",\n    \"uri\": \"{{ video_url }}\"\n  }]\n{% else %}\n  []\n{% endif %}"
+              actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Video\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
     - choose:
       - conditions:
         - condition: state
@@ -310,7 +335,7 @@
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
-              actions: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] and video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Video\",\n    \"uri\": \"{{ video_url }}\"\n  }]\n{% else %}\n  []\n{% endif %}"
+              actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Video\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
   mode: single
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
