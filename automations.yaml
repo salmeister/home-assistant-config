@@ -174,7 +174,7 @@
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Person Detection
-  description: Simplified garage security notifications using interior occupancy sensor and face recognition
+  description: Simplified garage security notifications using interior occupancy sensor and face recognition with GenAI descriptions
   triggers:
   - entity_id: binary_sensor.interior_garage_person_occupancy
     from: 'off'
@@ -186,6 +186,11 @@
     value_template: '{{ value_json["after"]["camera"] }}'
     payload: garage
     id: frigate-event
+  - trigger: mqtt
+    topic: frigate/tracked_object_update
+    value_template: '{{ value_json.get("camera", "") }}'
+    payload: garage
+    id: frigate-genai-update
   conditions:
   - condition: or
     conditions:
@@ -220,6 +225,91 @@
           entity_id: input_boolean.external_armed_mode
           state: 'on'
   actions:
+  # Handle GenAI description updates - send enhanced notification directly
+  - if:
+    - condition: template
+      value_template: "{{ trigger.id == 'frigate-genai-update' }}"
+    then:
+    - variables:
+        genai_event_id: "{{ trigger.payload_json.event_id }}"
+        genai_description: "{{ trigger.payload_json.description }}"
+        detection_time: '{{ now().strftime(''%I:%M %p'') }}'
+        base_url: "{{ states('input_text.baseurl') }}"
+        
+        # Build URLs using the event_id from GenAI update
+        snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ genai_event_id }}/snapshot.jpg"
+        video_url: "{{ base_url }}/api/frigate/notifications/{{ genai_event_id }}/garage/clip.mp4"
+        
+        # Try to get face recognition if available
+        current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
+        person_name: "{% if current_face_value not in ['None', 'unavailable', 'unknown'] %}\n  {{ current_face_value }}\n{% else %}\n  Unknown Person\n{% endif %}"
+    
+    # Send enhanced notifications with GenAI description
+    - parallel:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_andy
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: template
+              value_template: '{{ states("person.andy") != "home" }}'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob1
+            data:
+              title: "🚗 Person Detected in Garage"
+              message: "{{ person_name }} detected in garage at {{ detection_time }}. AI Analysis: {{ genai_description }}"
+              data:
+                image: '{{ snapshot_url }}'
+                persistent: true
+                clickAction: '{{ snapshot_url }}'
+                actions:
+                - action: "URI"
+                  title: "View Clip"
+                  uri: "{{ video_url }}"
+                - action: "URI"
+                  title: "View Snapshot"
+                  uri: "{{ snapshot_url }}"
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_katie
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: template
+              value_template: '{{ states("person.katie") != "home" }}'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob2
+            data:
+              title: "🚗 Person Detected in Garage"
+              message: "{{ person_name }} detected in garage at {{ detection_time }}. AI Analysis: {{ genai_description }}"
+              data:
+                image: '{{ snapshot_url }}'
+                persistent: true
+                clickAction: '{{ snapshot_url }}'
+                actions:
+                - action: "URI"
+                  title: "View Clip"
+                  uri: "{{ video_url }}"
+                - action: "URI"
+                  title: "View Snapshot"
+                  uri: "{{ snapshot_url }}"
+    - stop: "GenAI notification sent"
+  
   - variables:
       detection_start_time: "{{ now().timestamp() }}"
       detection_timeout: "00:05:00"
@@ -310,7 +400,7 @@
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
-              actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Video\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
+              actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
     - choose:
       - conditions:
         - condition: state
@@ -335,7 +425,7 @@
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
-              actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Video\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
+              actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
   mode: single
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
