@@ -1280,8 +1280,6 @@
               "primary": "{% if is_state('sun.sun', 'above_horizon') %}\n  Daylight\n{% else %}\n  Nighttime\n{% endif %}\n",
               "secondary": "{% set hour = now().hour %}\n{% if is_state('sun.sun', 'above_horizon') %}\n  {% if hour >= 5 and hour < 8 %}\n    Sunrise • Next sunset: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%I:%M %p') }}\n  {% elif hour >= 8 and hour < 11 %}\n    Morning • Next sunset: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%I:%M %p') }}\n  {% elif hour >= 11 and hour < 14 %}\n    Midday • Next sunset: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%I:%M %p') }}\n  {% elif hour >= 14 and hour < 17 %}\n    Afternoon • Next sunset: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%I:%M %p') }}\n  {% elif hour >= 17 and hour < 20 %}\n    Evening • Next sunset: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%I:%M %p') }}\n  {% else %}\n    Daylight • Next sunset: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%I:%M %p') }}\n  {% endif %}\n{% else %}\n  {% if hour >= 20 and hour < 23 %}\n    Early Night • Next sunrise: {{ as_timestamp(state_attr('sun.sun', 'next_rising')) | timestamp_custom('%I:%M %p') }}\n  {% elif hour >= 23 or hour < 2 %}\n    Late Night • Next sunrise: {{ as_timestamp(state_attr('sun.sun', 'next_rising')) | timestamp_custom('%I:%M %p') }}\n  {% elif hour >= 2 and hour < 5 %}\n    Early Morning • Next sunrise: {{ as_timestamp(state_attr('sun.sun', 'next_rising')) | timestamp_custom('%I:%M %p') }}\n  {% else %}\n    Nighttime • Next sunrise: {{ as_timestamp(state_attr('sun.sun', 'next_rising')) | timestamp_custom('%I:%M %p') }}\n  {% endif %}\n{% endif %}\n",
               "icon": "{% set hour = now().hour %}\n{% set elevation = state_attr('sun.sun', 'elevation') | float %}\n{% if is_state('sun.sun', 'above_horizon') %}\n  {% if hour >= 5 and hour < 7 %}\n    mdi:weather-sunset-up\n  {% elif hour >= 7 and hour < 10 %}\n    mdi:white-balance-sunny\n  {% elif hour >= 10 and hour < 14 %}\n    mdi:weather-sunny\n  {% elif hour >= 14 and hour < 17 %}\n    mdi:white-balance-sunny\n  {% elif hour >= 17 and hour < 20 %}\n    mdi:weather-sunset-down\n  {% else %}\n    mdi:weather-sunny\n  {% endif %}\n{% else %}\n  {% if hour >= 20 and hour < 22 %}\n    mdi:weather-night\n  {% elif hour >= 22 or hour < 4 %}\n    mdi:moon-full\n  {% elif hour >= 4 and hour < 6 %}\n    mdi:weather-night\n  {% else %}\n    mdi:weather-night\n  {% endif %}\n{% endif %}\n",
-              "icon_color": "{% set hour = now().hour %}\n{% set elevation = state_attr('sun.sun', 'elevation') | float %}\n{% if is_state('sun.sun', 'above_horizon') %}\n  {% if hour >= 5 and hour < 7 %}\n    orange\n  {% elif hour >= 7 and hour < 10 %}\n    gold\n  {% elif hour >= 10 and hour < 14 %}\n    yellow\n  {% elif hour >= 14 and hour < 17 %}\n    gold\n  {% elif hour >= 17 and hour < 20 %}\n    orange\n  {% else %}\n    yellow\n  {% endif %}\n{% else %}\n  {% if elevation > -6 %}\n    indigo\n  {% elif elevation > -12 %}\n    navy\n  {% else %}\n    black\n  {% endif %}\n{% endif %}\n",
-              "badge_icon": "{% if is_state('sun.sun', 'above_horizon') %}\n  mdi:weather-sunset-down\n{% else %}\n  mdi:weather-sunset-up\n{% endif %}\n",
               "badge_color": "{% if is_state('sun.sun', 'above_horizon') %}\n  red\n{% else %}\n  blue\n{% endif %}\n",
               "tap_action": {
                 "action": "more-info"
@@ -1291,7 +1289,9 @@
               },
               "double_tap_action": {
                 "action": "none"
-              }
+              },
+              "color": "{% set hour = now().hour %}\n{% set elevation = state_attr('sun.sun', 'elevation') | float %}\n{% if is_state('sun.sun', 'above_horizon') %}\n  {% if hour >= 5 and hour < 7 %}\n    orange\n  {% elif hour >= 7 and hour < 10 %}\n    gold\n  {% elif hour >= 10 and hour < 14 %}\n    yellow\n  {% elif hour >= 14 and hour < 17 %}\n    gold\n  {% elif hour >= 17 and hour < 20 %}\n    orange\n  {% else %}\n    yellow\n  {% endif %}\n{% else %}\n  {% if elevation > -6 %}\n    indigo\n  {% elif elevation > -12 %}\n    navy\n  {% else %}\n    black\n  {% endif %}\n{% endif %}\n",
+              "features_position": "bottom"
             },
             {
               "type": "custom:mushroom-template-card",
@@ -1299,8 +1299,6 @@
               "primary": "Moon Phase",
               "secondary": "{{ states('sensor.moon') | title | replace('_', ' ') }}",
               "icon": "{% set phase = states('sensor.moon') %}\n{% if phase == 'new_moon' %}\n  mdi:moon-new\n{% elif phase == 'waxing_crescent' %}\n  mdi:moon-waxing-crescent\n{% elif phase == 'first_quarter' %}\n  mdi:moon-first-quarter\n{% elif phase == 'waxing_gibbous' %}\n  mdi:moon-waxing-gibbous\n{% elif phase == 'full_moon' %}\n  mdi:moon-full\n{% elif phase == 'waning_gibbous' %}\n  mdi:moon-waning-gibbous\n{% elif phase == 'last_quarter' %}\n  mdi:moon-last-quarter\n{% elif phase == 'waning_crescent' %}\n  mdi:moon-waning-crescent\n{% else %}\n  mdi:moon-new\n{% endif %}\n",
-              "icon_color": "{% set phase = states('sensor.moon') %}\n{% if phase == 'new_moon' %}\n  black\n{% elif phase == 'waxing_crescent' %}\n  grey\n{% elif phase == 'first_quarter' %}\n  silver\n{% elif phase == 'waxing_gibbous' %}\n  lightgrey\n{% elif phase == 'full_moon' %}\n  white\n{% elif phase == 'waning_gibbous' %}\n  lightgrey\n{% elif phase == 'last_quarter' %}\n  silver\n{% elif phase == 'waning_crescent' %}\n  grey\n{% else %}\n  var(--primary-text-color)\n{% endif %}\n",
-              "badge_icon": "{% set hour = now().hour %}\n{% if hour >= 6 and hour < 18 %}\n  mdi:white-balance-sunny\n{% else %}\n  mdi:weather-night\n{% endif %}\n",
               "badge_color": "{% set hour = now().hour %}\n{% if hour >= 6 and hour < 18 %}\n  orange\n{% else %}\n  indigo\n{% endif %}\n",
               "tap_action": {
                 "action": "more-info"
@@ -1310,7 +1308,9 @@
               },
               "double_tap_action": {
                 "action": "none"
-              }
+              },
+              "color": "{% set phase = states('sensor.moon') %}\n{% if phase == 'new_moon' %}\n  black\n{% elif phase == 'waxing_crescent' %}\n  grey\n{% elif phase == 'first_quarter' %}\n  silver\n{% elif phase == 'waxing_gibbous' %}\n  lightgrey\n{% elif phase == 'full_moon' %}\n  white\n{% elif phase == 'waning_gibbous' %}\n  lightgrey\n{% elif phase == 'last_quarter' %}\n  silver\n{% elif phase == 'waning_crescent' %}\n  grey\n{% else %}\n  var(--primary-text-color)\n{% endif %}\n",
+              "features_position": "bottom"
             }
           ],
           "cards": [
