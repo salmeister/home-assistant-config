@@ -424,8 +424,8 @@
         sequence:
         - action: notify.mobile_app_salmob1
           data:
-            title: "👤🚪 Person Detected in Garage"
-            message: "{{ person_name }} detected in garage at {{ detection_time }}."
+            title: "🚶‍➡️Detected in Garage"
+            message: "{{ person_name }} detected at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
               persistent: true
@@ -458,8 +458,8 @@
         sequence:
         - action: notify.mobile_app_salmob2
           data:
-            title: "👤🚪 Person Detected in Garage"
-            message: "{{ person_name }} detected in garage at {{ detection_time }}."
+            title: "🚶‍➡️Detected in Garage"
+            message: "{{ person_name }} detected at {{ detection_time }}. "
             data:
               image: '{{ snapshot_url }}'
               persistent: true

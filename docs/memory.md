@@ -232,11 +232,17 @@ Based on entity_registry_snapshot.json review:
 - **Reference Document**: `docs/frigate-reference.md` contains comprehensive MQTT topic documentation and Home Assistant integration details
 - **Available Topics**: Events, stats, camera controls, object counts, PTZ commands, notifications
 - **Home Assistant API**: Notification endpoints, entity types, media browser integration
+- **GenAI Integration**: Complete GenAI capabilities section with send_triggers, intent analysis, and automation examples
+- **Official Notification Guidance**: Integration of Frigate's official Home Assistant notification patterns and best practices
+- **Platform-Specific Examples**: iOS/Android optimized notification templates with proper media handling
+- **Blueprint Reference**: Link to official Frigate notification blueprint for starting point
+- **Reviews vs Events**: Clear guidance on when to use `frigate/reviews` vs `frigate/events` topics
 - **Usage**: Reference this document when creating Frigate-based automations, sensors, or controls
 - **Maintenance**: Update reference document after major Frigate releases to capture new/changed topics
 - **Event Structure**: Detailed JSON payloads for events, reviews, and tracked object updates
 - **Camera Controls**: Complete MQTT command set for enabling/disabling detection, recording, notifications
 - **⚠️ REMINDER**: Always update `docs/frigate-reference.md` when upgrading Frigate major versions
+- **📅 UPDATED**: September 24, 2025 - Added GenAI integration section and official HA notification guidance
 
 ---
 

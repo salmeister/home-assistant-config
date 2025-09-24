@@ -214,14 +214,15 @@ The `frigate/events` topic publishes detailed JSON objects with the following st
 
 ### Tracked Object Update Payload
 
-The `frigate/tracked_object_update` topic publishes updates for specific features:
+The `frigate/tracked_object_update` topic publishes updates for specific features including GenAI descriptions, face recognition, and license plate detection:
 
 #### Generative AI Description
 ```json
 {
   "type": "description",
   "id": "1607123955.475377-mxklsc",
-  "description": "The car is a red sedan moving away from the camera."
+  "description": "A person in a yellow vest appears to be walking toward the front door with purposeful intent, possibly making a delivery.",
+  "event_id": "1607123955.475377-mxklsc"
 }
 ```
 
@@ -274,6 +275,194 @@ The `frigate/reviews` topic publishes review activity:
   },
   "after": { /* updated review data */ }
 }
+```
+
+## GenAI Integration
+
+### Overview
+
+Frigate's GenAI functionality provides intelligent descriptions of detected objects that focus on **intent** rather than just appearance. Instead of simply describing "what" is in a scene, Frigate's AI analyzes "why" objects might be there or "what" they might do next, providing valuable context for automation decisions.
+
+### Key Capabilities
+
+- **Intent Analysis**: Understands context like "person walking toward door with delivery intent" vs "person loitering near entrance"
+- **Rich Descriptions**: Provides detailed context suitable for notifications and automation logic
+- **Real-time Updates**: Delivers descriptions via MQTT during object tracking
+- **Early Notification**: Supports notifications before tracking ends via `send_triggers`
+
+### GenAI MQTT Topic
+
+| Topic | Type | Description | Payload |
+|-------|------|-------------|---------|
+| `frigate/tracked_object_update` | Event | AI-generated descriptions and analysis | JSON with event_id and description |
+
+### Send Triggers Configuration
+
+GenAI descriptions can be triggered at different points during object tracking:
+
+```yaml
+# Frigate configuration example
+genai:
+  enabled: true
+  provider: openai  # or ollama, gemini
+  model: gpt-4o
+  send_triggers:
+    tracked_object_end: true        # Default: Send when tracking ends
+    after_significant_updates: 3    # Send after N tracking updates (earlier notifications)
+```
+
+#### Send Trigger Options
+
+| Trigger | Description | Use Case |
+|---------|-------------|----------|
+| `tracked_object_end: true` | Send description when object tracking ends (default) | Standard notifications after complete analysis |
+| `after_significant_updates: N` | Send description after N tracking updates | Early alerts for security/safety scenarios |
+
+### GenAI for Home Assistant Automations
+
+#### Basic GenAI Trigger
+```yaml
+automation:
+  - alias: "GenAI Security Alert"
+    trigger:
+      platform: mqtt
+      topic: frigate/tracked_object_update
+    condition:
+      condition: template
+      value_template: "{{ trigger.payload_json.type == 'description' }}"
+    action:
+      - service: notify.mobile_app_salmob1
+        data:
+          title: "Security Analysis"
+          message: "{{ trigger.payload_json.description }}"
+          data:
+            image: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.event_id }}/thumbnail.jpg"
+```
+
+#### Intent-Based Conditional Logic
+```yaml
+automation:
+  - alias: "Delivery Detection"
+    trigger:
+      platform: mqtt
+      topic: frigate/tracked_object_update
+    condition:
+      - condition: template
+        value_template: "{{ trigger.payload_json.type == 'description' }}"
+      - condition: template
+        value_template: "{{ 'delivery' in trigger.payload_json.description.lower() or 'package' in trigger.payload_json.description.lower() }}"
+    action:
+      - service: notify.parent_mobile_devices
+        data:
+          title: "📦 Delivery Detected"
+          message: "{{ trigger.payload_json.description }}"
+          data:
+            tag: "delivery_alert"
+            group: "security"
+            actions:
+              - action: "VIEW_CLIP"
+                title: "View Video"
+                uri: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.event_id }}/clip.mp4"
+```
+
+#### Security-Focused GenAI Automation
+```yaml
+automation:
+  - alias: "Suspicious Activity Alert"
+    trigger:
+      platform: mqtt
+      topic: frigate/tracked_object_update
+    condition:
+      - condition: template
+        value_template: "{{ trigger.payload_json.type == 'description' }}"
+      - condition: template
+        value_template: >
+          {% set desc = trigger.payload_json.description.lower() %}
+          {{ 'loiter' in desc or 'suspicious' in desc or 'quickly' in desc and 'night' in desc }}
+      - condition: state
+        entity_id: alarm_control_panel.home_security
+        state: 'armed_away'
+    action:
+      - parallel:
+        - service: notify.all_mobile_devices
+          data:
+            title: "🚨 Security Alert"
+            message: "{{ trigger.payload_json.description }}"
+            data:
+              tag: "security_alert"
+              persistent: true
+              actions:
+                - action: "VIEW_LIVE"
+                  title: "View Live"
+                - action: "CALL_POLICE"
+                  title: "Call Police"
+        - service: light.turn_on
+          target:
+            entity_id: light.back_entry_light
+          data:
+            brightness: 255
+            color_name: red
+```
+
+### GenAI Best Practices
+
+#### Notification Strategy
+- **Early Alerts**: Use `after_significant_updates` for security scenarios requiring immediate response
+- **Complete Analysis**: Use `tracked_object_end` for detailed notifications after full tracking
+- **Context Filtering**: Use description content for conditional logic (delivery, suspicious activity, etc.)
+- **Rich Media**: Combine AI descriptions with video clips and images for comprehensive notifications
+
+#### Performance Considerations
+- **API Costs**: GenAI calls consume API credits - configure triggers appropriately
+- **Latency**: Early triggers (`after_significant_updates`) may have less complete analysis
+- **Accuracy**: Complete tracking provides more accurate intent analysis
+
+#### Configuration Recommendations
+```yaml
+# Recommended GenAI configuration for home security
+genai:
+  enabled: true
+  provider: openai
+  model: gpt-4o-mini  # Cost-effective for frequent analyses
+  send_triggers:
+    tracked_object_end: true          # Standard notifications
+    after_significant_updates: 2      # Early security alerts
+  system_prompt: >
+    You are analyzing home security camera footage.
+    Focus on the person's apparent intent and context.
+    Describe suspicious behavior, delivery activities, or normal activities.
+    Be specific about timing context (day/night) and apparent urgency.
+```
+
+### Integration with Existing Automations
+
+For your existing garage door and security automations, GenAI can enhance:
+
+1. **Garage Person Detection**: Add intent analysis to distinguish between delivery, family, and suspicious activity
+2. **Mobile Notifications**: Include AI-generated context in existing notification workflows
+3. **Security Mode Logic**: Use intent analysis to trigger different responses based on activity type
+4. **Google Assistant**: Announce AI descriptions for voice updates
+
+### Troubleshooting GenAI
+
+#### Common Issues
+- **No Descriptions**: Check GenAI provider configuration and API credentials
+- **Delayed Updates**: Verify `send_triggers` configuration matches automation expectations
+- **API Limits**: Monitor API usage and costs with provider
+- **Poor Analysis**: Adjust system prompts for better context-specific analysis
+
+#### Debug Automation
+```yaml
+automation:
+  - alias: "GenAI Debug Logger"
+    trigger:
+      platform: mqtt
+      topic: frigate/tracked_object_update
+    action:
+      - service: system_log.write
+        data:
+          message: "GenAI Update: {{ trigger.payload_json }}"
+          level: info
 ```
 
 ## Common Object Types
@@ -363,57 +552,188 @@ When using multiple Frigate instances, include the MQTT `client_id` in URLs:
 
 > **Note**: When only one Frigate instance is configured, the `client-id` parameter can be omitted.
 
+### Official Notification Guidance
+
+> **📖 Reference**: [Frigate Home Assistant Notifications Guide](https://docs.frigate.video/guides/ha_notifications)
+
+#### Recommended Approach: Use Reviews Topic
+
+**Best Practice**: Trigger notifications based on `frigate/reviews` MQTT topic rather than `frigate/events`. This provides better filtering for alert-worthy events and includes all necessary event IDs for media retrieval.
+
+**Benefits of Reviews Topic**:
+- Filters events by severity (`detection` vs `alert`)
+- Provides multiple event IDs for comprehensive clips
+- Reduces notification noise from routine detections
+- Better suited for security alerts
+
+#### Blueprint Starting Point
+
+Frigate recommends starting with their official [Home Assistant Blueprint](https://community.home-assistant.io/t/frigate-mobile-app-notifications-2-0/559732) and customizing from there. The blueprint provides:
+- Optimized notification triggers
+- Platform-specific formatting (iOS/Android)
+- Actionable notifications with proper URI handling
+- Image and video integration
+
 ### Notification Examples
 
-#### Mobile App Notification with Image
+#### Recommended: Reviews-Based Security Notification
 ```yaml
 automation:
-  - trigger:
-      platform: mqtt
-      topic: frigate/events
+  - alias: "Frigate Security Alert"
+    description: "Official recommended pattern using reviews topic"
+    trigger:
+      - platform: mqtt
+        topic: frigate/reviews
+        payload: "alert"
+        value_template: "{{ value_json['after']['severity'] }}"
     action:
-      - service: notify.mobile_app_your_phone
+      - service: notify.mobile_app_iphone
         data:
-          title: "Person Detected"
-          message: "Someone is at the front door"
+          message: "A {{ trigger.payload_json['after']['data']['objects'] | sort | join(', ') | title }} was detected."
           data:
-            image: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.after.id }}/thumbnail.jpg"
-            clickAction: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.after.id }}/clip.mp4"
+            image: >-
+              https://your.public.hass.address.com/api/frigate/notifications/{{ trigger.payload_json["after"]["data"]["detections"][0] }}/thumbnail.jpg
+            tag: "{{ trigger.payload_json['after']['id'] }}"
+            when: "{{ trigger.payload_json['after']['start_time']|int }}"
+            entity_id: "camera.{{ trigger.payload_json['after']['camera'] | replace('-','_') | lower }}"
+    mode: single
 ```
 
-#### Persistent Notification with Snapshot
+#### Events-Based Updating Notification
 ```yaml
 automation:
-  - trigger:
+  - alias: "Frigate Tracked Object Updates"
+    description: "Updates notification image as better images are found"
+    trigger:
       platform: mqtt
       topic: frigate/events
     action:
-      - service: persistent_notification.create
+      - service: notify.mobile_app_pixel_3
+        data:
+          message: "A {{ trigger.payload_json['after']['label'] }} was detected."
+          data:
+            image: "https://your.public.hass.address.com/api/frigate/notifications/{{ trigger.payload_json['after']['id'] }}/thumbnail.jpg?format=android"
+            tag: "{{ trigger.payload_json['after']['id'] }}"
+            when: "{{ trigger.payload_json['after']['start_time']|int }}"
+```
+
+#### iOS Live Camera Preview
+```yaml
+# iOS devices support live camera previews in notifications
+automation:
+  - trigger:
+      platform: mqtt
+      topic: frigate/reviews
+    action:
+      - service: notify.mobile_app_iphone
         data:
           title: "Security Alert"
-          message: "Motion detected in {{ trigger.payload_json.after.camera }}"
-          notification_id: "frigate_{{ trigger.payload_json.after.id }}"
+          message: "Person detected at {{ trigger.payload_json['after']['camera'] }}"
+          data:
+            image: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json['after']['data']['detections'][0] }}/thumbnail.jpg"
+            entity_id: "camera.{{ trigger.payload_json['after']['camera'] | replace('-','_') | lower }}"
+            tag: "{{ trigger.payload_json['after']['id'] }}"
 ```
 
-#### Actionable Notification with Video
+#### Android-Optimized Notification
 ```yaml
 automation:
   - trigger:
       platform: mqtt
       topic: frigate/events
     action:
-      - service: notify.mobile_app_your_phone
+      - service: notify.mobile_app_android_device
         data:
-          title: "Person at Door"
-          message: "View video?"
+          title: "Person Detected"
+          message: "Someone is at the {{ trigger.payload_json.after.camera }}"
           data:
-            actions:
-              - action: "VIEW_CLIP"
-                title: "View Video"
-                uri: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.after.id }}/clip.mp4"
-              - action: "VIEW_LIVE"
-                title: "View Live"
-                uri: "app://frigate"
+            # Android-specific image format parameter
+            image: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.after.id }}/thumbnail.jpg?format=android"
+            clickAction: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json.after.id }}/clip.mp4"
+            tag: "{{ trigger.payload_json.after.id }}"
+            when: "{{ trigger.payload_json.after.start_time|int }}"
+```
+
+#### Advanced: Multi-Platform Notification
+```yaml
+automation:
+  - alias: "Cross-Platform Frigate Notifications"
+    trigger:
+      - platform: mqtt
+        topic: frigate/reviews
+        payload: "alert"
+        value_template: "{{ value_json['after']['severity'] }}"
+    action:
+      - parallel:
+        # iOS notification with live preview
+        - service: notify.mobile_app_iphone
+          data:
+            title: "🚨 Security Alert"
+            message: "{{ trigger.payload_json['after']['data']['objects'] | sort | join(', ') | title }} detected"
+            data:
+              image: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json['after']['data']['detections'][0] }}/thumbnail.jpg"
+              entity_id: "camera.{{ trigger.payload_json['after']['camera'] | replace('-','_') | lower }}"
+              tag: "security_{{ trigger.payload_json['after']['id'] }}"
+              actions:
+                - action: "VIEW_CLIP_IOS"
+                  title: "View Video"
+                  uri: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json['after']['data']['detections'][0] }}/master.m3u8"
+        # Android notification with different video format
+        - service: notify.mobile_app_android_device
+          data:
+            title: "🚨 Security Alert"
+            message: "{{ trigger.payload_json['after']['data']['objects'] | sort | join(', ') | title }} detected"
+            data:
+              image: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json['after']['data']['detections'][0] }}/thumbnail.jpg?format=android"
+              tag: "security_{{ trigger.payload_json['after']['id'] }}"
+              actions:
+                - action: "VIEW_CLIP_ANDROID"
+                  title: "View Video"
+                  uri: "https://your-ha-url/api/frigate/notifications/{{ trigger.payload_json['after']['data']['detections'][0] }}/clip.mp4"
+
+# Event handler for notification actions
+  - alias: "Handle Frigate Notification Actions"
+    trigger:
+      - platform: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: "VIEW_CLIP_IOS"
+      - platform: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: "VIEW_CLIP_ANDROID"
+    action:
+      # Actions handled by URI in notification data
+      - service: system_log.write
+        data:
+          message: "Frigate clip viewed via {{ trigger.event.data.action }}"
+```
+
+### Notification Best Practices
+
+#### Topic Selection
+- **Use `frigate/reviews`** for security alerts (filtered by severity)
+- **Use `frigate/events`** for comprehensive tracking updates
+- **Use `frigate/tracked_object_update`** for AI-enhanced descriptions
+
+#### Platform Considerations
+- **iOS**: Supports live camera previews with `entity_id`, use `.m3u8` for video
+- **Android**: Add `?format=android` to image URLs, use `.mp4` for video
+- **Both**: Use consistent `tag` values for notification updates
+
+#### Performance Optimization
+- Use `mode: single` to prevent notification spam
+- Include `when` timestamp for proper chronological ordering
+- Consider notification grouping with consistent tag patterns
+
+#### URL Formatting
+```yaml
+# Correct URL patterns for different media types
+thumbnail: "https://your-ha-url/api/frigate/notifications/{{ event_id }}/thumbnail.jpg"
+snapshot: "https://your-ha-url/api/frigate/notifications/{{ event_id }}/snapshot.jpg" 
+android_video: "https://your-ha-url/api/frigate/notifications/{{ event_id }}/clip.mp4"
+ios_video: "https://your-ha-url/api/frigate/notifications/{{ event_id }}/master.m3u8"
+preview_gif: "https://your-ha-url/api/frigate/notifications/{{ event_id }}/event_preview.gif"
 ```
 
 ## Integration Entities
