@@ -194,35 +194,41 @@
   conditions:
   - condition: or
     conditions:
+    # Both Andy AND Katie are away during the day
+    - condition: and
+      conditions:
+      - condition: template
+        value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+      - condition: state
+        entity_id: input_boolean.bedtime
+        state: 'off'
+    # Bedtime is on - can notify either person even if they're home
     - condition: and
       conditions:
       - condition: state
-        entity_id: input_boolean.notify_fpm_andy
+        entity_id: input_boolean.bedtime
         state: 'on'
       - condition: or
         conditions:
-        - condition: template
-          value_template: '{{ states("person.andy") != "home" }}'
         - condition: state
-          entity_id: input_boolean.bedtime
+          entity_id: input_boolean.notify_fpm_andy
           state: 'on'
         - condition: state
-          entity_id: input_boolean.external_armed_mode
+          entity_id: input_boolean.notify_fpm_katie
           state: 'on'
+    # External armed mode override
     - condition: and
       conditions:
       - condition: state
-        entity_id: input_boolean.notify_fpm_katie
+        entity_id: input_boolean.external_armed_mode
         state: 'on'
       - condition: or
         conditions:
-        - condition: template
-          value_template: '{{ states("person.katie") != "home" }}'
         - condition: state
-          entity_id: input_boolean.bedtime
+          entity_id: input_boolean.notify_fpm_andy
           state: 'on'
         - condition: state
-          entity_id: input_boolean.external_armed_mode
+          entity_id: input_boolean.notify_fpm_katie
           state: 'on'
   actions:
   # Handle GenAI description updates - send enhanced notification directly
@@ -242,7 +248,7 @@
         
         # Try to get face recognition if available
         current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
-        person_name: "{% if current_face_value not in ['None', 'unavailable', 'unknown'] %}\n  {{ current_face_value }}\n{% else %}\n  Unknown Person\n{% endif %}"
+        person_name: "{% if current_face_value not in ['None', 'unavailable', 'unknown'] %}\n  {{ current_face_value }}\n{% else %}\n  A Person\n{% endif %}"
     
     # Send enhanced notifications with GenAI description
     - parallel:
@@ -253,8 +259,14 @@
             state: 'on'
           - condition: or
             conditions:
-            - condition: template
-              value_template: '{{ states("person.andy") != "home" }}'
+            # Both away during day OR bedtime is on OR external armed
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
             - condition: state
               entity_id: input_boolean.bedtime
               state: 'on'
@@ -264,19 +276,22 @@
           sequence:
           - action: notify.mobile_app_salmob1
             data:
-              title: "🚗 Person Detected in Garage"
-              message: "{{ person_name }} detected in garage at {{ detection_time }}. AI Analysis: {{ genai_description }}"
+              title: "🚶‍➡️Detected in Garage"
+              message: "{{ person_name }} detected at {{ detection_time }}. Description: {{ genai_description }}"
               data:
-                image: '{{ snapshot_url }}'
+                image: '{{ snapshot_url if snapshot_url else base_url + "/api/camera_proxy/camera.garage" }}'
                 persistent: true
-                clickAction: '{{ snapshot_url }}'
+                clickAction: '{{ snapshot_url if snapshot_url else base_url + "/api/camera_proxy/camera.garage" }}'
+                notification_icon: "mdi:garage"
+                channel: "Garage Security"
+                importance: "high"
                 actions:
                 - action: "URI"
                   title: "View Clip"
                   uri: "{{ video_url }}"
                 - action: "URI"
                   title: "View Snapshot"
-                  uri: "{{ snapshot_url }}"
+                  uri: "{{ snapshot_url if snapshot_url else base_url + '/api/camera_proxy/camera.garage' }}"
       - choose:
         - conditions:
           - condition: state
@@ -284,8 +299,14 @@
             state: 'on'
           - condition: or
             conditions:
-            - condition: template
-              value_template: '{{ states("person.katie") != "home" }}'
+            # Both away during day OR bedtime is on OR external armed
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
             - condition: state
               entity_id: input_boolean.bedtime
               state: 'on'
@@ -295,19 +316,22 @@
           sequence:
           - action: notify.mobile_app_salmob2
             data:
-              title: "🚗 Person Detected in Garage"
-              message: "{{ person_name }} detected in garage at {{ detection_time }}. AI Analysis: {{ genai_description }}"
+              title: "🚶‍➡️Detected in Garage"
+              message: "{{ person_name }} detected at {{ detection_time }}. Description: {{ genai_description }}"
               data:
-                image: '{{ snapshot_url }}'
+                image: '{{ snapshot_url if snapshot_url else base_url + "/api/camera_proxy/camera.garage" }}'
                 persistent: true
-                clickAction: '{{ snapshot_url }}'
+                clickAction: '{{ snapshot_url if snapshot_url else base_url + "/api/camera_proxy/camera.garage" }}'
+                notification_icon: "mdi:garage"
+                channel: "Garage Security"
+                importance: "high"
                 actions:
                 - action: "URI"
                   title: "View Clip"
                   uri: "{{ video_url }}"
                 - action: "URI"
                   title: "View Snapshot"
-                  uri: "{{ snapshot_url }}"
+                  uri: "{{ snapshot_url if snapshot_url else base_url + '/api/camera_proxy/camera.garage' }}"
     - stop: "GenAI notification sent"
   
   - variables:
@@ -367,11 +391,11 @@
         recognized_face: "{% if wait.trigger is not none %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ current_face_value }}\n{% endif %}"
   
   - variables:
-      person_name: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ recognized_face }}\n{% else %}\n  Unknown Person\n{% endif %}"
+      person_name: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ recognized_face }}\n{% else %}\n  A Person\n{% endif %}"
       detection_time: '{{ now().strftime(''%I:%M %p'') }}'
       
-      # Enhanced URL logic: Prefer Frigate event-based URLs when available
-      snapshot_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  /api/camera_proxy/image.garage_person\n{% else %}\n  /api/camera_proxy/camera.garage\n{% endif %}"
+      # Enhanced URL logic: Prefer Frigate event-based URLs when available, always fallback to live camera
+      snapshot_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/camera_proxy/image.garage_person\n{% else %}\n  {{ base_url }}/api/camera_proxy/camera.garage\n{% endif %}"
       
       video_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/garage/clip.mp4\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/garage/clip.mp4\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
   
@@ -383,8 +407,14 @@
           state: 'on'
         - condition: or
           conditions:
-          - condition: template
-            value_template: '{{ states("person.andy") != "home" }}'
+          # Both away during day OR bedtime is on OR external armed
+          - condition: and
+            conditions:
+            - condition: template
+              value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'off'
           - condition: state
             entity_id: input_boolean.bedtime
             state: 'on'
@@ -394,12 +424,15 @@
         sequence:
         - action: notify.mobile_app_salmob1
           data:
-            title: "🚗 Person Detected in Garage"
+            title: "👤🚪 Person Detected in Garage"
             message: "{{ person_name }} detected in garage at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
+              notification_icon: "mdi:garage"
+              channel: "Garage Security"
+              importance: "high"
               actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
     - choose:
       - conditions:
@@ -408,8 +441,14 @@
           state: 'on'
         - condition: or
           conditions:
-          - condition: template
-            value_template: '{{ states("person.katie") != "home" }}'
+          # Both away during day OR bedtime is on OR external armed
+          - condition: and
+            conditions:
+            - condition: template
+              value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'off'
           - condition: state
             entity_id: input_boolean.bedtime
             state: 'on'
@@ -419,12 +458,15 @@
         sequence:
         - action: notify.mobile_app_salmob2
           data:
-            title: "🚗 Person Detected in Garage"
+            title: "👤🚪 Person Detected in Garage"
             message: "{{ person_name }} detected in garage at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
               persistent: true
               clickAction: '{{ snapshot_url }}'
+              notification_icon: "mdi:garage"
+              channel: "Garage Security"
+              importance: "high"
               actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
   mode: single
 - id: af0c4a0821ad44af8e99ac7e98e28964
