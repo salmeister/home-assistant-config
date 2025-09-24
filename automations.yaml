@@ -3169,3 +3169,30 @@
   - entity_id: switch.garage_lights
     action: switch.turn_off
   mode: single
+- id: washing_machine_dryer_reminder
+  alias: Washing Machine Dryer Reminder
+  description: Notify Andy when washing machine is done but dryer door hasn't been opened after 10 minutes
+  triggers:
+  - entity_id: sensor.washer_washer_job_state
+    to: complete
+    trigger: state
+  conditions: []
+  actions:
+  - delay: 00:10:00
+  - condition: state
+    entity_id: binary_sensor.dryer_door_window_door_is_open
+    state: 'off'
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_andy
+        state: 'on'
+      sequence:
+      - data:
+          title: Laundry Alert
+          message: "Washing machine is done, dryer time!"
+          data:
+            tag: washer_dryer_reminder
+            persistent: false
+        action: notify.mobile_app_salmob1
+  mode: single

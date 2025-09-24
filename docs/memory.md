@@ -174,11 +174,19 @@ Based on entity_registry_snapshot.json review:
 - ✅ Established memory management framework
 - ✅ Reviewed entity registry structure
 - ✅ Documented key automation patterns
+- ✅ Added washing machine dryer reminder automation (September 24, 2025)
 
 ### Active Projects
 - 📝 Document existing automation relationships
 - 📝 Create troubleshooting guides for common issues
 - 📝 Establish entity change tracking procedures
+
+### Recent Automation Additions (September 24, 2025)
+- **Washing Machine Dryer Reminder**: New automation `washing_machine_dryer_reminder` that notifies Andy (SALMOB1) when washing machine completes but dryer door hasn't opened after 10 minutes
+  - **Trigger**: `sensor.washer_washer_job_state` changes to "complete"
+  - **Conditions**: 10-minute delay, dryer door still closed (`binary_sensor.dryer_door_window_door_is_open` = 'off'), Andy notifications enabled
+  - **Action**: Mobile notification with message "Washing machine is done, dryer time!"
+  - **Pattern**: Follows existing notification patterns with `input_boolean.notify_fpm_andy` condition check
 
 ### Future Considerations
 - Enhanced mobile notification templates
