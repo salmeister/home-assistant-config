@@ -4,6 +4,8 @@
 
 This is a comprehensive Home Assistant configuration repository featuring advanced automation, security monitoring, intelligent lighting, and smart home integrations. The configuration has been refined over 3+ years and includes 60+ automations, Frigate camera integration with AI, actionable mobile notifications, and sophisticated garage door management.
 
+**Key Metrics**: 5000+ entities, 7-zone Rachio irrigation system, multi-platform mobile notifications, Z-Wave mesh network, comprehensive water detection, and automated GitHub configuration management.
+
 ## Critical First Steps
 
 ### 1. ALWAYS Read Memory File First
@@ -26,9 +28,15 @@ This prevents repetitive work, maintains continuity, and leverages previous insi
 ```bash
 # Always start with this command after reading memory
 cat entity_registry_snapshot.json | jq '.data.entities[] | {entity_id, area_id, original_name, platform}'
+
+# Filter by specific area
+cat entity_registry_snapshot.json | jq '.data.entities[] | select(.area_id == "garage")'
+
+# Find entities by platform
+cat entity_registry_snapshot.json | jq '.data.entities[] | select(.platform == "zwave_js")'
 ```
 
-This file is updated regularly and contains the authoritative source of truth for all Home Assistant entities and their locations.
+This file is updated regularly using `scripts/update-config-snapshots.sh` and contains the authoritative source of truth for all Home Assistant entities and their locations.
 
 ### 3. Memory Management System
 **REQUIRED**: This repository includes a memory system for maintaining context across interactions:
@@ -152,17 +160,25 @@ Home Assistant primarily uses three key technologies for configuration and opera
 - Consider platform limitations (Z-Wave, WiFi, etc.)
 
 ### Automation Development
-- Follow existing patterns in `automations.yaml`
-- Use meaningful, descriptive automation names
-- Include proper conditions to prevent unwanted triggers
-- Test with Home Assistant's automation trace feature
+- **Follow existing patterns** in `automations.yaml` (3172 lines of proven automations)
+- **Use meaningful, descriptive automation names** with area context when applicable
+- **Include proper conditions** to prevent unwanted triggers, especially for security modes
+- **Test with automation trace** feature and validate in Developer Tools
+- **Area-based organization**: Assign `area_id` to automations for logical grouping
+- **Security awareness**: Check `input_boolean.external_armed_mode` and security states
+- **Time-based logic**: Use sunrise/sunset offsets and holiday conditions
+- **Parallel sequences**: Use `parallel:` for simultaneous actions (notifications + device control)
 
 ### Script Development
-- Store reusable logic in `scripts.yaml`
-- Use scripts for complex notification workflows
-- Parameterize scripts for flexibility across automations
-- Follow notification best practices for mobile apps (see `docs/companion-app-reference.md`)
-- Implement proper `mobile_app_notification_action` event handling for actionable notifications
+- **Store reusable logic** in `scripts.yaml` (451 lines of proven scripts)
+- **Use scripts for complex workflows**: notification chains, device sequences, house modes
+- **Parameterize scripts** for flexibility across automations
+- **Scene integration**: Use `scene.turn_on` for coordinated device states (see `scenes.yaml`)
+- **Python script patterns**: Reference `python_scripts/calc_light_level.py` for custom logic
+- **Mode management**: Single mode scripts for house shutdown, security changes
+- **Google Assistant integration**: Cast lovelace views to specific hubs
+- **Follow notification best practices** (see `docs/companion-app-reference.md`)
+- **Event handling**: Implement `mobile_app_notification_action` event automations
 
 ### Blueprint Usage
 - Check existing blueprints in `blueprints/` before creating new automations
@@ -345,6 +361,36 @@ card:
         - action: "ACTION_IDENTIFIER"
           title: "Action Button"
           # Platform-specific options
+
+# Multi-device notification with conditions
+- parallel:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_andy
+        state: 'on'
+    sequence:
+    - service: notify.mobile_app_salmob1
+      data:
+        title: "Parent Alert"
+        message: "Important notification"
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_katie
+        state: 'on'
+    sequence:
+    - service: notify.mobile_app_salmob2
+      data:
+        title: "Parent Alert"
+        message: "Important notification"
+
+# Google Assistant SDK integration
+- service: notify.google_assistant_sdk
+  data:
+    target:
+    - kitchen
+    message: "Voice announcement message"
 ```
 
 # Companion app event handling
@@ -414,10 +460,11 @@ condition:
 - Use device-agnostic naming where possible
 
 ### Configuration Management
-- Git-based version control with develop-ha branch
-- Automated sync capabilities via shell commands
-- Regular entity registry updates
-- Backup strategies for critical configurations
+- **Git-based version control** with `develop-ha` branch strategy
+- **Automated GitHub sync** via UI buttons and shell commands (see README.md)
+- **Entity registry snapshots** using `scripts/update-config-snapshots.sh`
+- **Backup strategies** for critical configurations
+- **Branch protection**: Test on `develop-ha`, merge to `main` for stable releases
 
 ### Testing & Validation
 - Test new automations in safe conditions
@@ -428,13 +475,15 @@ condition:
 ## Repository Maintenance
 
 ### Regular Tasks
-1. Update `entity_registry_snapshot.json` after device changes
-2. Review and clean up `docs/memory.md`
-3. Test critical automations monthly
-4. Update documentation for major changes
+1. **Update entity registry** after device changes: `bash scripts/update-config-snapshots.sh`
+2. **Review and clean up** `docs/memory.md` to maintain context freshness
+3. **Test critical automations** monthly, especially garage door and security systems
+4. **Update documentation** for major changes, especially integration references
 5. **Check HA Release Notes**: Review monthly releases for breaking changes affecting this configuration
 6. **Validate Integration Updates**: Test automations after major integration updates
 7. **Documentation Sync**: Update local references when HA docs show significant changes to heavily-used integrations
+8. **Git workflow**: Use `develop-ha` branch for testing, merge to `main` for stable releases
+9. **Security review**: Validate no sensitive information in commits before pushing
 
 ### Memory File Management
 The `docs/memory.md` file should contain:
