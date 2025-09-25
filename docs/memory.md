@@ -188,6 +188,17 @@ Based on entity_registry_snapshot.json review:
   - **Action**: Mobile notification with message "Washing machine is done, dryer time!"
   - **Pattern**: Follows existing notification patterns with `input_boolean.notify_fpm_andy` condition check
 
+### Recent Automation Updates (September 25, 2025)
+- **Frigate Person Name Display Fix**: Updated person_name templates in garage detection automations
+  - **Problem**: Notifications showing "None" or "Unknown" instead of user-friendly names
+  - **Solution**: Enhanced Jinja2 templates to handle all variations of None/Unknown values (case-insensitive)
+  - **Changes**: 
+    - Added `| string | lower` conversion for robust string comparison
+    - Changed fallback from "A Person" to "Person" for cleaner notifications
+    - Updated all related conditional checks for consistent behavior
+  - **Templates Updated**: Both GenAI and standard garage person detection automations
+  - **Result**: Notifications will now show "Person" instead of "None", "Unknown", or other placeholder values
+
 ### Future Considerations
 - Enhanced mobile notification templates
 - Additional Frigate camera integrations

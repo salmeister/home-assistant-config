@@ -248,7 +248,7 @@
         
         # Try to get face recognition if available
         current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
-        person_name: "{% if current_face_value not in ['None', 'unavailable', 'unknown'] %}\n  {{ current_face_value }}\n{% else %}\n  A Person\n{% endif %}"
+        person_name: "{% set face_val = current_face_value | string | lower %}{% if current_face_value and face_val not in ['none', 'unavailable', 'unknown', ''] %}\n  {{ current_face_value }}\n{% else %}\n  Person\n{% endif %}"
     
     # Send enhanced notifications with GenAI description
     - parallel:
@@ -372,7 +372,7 @@
       value_template: >
         {{ face_last_changed is not none and 
            (detection_start_time - as_timestamp(face_last_changed)) < 120 and
-           current_face_value not in ['None', 'unavailable', 'unknown'] }}
+           current_face_value and (current_face_value | string | lower) not in ['none', 'unavailable', 'unknown', ''] }}
     then:
     # Face was recognized recently, use current value
     - variables:
@@ -391,13 +391,13 @@
         recognized_face: "{% if wait.trigger is not none %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ current_face_value }}\n{% endif %}"
   
   - variables:
-      person_name: "{% if recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ recognized_face }}\n{% else %}\n  A Person\n{% endif %}"
+      person_name: "{% set face_val = recognized_face | string | lower %}{% if recognized_face and face_val not in ['none', 'unavailable', 'unknown', ''] %}\n  {{ recognized_face }}\n{% else %}\n  Person\n{% endif %}"
       detection_time: '{{ now().strftime(''%I:%M %p'') }}'
       
       # Enhanced URL logic: Prefer Frigate event-based URLs when available, always fallback to live camera
-      snapshot_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/camera_proxy/image.garage_person\n{% else %}\n  {{ base_url }}/api/camera_proxy/camera.garage\n{% endif %}"
+      snapshot_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg\n{% elif recognized_face and (recognized_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] %}\n  {{ base_url }}/api/camera_proxy/image.garage_person\n{% else %}\n  {{ base_url }}/api/camera_proxy/camera.garage\n{% endif %}"
       
-      video_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/garage/clip.mp4\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/garage/clip.mp4\n{% elif recognized_face not in ['None', 'unavailable', 'unknown'] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
+      video_url: "{% if frigate_detection_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/garage/clip.mp4\n{% elif frigate_event_id %}\n  {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/garage/clip.mp4\n{% elif recognized_face and (recognized_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] %}\n  {{ base_url }}/api/frigate/garage/vod/{{ now().strftime('%Y-%m-%d') }}/{{ (detection_start_time - 30) | timestamp_custom('%H') }}/{{ (detection_start_time - 30) | timestamp_custom('%M') }}/{{ (detection_start_time + 30) | timestamp_custom('%M') }}/master.m3u8\n{% else %}\n  \n{% endif %}"
   
   - parallel:
     - choose:
