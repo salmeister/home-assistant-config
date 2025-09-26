@@ -173,19 +173,27 @@
           action: switch.turn_on
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
-  alias: Enhanced Garage Door Person Detection
-  description: Simplified garage security notifications using interior occupancy sensor and face recognition with GenAI descriptions
+  alias: Enhanced Garage Door Open Security Notification
+  description: Notify when the garage door opens (parents away/asleep/armed) with progressive enrichment (Frigate event, face recognition, GenAI description). Prevents repeated notifications on mere interior motion.
   triggers:
-  - entity_id: binary_sensor.interior_garage_person_occupancy
-    from: 'off'
-    to: 'on'
+  # Primary trigger: Garage door begins opening (preferred) or transitions directly to open
+  - entity_id: cover.garage_doors
+    from: closed
+    to: opening
     trigger: state
-    id: motion-sensor
+    id: door-open
+  - entity_id: cover.garage_doors
+    from: closed
+    to: open
+    trigger: state
+    id: door-open
+  # Frigate review event (initial AI detection) used to enrich existing notification (same tag)
   - trigger: mqtt
     topic: frigate/reviews
     value_template: '{{ value_json["after"]["camera"] }}'
     payload: garage
     id: frigate-event
+  # Frigate GenAI tracked object update (description + event id) further enriches notification
   - trigger: mqtt
     topic: frigate/tracked_object_update
     value_template: '{{ value_json.get("camera", "") }}'
@@ -231,7 +239,7 @@
           entity_id: input_boolean.notify_fpm_katie
           state: 'on'
   actions:
-  # Handle GenAI description updates - send enhanced notification directly
+  # Handle GenAI description updates - send enhanced notification directly (updates existing via tag)
   - if:
     - condition: template
       value_template: "{{ trigger.id == 'frigate-genai-update' }}"
@@ -250,7 +258,7 @@
         current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
         person_name: "{% set face_val = current_face_value | string | lower %}{% if current_face_value and face_val not in ['none', 'unavailable', 'unknown', ''] %}\n  {{ current_face_value }}\n{% else %}\n  Person\n{% endif %}"
     
-    # Send enhanced notifications with GenAI description
+    # Send enhanced notifications with GenAI description (replace prior notification via tag)
     - parallel:
       - choose:
         - conditions:
@@ -285,6 +293,7 @@
                 notification_icon: "mdi:garage"
                 channel: "Garage Security"
                 importance: "high"
+                tag: garage_door_security
                 actions:
                 - action: "URI"
                   title: "View Clip"
@@ -325,6 +334,7 @@
                 notification_icon: "mdi:garage"
                 channel: "Garage Security"
                 importance: "high"
+                tag: garage_door_security
                 actions:
                 - action: "URI"
                   title: "View Clip"
@@ -333,37 +343,52 @@
                   title: "View Snapshot"
                   uri: "{{ snapshot_url if snapshot_url else base_url + '/api/camera_proxy/camera.garage' }}"
     - stop: "GenAI notification sent"
+
+  # Optional short enrichment wait: if this is a door-open trigger, pause briefly (up to 5s) to allow a Frigate review event or face sensor update to arrive before sending baseline notification.
+  - if:
+    - condition: template
+      value_template: "{{ trigger.id == 'door-open' }}"
+    then:
+    - wait_for_trigger:
+      - trigger: mqtt
+        topic: frigate/reviews
+        value_template: '{{ value_json["after"]["camera"] }}'
+        payload: garage
+      - trigger: mqtt
+        topic: frigate/tracked_object_update
+        value_template: '{{ value_json.get("camera", "") }}'
+        payload: garage
+      timeout: '00:00:05'
+      continue_on_timeout: true
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ wait.trigger is not none }}"
+        sequence:
+        # A Frigate enrichment arrived during wait; restart automation so that the enrichment branch handles notification (avoids sending baseline first)
+        - stop: "Frigate event arrived during enrichment window - baseline notification suppressed"
   
   - variables:
       detection_start_time: "{{ now().timestamp() }}"
       detection_timeout: "00:05:00"
       base_url: "{{ states('input_text.baseurl') }}"
       current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
-      face_last_changed: "{{ state_attr('sensor.garage_last_recognized_face', 'last_changed') }}"
-      garage_door_last_changed: "{{ state_attr('cover.garage_doors', 'last_changed') }}"
-      
+      face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
+      garage_door_last_changed: "{{ states.cover.garage_doors.last_changed }}"
+
       # Frigate event data (available when trigger.id == 'frigate-event')
       frigate_event: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json }}{% else %}{% endif %}"
       frigate_event_id: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.id }}{% else %}{% endif %}"
       frigate_review_id: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.id }}{% else %}{% endif %}"
       frigate_detections: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.data.detections }}{% else %}[]{% endif %}"
       frigate_detection_id: "{% if trigger.id == 'frigate-event' and trigger.payload_json.after.data.detections|length > 0 %}{{ trigger.payload_json.after.data.detections[0] }}{% else %}{% endif %}"
-  
-  # Only proceed if garage door was recently opened (within 5 minutes)
-  # This prevents false positives from movement when door hasn't actually opened
-  # Skip this check for Frigate events as they are inherently valid detections
-  - condition: or
-    conditions:
-    - condition: template
-      value_template: "{{ trigger.id == 'frigate-event' }}"
-    - condition: and
-      conditions:
-      - condition: template
-        value_template: "{{ trigger.id == 'motion-sensor' }}"
-      - condition: template
-        value_template: >
-          {{ garage_door_last_changed is not none and 
-             (detection_start_time - as_timestamp(garage_door_last_changed)) < 300 }}
+
+  # Only proceed if the garage door was opened within the last 5 minutes.
+  # (Required for ALL triggers including Frigate events to avoid notifications when door stayed open earlier.)
+  - condition: template
+    value_template: >
+      {% set door_changed = as_timestamp(states.cover.garage_doors.last_changed) %}
+      {{ (now().timestamp() - door_changed) < 300 }}
   
   # Check if face recognition sensor changed recently (within 2 minutes before automation start)
   # or wait for it to change from current value
@@ -379,16 +404,27 @@
         face_detected: true
         recognized_face: "{{ current_face_value }}"
     else:
-    # Face not recently recognized, wait for it to change
-    - wait_for_trigger:
-      - trigger: state
-        entity_id: sensor.garage_last_recognized_face
-        from: "{{ current_face_value }}"
-      timeout: '{{ detection_timeout }}'
-      continue_on_timeout: true
-    - variables:
-        face_detected: '{{ wait.trigger is not none }}'
-        recognized_face: "{% if wait.trigger is not none %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ current_face_value }}\n{% endif %}"
+    # Face not recently recognized, wait (only for door-open trigger) for it to change
+    - if:
+      - condition: template
+        value_template: "{{ trigger.id == 'door-open' }}"
+      then:
+      - wait_for_trigger:
+        - trigger: state
+          entity_id: sensor.garage_last_recognized_face
+          from: "{{ current_face_value }}"
+        timeout: '00:00:10'
+        continue_on_timeout: true
+      - variables:
+          face_detected: '{{ wait.trigger is not none }}'
+          recognized_face: "{% if wait.trigger is not none %}\n  {{ wait.trigger.to_state.state }}\n{% else %}\n  {{ current_face_value }}\n{% endif %}"
+    - if:
+      - condition: template
+        value_template: "{{ trigger.id != 'door-open' }}"
+      then:
+      - variables:
+          face_detected: false
+          recognized_face: "{{ current_face_value }}"
   
   - variables:
       person_name: "{% set face_val = recognized_face | string | lower %}{% if recognized_face and face_val not in ['none', 'unavailable', 'unknown', ''] %}\n  {{ recognized_face }}\n{% else %}\n  Person\n{% endif %}"
@@ -433,6 +469,7 @@
               notification_icon: "mdi:garage"
               channel: "Garage Security"
               importance: "high"
+              tag: garage_door_security
               actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
     - choose:
       - conditions:
@@ -467,8 +504,11 @@
               notification_icon: "mdi:garage"
               channel: "Garage Security"
               importance: "high"
+              tag: garage_door_security
               actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
   mode: single
+  # Change mode to restart so a rapid Frigate event can preempt baseline path cleanly (will only apply after reload)
+  mode: restart
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
