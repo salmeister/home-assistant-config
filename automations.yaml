@@ -407,31 +407,13 @@
                   title: "Dismiss"
     - stop: "GenAI notification sent with recognized person"
 
-  # Optional short enrichment wait: if this is a door-open trigger, pause briefly (up to 5s) to allow enrichment data
+  # If this is a door-open trigger, stop here and let Frigate triggers handle notifications
+  # This ensures all notifications have proper images and we avoid duplicates
   - if:
     - condition: template
       value_template: "{{ trigger.id == 'door-open' }}"
     then:
-    - wait_for_trigger:
-      - trigger: mqtt
-        topic: frigate/reviews
-        value_template: '{{ value_json["after"]["camera"] }}'
-        payload: garage
-      - trigger: mqtt
-        topic: frigate/tracked_object_update
-        value_template: '{{ value_json.get("camera", "") }}'
-        payload: garage
-      - trigger: state
-        entity_id: sensor.garage_last_recognized_face
-      timeout: '00:00:15'
-      continue_on_timeout: true
-    - choose:
-      - conditions:
-        - condition: template
-          value_template: "{{ wait.trigger is not none }}"
-        sequence:
-        # Frigate enrichment arrived during wait; restart automation to handle via enrichment path
-        - stop: "Frigate enrichment arrived - baseline notification suppressed"
+    - stop: "Door-open trigger suppressed - waiting for Frigate event with image data"
   
   - variables:
       detection_start_time: "{{ now().timestamp() }}"
@@ -470,15 +452,6 @@
     value_template: >
       {% set door_changed = as_timestamp(states.cover.garage_doors.last_changed) %}
       {{ (now().timestamp() - door_changed) < 300 }}
-  
-  # Skip if this is a door-open trigger but we already have frigate event data (prevents duplicate)
-  - condition: template
-    value_template: >
-      {% if trigger.id == 'door-open' and wait.trigger is not none %}
-        false
-      {% else %}
-        true
-      {% endif %}
   
   # Enhanced face recognition check - handle recent changes and wait for updates
   - if:
@@ -699,8 +672,7 @@
                     }
                   ]
                 {% endif %}
-  mode: single
-  max_exceeded: silent
+  mode: restart
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
