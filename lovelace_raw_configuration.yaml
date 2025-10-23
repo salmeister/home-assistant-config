@@ -1474,144 +1474,32 @@
               ]
             },
             {
-              "square": false,
               "type": "grid",
-              "title": "Lunch Menu",
+              "title": "🍽️ PLHS Lunch Menu",
+              "square": false,
+              "columns": 1,
               "cards": [
                 {
-                  "entities": [
-                    {
-                      "entity": "sensor.dayoftheweek",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.my_date",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.plhs_lunch_0",
-                      "icon": " ",
-                      "name": "PLHS"
-                    }
-                  ],
-                  "type": "entities"
+                  "type": "markdown",
+                  "content": "### {{ now().strftime('%A') }}\n{{ now().strftime('%B %d, %Y') }}\n---\n{% set blue = states('sensor.schoolcafe_blue_line_today') %} {% set gold = states('sensor.schoolcafe_gold_line_today') %} {% set is_weekday = state_attr('sensor.schoolcafe_blue_line_today', 'is_weekday') %} {% if is_weekday %} {% if blue not in ['unavailable', 'unknown', 'No items available'] or gold not in ['unavailable', 'unknown', 'No items available'] %}\n{% if blue not in ['unavailable', 'unknown', 'No items available'] %}🔵 {{ blue }}\n{% endif %}{% if gold not in ['unavailable', 'unknown', 'No items available'] %}🟡 {{ gold }}{% endif %} {% else %} 🏫 **PLHS - No School** {% endif %} {% endif %}\n"
                 },
                 {
-                  "entities": [
-                    {
-                      "entity": "sensor.dayoftheweek_plus_one",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.date_plus_one",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.plhs_lunch_1",
-                      "icon": " ",
-                      "name": "PLHS"
-                    }
-                  ],
-                  "type": "entities"
+                  "type": "markdown",
+                  "content": "### {{ (now() + timedelta(days=1)).strftime('%A') }}\n{{ (now() + timedelta(days=1)).strftime('%B %d, %Y') }}\n---\n{% set blue = states('sensor.schoolcafe_blue_line_tomorrow') %} {% set gold = states('sensor.schoolcafe_gold_line_tomorrow') %} {% set is_weekday = state_attr('sensor.schoolcafe_blue_line_tomorrow', 'is_weekday') %} {% if is_weekday %} {% if blue not in ['unavailable', 'unknown', 'No items available'] or gold not in ['unavailable', 'unknown', 'No items available'] %}\n{% if blue not in ['unavailable', 'unknown', 'No items available'] %}🔵 {{ blue }}\n{% endif %}{% if gold not in ['unavailable', 'unknown', 'No items available'] %}🟡 {{ gold }}{% endif %} {% else %} 🏫 **PLHS - No School** {% endif %} {% endif %}\n"
                 },
                 {
-                  "entities": [
-                    {
-                      "entity": "sensor.dayoftheweek_plus_two",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.date_plus_two",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.plhs_lunch_2",
-                      "icon": " ",
-                      "name": "PLHS"
-                    }
-                  ],
-                  "type": "entities"
+                  "type": "markdown",
+                  "content": "### {{ (now() + timedelta(days=2)).strftime('%A') }}\n{{ (now() + timedelta(days=2)).strftime('%B %d, %Y') }}\n---\n{% set blue = states('sensor.schoolcafe_blue_line_day2') %} {% set gold = states('sensor.schoolcafe_gold_line_day2') %} {% set is_weekday = state_attr('sensor.schoolcafe_blue_line_day2', 'is_weekday') %} {% if is_weekday %} {% if blue not in ['unavailable', 'unknown', 'No items available'] or gold not in ['unavailable', 'unknown', 'No items available'] %}\n{% if blue not in ['unavailable', 'unknown', 'No items available'] %}🔵 {{ blue }}\n{% endif %}{% if gold not in ['unavailable', 'unknown', 'No items available'] %}🟡 {{ gold }}{% endif %} {% else %} 🏫 **PLHS - No School** {% endif %} {% endif %}\n"
                 },
                 {
-                  "entities": [
-                    {
-                      "entity": "sensor.dayoftheweek_plus_three",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.date_plus_three",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.plhs_lunch_3",
-                      "icon": " ",
-                      "name": "PLHS"
-                    }
-                  ],
-                  "type": "entities"
+                  "type": "markdown",
+                  "content": "### {{ (now() + timedelta(days=3)).strftime('%A') }}\n{{ (now() + timedelta(days=3)).strftime('%B %d, %Y') }}\n---\n{% set blue = states('sensor.schoolcafe_blue_line_day3') %} {% set gold = states('sensor.schoolcafe_gold_line_day3') %} {% set is_weekday = state_attr('sensor.schoolcafe_blue_line_day3', 'is_weekday') %} {% if is_weekday %} {% if blue not in ['unavailable', 'unknown', 'No items available'] or gold not in ['unavailable', 'unknown', 'No items available'] %}\n{% if blue not in ['unavailable', 'unknown', 'No items available'] %}🔵 {{ blue }}\n{% endif %}{% if gold not in ['unavailable', 'unknown', 'No items available'] %}🟡 {{ gold }}{% endif %} {% else %} 🏫 **PLHS - No School** {% endif %} {% endif %}\n"
                 },
                 {
-                  "entities": [
-                    {
-                      "entity": "sensor.dayoftheweek_plus_four",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.date_plus_four",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.plhs_lunch_4",
-                      "icon": " ",
-                      "name": "PLHS"
-                    }
-                  ],
-                  "type": "entities"
-                },
-                {
-                  "entities": [
-                    {
-                      "entity": "sensor.dayoftheweek_plus_five",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.date_plus_five",
-                      "icon": " ",
-                      "name": " ",
-                      "style": ":host {\n  margin: auto;\n  font-size: 18px;\n}\n"
-                    },
-                    {
-                      "entity": "sensor.plhs_lunch_5",
-                      "icon": " ",
-                      "name": "PLHS"
-                    }
-                  ],
-                  "type": "entities"
+                  "type": "markdown",
+                  "content": "### {{ (now() + timedelta(days=4)).strftime('%A') }}\n{{ (now() + timedelta(days=4)).strftime('%B %d, %Y') }}\n---\n{% set blue = states('sensor.schoolcafe_blue_line_day4') %} {% set gold = states('sensor.schoolcafe_gold_line_day4') %} {% set is_weekday = state_attr('sensor.schoolcafe_blue_line_day4', 'is_weekday') %} {% if is_weekday %} {% if blue not in ['unavailable', 'unknown', 'No items available'] or gold not in ['unavailable', 'unknown', 'No items available'] %}\n{% if blue not in ['unavailable', 'unknown', 'No items available'] %}🔵 {{ blue }}\n{% endif %}{% if gold not in ['unavailable', 'unknown', 'No items available'] %}🟡 {{ gold }}{% endif %} {% else %} 🏫 **PLHS - No School** {% endif %} {% endif %}\n"
                 }
-              ],
-              "columns": 1
+              ]
             }
           ]
         },
