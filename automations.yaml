@@ -506,8 +506,6 @@
               importance: "high"
               tag: garage_door_security
               actions: "{% if video_url != '' %}\n  [{\n    \"action\": \"URI\",\n    \"title\": \"View Clip\",\n    \"uri\": \"{{ video_url }}\"\n  }{% if frigate_detection_id or frigate_event_id %},\n  {\n    \"action\": \"URI\",\n    \"title\": \"View Snapshot\",\n    \"uri\": \"{{ snapshot_url }}\"\n  }{% endif %}\n  ]\n{% else %}\n  []\n{% endif %}"
-  mode: single
-  # Change mode to restart so a rapid Frigate event can preempt baseline path cleanly (will only apply after reload)
   mode: restart
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
@@ -1004,15 +1002,6 @@
       minutes: 5
       seconds: 0
       milliseconds: 0
-  - action: homeassistant.update_entity
-    data:
-      entity_id:
-      - sensor.plhs_lunch_0
-      - sensor.plhs_lunch_1
-      - sensor.plhs_lunch_2
-      - sensor.plhs_lunch_3
-      - sensor.plhs_lunch_4
-      - sensor.plhs_lunch_5
 - id: b1181b134261492db210649c6bd52831
   alias: Dogs Already Fed Check
   triggers:

@@ -3,10 +3,12 @@
       school_day:
         friendly_name: "School Day"
         value_template: >-
-          {% if not is_state('sensor.plhs_lunch_0', none) %}
-            {% if not is_state('sensor.plhs_lunch_0', '') %}
-              {% if not is_state('sensor.plhs_lunch_0', 'No School') %}
-              on
+          {% if not is_state('sensor.schoolcafe_blue_line_today', none) %}
+            {% if not is_state('sensor.schoolcafe_blue_line_today', '') %}
+              {% if not is_state('sensor.schoolcafe_blue_line_today', 'No items available') %}
+                {% if not is_state('sensor.schoolcafe_blue_line_today', 'No School') %}
+                on
+                {% endif %}
               {% endif %}
             {% endif %}
           {% endif %}
@@ -16,10 +18,12 @@
       school_night:
         friendly_name: "School Night"
         value_template: >-
-          {% if not is_state('sensor.plhs_lunch_1', none) %}
-            {% if not is_state('sensor.plhs_lunch_1', '') %}
-              {% if not is_state('sensor.plhs_lunch_1', 'No School') %}
-              on
+          {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', none) %}
+            {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', '') %}
+              {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', 'No items available') %}
+                {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', 'No School') %}
+                on
+                {% endif %}
               {% endif %}
             {% endif %}
           {% endif %}

@@ -23,39 +23,3 @@
       command: !secret frigate_healthcheck_command
       scan_interval: 900  # Every 15 minutes
       command_timeout: 15
-  - sensor:
-      name: PLHS Lunch 0
-      unique_id: '8323629042449'
-      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: PLHS Lunch 1
-      unique_id: '4204585760544'
-      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_one_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: PLHS Lunch 2
-      unique_id: '0423253552945'
-      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_two_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: PLHS Lunch 3
-      unique_id: '9134060986159'
-      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_three_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: PLHS Lunch 4
-      unique_id: '7680451952452'
-      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_four_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
-      scan_interval: 20000
-      command_timeout: 45
-  - sensor:
-      name: PLHS Lunch 5
-      unique_id: '1039070887115'
-      command: curl 'https://webapis.schoolcafe.com/api/CalendarView/GetDailyMenuitems?SchoolId=ef44acd3-63cb-4d3b-828e-80ed1ef89779&ServingDate={{states.sensor.date_plus_five_html.state}}&ServingLine=All%20Lines&MealType=Lunch' | jq -r '.["BLUE LINE"][0].MenuItemDescription as $blue_description | .["GOLD LINE"][0].MenuItemDescription as $gold_description | select($blue_description != null or $gold_description != null) | "\(.["BLUE LINE"][0].Category) - \($blue_description), \(.["GOLD LINE"][0].Category) - \($gold_description)"'
-      scan_interval: 20000
-      command_timeout: 45
