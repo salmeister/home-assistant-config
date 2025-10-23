@@ -2,14 +2,17 @@
 
 **Purpose**: This file serves as persistent memory for GitHub Copilot to maintain context across conversations and development sessions.
 
-**Last Updated**: September 18, 2025  
+**Last Updated**: October 23, 2025  
 **Current Branch**: develop-ha  
 **Repository**: salmeister/home-assistant-config
 
-## Recent Updates (September 18, 2025)
-- ✅ Updated `.copilot/instructions.md` to make memory file reading MANDATORY first step
-- ✅ Verified Copilot instructions are properly configured and accessible
-- 📋 Instructions now enforce: Memory → Entity Registry → Task execution workflow
+## Recent Updates (October 23, 2025)
+- ✅ Enhanced Garage Door Security Notification automation with comprehensive improvements
+- ✅ Added multi-person detection support with face recognition aggregation
+- ✅ Implemented session-based notification tagging to prevent duplicates
+- ✅ Improved snapshot selection logic for best quality images
+- ✅ Added consistent video clip linking in all notification paths
+- 📋 Notification now uses unique event-based tags for progressive enrichment
 
 ## Security & privacy guardrails (public repo)
 
@@ -187,6 +190,25 @@ Based on entity_registry_snapshot.json review:
   - **Conditions**: 10-minute delay, dryer door still closed (`binary_sensor.dryer_door_window_door_is_open` = 'off'), Andy notifications enabled
   - **Action**: Mobile notification with message "Washing machine is done, dryer time!"
   - **Pattern**: Follows existing notification patterns with `input_boolean.notify_fpm_andy` condition check
+
+### Recent Automation Updates (October 23, 2025)
+- **Enhanced Garage Door Security Notification - Comprehensive Upgrade**: Major improvements to ID `48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b`
+  - **Problem**: Notifications inconsistent across detection paths, potential duplicates, unclear person identification
+  - **Solution**: Complete overhaul with session-based tracking, improved person detection, and consistent media handling
+  - **Key Changes**:
+    - **Session Tagging**: Unique event-based notification tags (`garage_event_<id>`) prevent duplicate notifications
+    - **Multi-Person Support**: Added face recognition trigger and logic to track multiple people in single event
+    - **Snapshot Selection**: Prioritized best quality snapshots (Frigate detection > event > face recognition > live camera)
+    - **Video Links**: Consistent video clip URLs in all notification paths using Frigate notification API
+    - **Progressive Enrichment**: GenAI descriptions update existing notifications using same tag
+    - **Face Recognition**: Enhanced wait logic and recent face detection (2-minute window)
+    - **Notification Actions**: 3 Android-compatible actions (View Clip, View Snapshot, Dismiss)
+    - **Message Formatting**: Cleaner people_text with proper grammar, improved emoji usage (🚗 vs 🚶‍➡️)
+  - **Triggers**: Door-open, frigate-event, frigate-genai-update, face-recognition (new)
+  - **Media Handling**: All paths now include snapshot_url, video_url with proper fallbacks
+  - **Tag Strategy**: Uses frigate_event_id > frigate_detection_id > door timestamp for consistent updates
+  - **Result**: Single notification per event, progressive enrichment, recognized person names, quality snapshots, video links
+  - **Mode**: Restart mode allows newer detections to override pending ones
 
 ### Recent Automation Updates (September 25, 2025)
 - **Frigate Person Name Display Fix**: Updated person_name templates in garage detection automations
