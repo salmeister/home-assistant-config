@@ -341,11 +341,8 @@
           sequence:
           - action: notify.mobile_app_salmob1
             data:
-              title: "� Garage Entry Detected"
-              message: >-
-                {{ people_text }} entered the garage at {{ detection_time }}.
-                
-                🤖 {{ genai_description }}
+              title: "🚪 Garage Entry Detected"
+              message: "{{ people_text }} detected at {{ detection_time }}."
               data:
                 image: '{{ snapshot_url }}'
                 persistent: true
@@ -388,11 +385,8 @@
           sequence:
           - action: notify.mobile_app_salmob2
             data:
-              title: "� Garage Entry Detected"
-              message: >-
-                {{ people_text }} entered the garage at {{ detection_time }}.
-                
-                🤖 {{ genai_description }}
+              title: "🚪 Garage Entry Detected"
+              message: "{{ people_text }} detected at {{ detection_time }}."
               data:
                 image: '{{ snapshot_url }}'
                 persistent: true
@@ -429,7 +423,7 @@
         payload: garage
       - trigger: state
         entity_id: sensor.garage_last_recognized_face
-      timeout: '00:00:05'
+      timeout: '00:00:15'
       continue_on_timeout: true
     - choose:
       - conditions:
@@ -476,6 +470,15 @@
     value_template: >
       {% set door_changed = as_timestamp(states.cover.garage_doors.last_changed) %}
       {{ (now().timestamp() - door_changed) < 300 }}
+  
+  # Skip if this is a door-open trigger but we already have frigate event data (prevents duplicate)
+  - condition: template
+    value_template: >
+      {% if trigger.id == 'door-open' and wait.trigger is not none %}
+        false
+      {% else %}
+        true
+      {% endif %}
   
   # Enhanced face recognition check - handle recent changes and wait for updates
   - if:
@@ -588,7 +591,7 @@
         sequence:
         - action: notify.mobile_app_salmob1
           data:
-            title: "� Garage Entry Detected"
+            title: "🚪 Garage Entry Detected"
             message: "{{ people_text }} detected at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
@@ -654,7 +657,7 @@
         sequence:
         - action: notify.mobile_app_salmob2
           data:
-            title: "� Garage Entry Detected"
+            title: "🚪 Garage Entry Detected"
             message: "{{ people_text }} detected at {{ detection_time }}."
             data:
               image: '{{ snapshot_url }}'
@@ -696,7 +699,8 @@
                     }
                   ]
                 {% endif %}
-  mode: restart
+  mode: single
+  max_exceeded: silent
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
