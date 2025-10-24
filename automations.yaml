@@ -167,7 +167,7 @@
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Open Security Notification
-  description: Notify when the garage door opens (parents away/asleep/armed) with progressive enrichment (Frigate event, face recognition, GenAI description). Supports multiple person detection with aggregated names and best snapshot selection. Single notification per event using unique session tags.
+  description: Notify when garage door opens and person enters Interior Garage zone. Waits up to 3 minutes for zone occupancy before sending fallback notification. Supports multi-person detection with face recognition and proper image handling.
   triggers:
   # Primary trigger: Garage door begins opening (preferred) or transitions directly to open
   - entity_id: cover.garage_doors
@@ -192,12 +192,6 @@
     value_template: '{{ value_json.get("camera", "") }}'
     payload: garage
     id: frigate-genai-update
-  # Face recognition updates for multi-person tracking
-  - trigger: mqtt
-    topic: frigate/tracked_object_update
-    value_template: "{{ value_json.get('type', '') }}"
-    payload: face
-    id: face-recognition
   conditions:
   - condition: or
     conditions:
@@ -245,40 +239,15 @@
       garage_door_last_changed: "{{ states.cover.garage_doors.last_changed }}"
       
       # Create unique session tag based on event or door opening time
+      # IMPORTANT: Use review ID for consistency across all triggers for same event
       session_tag: >-
         {% if trigger.id == 'frigate-event' %}
           garage_event_{{ trigger.payload_json.after.id }}
         {% elif trigger.id == 'frigate-genai-update' %}
           garage_event_{{ trigger.payload_json.event_id }}
-        {% elif trigger.id == 'face-recognition' %}
-          garage_event_{{ trigger.payload_json.id }}
         {% else %}
           garage_door_{{ garage_door_last_changed | as_timestamp | int }}
         {% endif %}
-      
-      # Initialize tracking for multiple people
-      detected_people: []
-      face_names: []
-  
-  # Handle face recognition updates - accumulate names for multi-person tracking
-  - if:
-    - condition: template
-      value_template: "{{ trigger.id == 'face-recognition' and trigger.payload_json.get('camera', '') == 'garage' }}"
-    then:
-    - variables:
-        face_name: "{{ trigger.payload_json.get('name', 'Person') }}"
-        face_event_id: "{{ trigger.payload_json.get('id', '') }}"
-        face_score: "{{ trigger.payload_json.get('score', 0) }}"
-    
-    # Only proceed if garage door opened recently (within 5 minutes)
-    - condition: template
-      value_template: >
-        {% set door_changed = as_timestamp(states.cover.garage_doors.last_changed) %}
-        {{ (now().timestamp() - door_changed) < 300 }}
-    
-    # Store recognized face in scene for later aggregation (HA doesn't persist variables across triggers)
-    # This is a conceptual approach - in practice, you may need an input_text helper to persist names
-    - stop: "Face recognition logged - notification will be sent/updated by other triggers"
   
   # Handle GenAI description updates - send enhanced notification with all recognized people
   - if:
@@ -293,19 +262,54 @@
         # Build URLs using the event_id from GenAI update
         snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ genai_event_id }}/snapshot.jpg"
         video_url: "{{ base_url }}/api/frigate/notifications/{{ genai_event_id }}/garage/clip.mp4"
+    
+    # Wait 3 seconds to allow face recognition to complete for all detected people
+    - delay:
+        seconds: 3
+    
+    - variables:
+        # Get all recent face recognitions from history (last 10 seconds)
+        # This captures multiple people detected in same event
+        recent_faces: >-
+          {% set ns = namespace(names=[]) %}
+          {% set current_time = now().timestamp() %}
+          {% for state in states.sensor.garage_last_recognized_face.attributes.history | default([]) %}
+            {% if current_time - state.last_changed.timestamp() < 10 %}
+              {% set face_name = state.state | string | lower %}
+              {% if face_name not in ['none', 'unavailable', 'unknown', '', 'person'] %}
+                {% set ns.names = ns.names + [state.state] %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.names | unique | list }}
         
-        # Get face recognition - check for most recent recognized face(s)
+        # Also check current face value
         current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
         face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
         
-        # Build people text - prioritize recognized faces, fallback to generic
+        # Build people text with proper multi-person grammar
         people_text: >-
-          {% set face_val = current_face_value | string | lower %}
-          {% if current_face_value and face_val not in ['none', 'unavailable', 'unknown', ''] and
-                (detection_start_time - as_timestamp(face_last_changed)) < 120 %}
-            {{ current_face_value }}
-          {% else %}
+          {% set current_face = current_face_value | string | lower %}
+          {% set all_names = [] %}
+          
+          {# Add current face if valid and recent #}
+          {% if current_face_value and current_face not in ['none', 'unavailable', 'unknown', '', 'person'] and
+                (detection_start_time - as_timestamp(face_last_changed)) < 30 %}
+            {% set all_names = all_names + [current_face_value] %}
+          {% endif %}
+          
+          {# Get unique names #}
+          {% set unique_names = all_names | unique | list %}
+          
+          {# Format output based on number of people #}
+          {% if unique_names | length == 0 %}
             Person
+          {% elif unique_names | length == 1 %}
+            {{ unique_names[0] }}
+          {% elif unique_names | length == 2 %}
+            {{ unique_names[0] }} and {{ unique_names[1] }}
+          {% else %}
+            {{ unique_names[:-1] | join(', ') }}, and {{ unique_names[-1] }}
           {% endif %}
     
     # Send enhanced notifications with GenAI description (updates existing via session tag)
@@ -400,13 +404,118 @@
                   title: "Dismiss"
     - stop: "GenAI notification sent with recognized person"
 
-  # If this is a door-open trigger, stop here and let Frigate triggers handle notifications
-  # This ensures all notifications have proper images and we avoid duplicates
+  # For door-open triggers: wait for person to enter Interior Garage zone before sending notification
+  # This allows time for parking, gathering items, and walking into garage
   - if:
     - condition: template
       value_template: "{{ trigger.id == 'door-open' }}"
     then:
-    - stop: "Door-open trigger suppressed - waiting for Frigate event with image data"
+    # Wait up to 3 minutes for person to enter Interior Garage zone
+    - wait_for_trigger:
+      - platform: state
+        entity_id: binary_sensor.interior_garage_person_occupancy
+        to: 'on'
+      timeout:
+        minutes: 3
+      continue_on_timeout: true
+    
+    # If person detected in zone, stop and let Frigate event handle notification with face recognition
+    - if:
+      - condition: template
+        value_template: "{{ wait.trigger is not none }}"
+      then:
+      - stop: "Person entered Interior Garage zone - waiting for Frigate event with face recognition"
+    
+    # If timeout (no person detected), send generic door-open notification with live camera snapshot
+    - variables:
+        detection_time: '{{ now().strftime(''%I:%M %p'') }}'
+        snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
+        video_url: ""
+        notification_tag: "garage_door_{{ garage_door_last_changed | as_timestamp | int }}"
+    
+    # Send fallback notification (no person detected)
+    - parallel:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_andy
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob1
+            data:
+              title: "🚪 Garage Door Opened"
+              message: "Garage door opened at {{ detection_time }}. No person detected."
+              data:
+                image: '{{ snapshot_url }}'
+                persistent: true
+                clickAction: '{{ snapshot_url }}'
+                notification_icon: "mdi:garage-alert"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_katie
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob2
+            data:
+              title: "🚪 Garage Door Opened"
+              message: "Garage door opened at {{ detection_time }}. No person detected."
+              data:
+                image: '{{ snapshot_url }}'
+                persistent: true
+                clickAction: '{{ snapshot_url }}'
+                notification_icon: "mdi:garage-alert"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+    - stop: "Fallback notification sent (door opened, no person detected)"
   
   - variables:
       detection_start_time: "{{ now().timestamp() }}"
@@ -488,11 +597,16 @@
   
   # Build comprehensive person identification and media URLs
   - variables:
-      # Build people text with proper grammar for multiple people
+      # Check current face recognition value
+      current_face_check: "{{ states('sensor.garage_last_recognized_face') }}"
+      face_check_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
+      
+      # Build people text with multi-person support
       people_text: >-
-        {% set face_val = recognized_face | string | lower %}
-        {% if recognized_face and face_val not in ['none', 'unavailable', 'unknown', ''] %}
-          {{ recognized_face }}
+        {% set face_val = current_face_check | string | lower %}
+        {% if current_face_check and face_val not in ['none', 'unavailable', 'unknown', ''] and
+              (detection_start_time - as_timestamp(face_check_last_changed)) < 30 %}
+          {{ current_face_check }}
         {% else %}
           Person
         {% endif %}
@@ -665,7 +779,8 @@
                     }
                   ]
                 {% endif %}
-  mode: restart
+  mode: single
+  max_exceeded: silent
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:

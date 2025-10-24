@@ -6,6 +6,15 @@
 **Current Branch**: develop-ha  
 **Repository**: salmeister/home-assistant-config
 
+## Recent Updates (October 24, 2025)
+- ✅ **MAJOR IMPROVEMENT**: Zone-based garage door notification system implemented
+- ✅ Replaced arbitrary 3-second delay with intelligent Interior Garage zone occupancy detection
+- ✅ Added 3-minute wait period for real-world scenarios (parking, gathering items, walking to garage)
+- ✅ Implemented fallback notifications when door opens but no person detected
+- ✅ All notifications now guaranteed to include images (Frigate snapshots or live camera)
+- ✅ Multi-person face recognition with proper name aggregation ("Andy and Katie")
+- ✅ Single notification per event using `mode: single`
+
 ## Recent Updates (October 23, 2025)
 - ✅ Enhanced Garage Door Security Notification automation with comprehensive improvements
 - ✅ Added multi-person detection support with face recognition aggregation
