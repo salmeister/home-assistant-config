@@ -601,20 +601,24 @@
                         {
                           "type": "tile",
                           "entity": "switch.front_lights",
+                          "name": "Front",
                           "icon": "mdi:post-lamp",
                           "hide_state": true,
-                          "name": "Front"
+                          "vertical": false,
+                          "features_position": "bottom"
                         },
                         {
                           "type": "tile",
-                          "entity": "light.front_landscape",
+                          "entity": "light.front_landscape_all",
+                          "name": "Landscape",
                           "icon": "mdi:spotlight-beam",
                           "hide_state": true,
-                          "name": "Landscape",
-                          "tap_action": {
+                          "vertical": false,
+                          "double_tap_action": {
                             "action": "navigate",
                             "navigation_path": "/config/devices/device/eb95caaa7d24fca70cbe04f6113ce989"
-                          }
+                          },
+                          "features_position": "bottom"
                         }
                       ]
                     },
@@ -624,10 +628,11 @@
                         {
                           "type": "tile",
                           "entity": "switch.patio_light",
+                          "name": "Patio",
                           "icon": "mdi:post-lamp",
                           "hide_state": true,
-                          "name": "Patio",
-                          "vertical": true
+                          "vertical": true,
+                          "features_position": "bottom"
                         },
                         {
                           "type": "tile",
