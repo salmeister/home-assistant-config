@@ -7,13 +7,6 @@
   actions:
   - entity_id: scene.Dawn
     action: scene.turn_on
-  - delay:
-      hours: 0
-      minutes: 10
-      seconds: 0
-      milliseconds: 0
-  - entity_id: switch.fish_tank_light
-    action: switch.turn_on
 - id: 34d19e4e28744d10bf2eeba67c8c9652
   alias: Dust Settings
   triggers:
@@ -713,15 +706,6 @@
     trigger: time
   actions:
   - parallel:
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: switch.fish_tank_light
-          state: 'on'
-        sequence:
-        - entity_id: switch.fish_tank_light
-          action: switch.turn_off
-      alias: Turn Off Aquarium
     - choose:
       - conditions:
         - condition: state
