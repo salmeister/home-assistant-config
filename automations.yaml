@@ -167,31 +167,18 @@
       alias: Garage Light
 - id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
   alias: Enhanced Garage Door Open Security Notification
-  description: Notify when garage door opens and person enters Interior Garage zone. Waits up to 3 minutes for zone occupancy before sending fallback notification. Supports multi-person detection with face recognition and proper image handling.
+  description: >
+    Notify when garage door opens. Waits for person detection and attempts face recognition.
+    Flow: Door opens → Wait for person → Check face → Notify (recognized/person/door only)
   triggers:
-  # Primary trigger: Garage door begins opening (preferred) or transitions directly to open
   - entity_id: cover.garage_doors
     from: closed
     to: opening
     trigger: state
-    id: door-open
   - entity_id: cover.garage_doors
     from: closed
     to: open
     trigger: state
-    id: door-open
-  # Frigate review event (initial AI detection) used to enrich existing notification (same tag)
-  - trigger: mqtt
-    topic: frigate/reviews
-    value_template: '{{ value_json["after"]["camera"] }}'
-    payload: garage
-    id: frigate-event
-  # Frigate GenAI tracked object update (description + event id) further enriches notification
-  - trigger: mqtt
-    topic: frigate/tracked_object_update
-    value_template: '{{ value_json.get("camera", "") }}'
-    payload: garage
-    id: frigate-genai-update
   conditions:
   - condition: or
     conditions:
@@ -232,208 +219,139 @@
           entity_id: input_boolean.notify_fpm_katie
           state: 'on'
   actions:
-  # Initialize session tracking for this detection event
+  # Initialize variables
   - variables:
       base_url: "{{ states('input_text.baseurl') }}"
-      detection_start_time: "{{ now().timestamp() }}"
-      garage_door_last_changed: "{{ states.cover.garage_doors.last_changed }}"
-      
-      # Create unique session tag based on event or door opening time
-      # IMPORTANT: Use review ID for consistency across all triggers for same event
-      session_tag: >-
-        {% if trigger.id == 'frigate-event' %}
-          garage_event_{{ trigger.payload_json.after.id }}
-        {% elif trigger.id == 'frigate-genai-update' %}
-          garage_event_{{ trigger.payload_json.event_id }}
-        {% else %}
-          garage_door_{{ garage_door_last_changed | as_timestamp | int }}
-        {% endif %}
+      door_open_time: "{{ now().timestamp() }}"
+      notification_tag: "garage_door_{{ now().timestamp() | int }}"
   
-  # Handle GenAI description updates - send enhanced notification with all recognized people
+  # Step 1: Wait up to 4 minutes for person to enter the Interior Garage zone
+  # This zone is near the camera for optimal face recognition accuracy.
+  # Allows time for: parking, checking phone, gathering items, exiting vehicle.
+  - wait_for_trigger:
+    - platform: state
+      entity_id: binary_sensor.interior_garage_person_occupancy
+      to: 'on'
+    timeout:
+      minutes: 4
+    continue_on_timeout: true
+  
+  # Step 2: Check if person was detected in the zone
   - if:
     - condition: template
-      value_template: "{{ trigger.id == 'frigate-genai-update' and trigger.payload_json.get('type', '') == 'description' }}"
+      value_template: "{{ wait.trigger is not none }}"
     then:
-    - variables:
-        genai_event_id: "{{ trigger.payload_json.event_id }}"
-        genai_description: "{{ trigger.payload_json.description }}"
-        detection_time: '{{ now().strftime(''%I:%M %p'') }}'
-        
-        # Build URLs using the event_id from GenAI update
-        snapshot_url: "{{ base_url }}/api/frigate/notifications/{{ genai_event_id }}/snapshot.jpg"
-        video_url: "{{ base_url }}/api/frigate/notifications/{{ genai_event_id }}/garage/clip.mp4"
-    
-    # Wait 3 seconds to allow face recognition to complete for all detected people
+    # Person detected in Interior Garage zone - wait for face recognition to process
+    # The interior zone provides a closer view for more accurate face matching
     - delay:
-        seconds: 3
+        seconds: 5
     
+    # Check for recognized face
     - variables:
-        # Get all recent face recognitions from history (last 10 seconds)
-        # This captures multiple people detected in same event
-        recent_faces: >-
-          {% set ns = namespace(names=[]) %}
-          {% set current_time = now().timestamp() %}
-          {% for state in states.sensor.garage_last_recognized_face.attributes.history | default([]) %}
-            {% if current_time - state.last_changed.timestamp() < 10 %}
-              {% set face_name = state.state | string | lower %}
-              {% if face_name not in ['none', 'unavailable', 'unknown', '', 'person'] %}
-                {% set ns.names = ns.names + [state.state] %}
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-          {{ ns.names | unique | list }}
-        
-        # Also check current face value
-        current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
+        current_face: "{{ states('sensor.garage_last_recognized_face') }}"
         face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
-        
-        # Build people text with proper multi-person grammar
-        people_text: >-
-          {% set current_face = current_face_value | string | lower %}
-          {% set all_names = [] %}
-          
-          {# Add current face if valid and recent #}
-          {% if current_face_value and current_face not in ['none', 'unavailable', 'unknown', '', 'person'] and
-                (detection_start_time - as_timestamp(face_last_changed)) < 30 %}
-            {% set all_names = all_names + [current_face_value] %}
-          {% endif %}
-          
-          {# Get unique names #}
-          {% set unique_names = all_names | unique | list %}
-          
-          {# Format output based on number of people #}
-          {% if unique_names | length == 0 %}
-            Person
-          {% elif unique_names | length == 1 %}
-            {{ unique_names[0] }}
-          {% elif unique_names | length == 2 %}
-            {{ unique_names[0] }} and {{ unique_names[1] }}
+        face_is_valid: >-
+          {{ current_face and 
+             (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
+             (now().timestamp() - as_timestamp(face_last_changed)) < 60 }}
+        person_name: >-
+          {% if current_face and (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
+                (now().timestamp() - as_timestamp(face_last_changed)) < 60 %}
+            {{ current_face }}
           {% else %}
-            {{ unique_names[:-1] | join(', ') }}, and {{ unique_names[-1] }}
+            Person
           {% endif %}
-    
-    # Send enhanced notifications with GenAI description (updates existing via session tag)
-    - parallel:
-      - choose:
-        - conditions:
-          - condition: state
-            entity_id: input_boolean.notify_fpm_andy
-            state: 'on'
-          - condition: or
-            conditions:
-            # Both away during day OR bedtime is on OR external armed
-            - condition: and
-              conditions:
-              - condition: template
-                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
-              - condition: state
-                entity_id: input_boolean.bedtime
-                state: 'off'
-            - condition: state
-              entity_id: input_boolean.bedtime
-              state: 'on'
-            - condition: state
-              entity_id: input_boolean.external_armed_mode
-              state: 'on'
-          sequence:
-          - action: notify.mobile_app_salmob1
-            data:
-              title: "🚪 Garage Entry Detected"
-              message: "{{ people_text }} detected at {{ detection_time }}."
-              data:
-                image: '{{ snapshot_url }}'
-                persistent: true
-                clickAction: '{{ video_url }}'
-                notification_icon: "mdi:garage"
-                channel: "Garage Security"
-                importance: "high"
-                tag: "{{ session_tag }}"
-                group: "garage_security"
-                actions:
-                - action: "URI"
-                  title: "View Clip"
-                  uri: "{{ video_url }}"
-                - action: "URI"
-                  title: "View Snapshot"
-                  uri: "{{ snapshot_url }}"
-                - action: "DISMISS_GARAGE"
-                  title: "Dismiss"
-      - choose:
-        - conditions:
-          - condition: state
-            entity_id: input_boolean.notify_fpm_katie
-            state: 'on'
-          - condition: or
-            conditions:
-            # Both away during day OR bedtime is on OR external armed
-            - condition: and
-              conditions:
-              - condition: template
-                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
-              - condition: state
-                entity_id: input_boolean.bedtime
-                state: 'off'
-            - condition: state
-              entity_id: input_boolean.bedtime
-              state: 'on'
-            - condition: state
-              entity_id: input_boolean.external_armed_mode
-              state: 'on'
-          sequence:
-          - action: notify.mobile_app_salmob2
-            data:
-              title: "🚪 Garage Entry Detected"
-              message: "{{ people_text }} detected at {{ detection_time }}."
-              data:
-                image: '{{ snapshot_url }}'
-                persistent: true
-                clickAction: '{{ video_url }}'
-                notification_icon: "mdi:garage"
-                channel: "Garage Security"
-                importance: "high"
-                tag: "{{ session_tag }}"
-                group: "garage_security"
-                actions:
-                - action: "URI"
-                  title: "View Clip"
-                  uri: "{{ video_url }}"
-                - action: "URI"
-                  title: "View Snapshot"
-                  uri: "{{ snapshot_url }}"
-                - action: "DISMISS_GARAGE"
-                  title: "Dismiss"
-    - stop: "GenAI notification sent with recognized person"
-
-  # For door-open triggers: wait for person to enter Interior Garage zone before sending notification
-  # This allows time for parking, gathering items, and walking into garage
-  - if:
-    - condition: template
-      value_template: "{{ trigger.id == 'door-open' }}"
-    then:
-    # Wait up to 3 minutes for person to enter Interior Garage zone
-    - wait_for_trigger:
-      - platform: state
-        entity_id: binary_sensor.interior_garage_person_occupancy
-        to: 'on'
-      timeout:
-        minutes: 3
-      continue_on_timeout: true
-    
-    # If person detected in zone, stop and let Frigate event handle notification with face recognition
-    - if:
-      - condition: template
-        value_template: "{{ wait.trigger is not none }}"
-      then:
-      - stop: "Person entered Interior Garage zone - waiting for Frigate event with face recognition"
-    
-    # If timeout (no person detected), send generic door-open notification with live camera snapshot
-    - variables:
-        detection_time: '{{ now().strftime(''%I:%M %p'') }}'
+        detection_time: "{{ now().strftime('%I:%M %p') }}"
         snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
-        video_url: ""
-        notification_tag: "garage_door_{{ garage_door_last_changed | as_timestamp | int }}"
     
-    # Send fallback notification (no person detected)
+    # Send notification with person (recognized or not)
+    - parallel:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_andy
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob1
+            data:
+              title: "🚪 Garage Entry Detected"
+              message: "{{ person_name }} entered the garage at {{ detection_time }}."
+              data:
+                image: "{{ snapshot_url }}"
+                persistent: true
+                clickAction: "{{ snapshot_url }}"
+                notification_icon: "mdi:garage"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_katie
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob2
+            data:
+              title: "🚪 Garage Entry Detected"
+              message: "{{ person_name }} entered the garage at {{ detection_time }}."
+              data:
+                image: "{{ snapshot_url }}"
+                persistent: true
+                clickAction: "{{ snapshot_url }}"
+                notification_icon: "mdi:garage"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+    else:
+    # No person detected after timeout - send door-opened-only notification
+    - variables:
+        detection_time: "{{ now().strftime('%I:%M %p') }}"
+        snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
+    
     - parallel:
       - choose:
         - conditions:
@@ -461,9 +379,9 @@
               title: "🚪 Garage Door Opened"
               message: "Garage door opened at {{ detection_time }}. No person detected."
               data:
-                image: '{{ snapshot_url }}'
+                image: "{{ snapshot_url }}"
                 persistent: true
-                clickAction: '{{ snapshot_url }}'
+                clickAction: "{{ snapshot_url }}"
                 notification_icon: "mdi:garage-alert"
                 channel: "Garage Security"
                 importance: "high"
@@ -501,9 +419,9 @@
               title: "🚪 Garage Door Opened"
               message: "Garage door opened at {{ detection_time }}. No person detected."
               data:
-                image: '{{ snapshot_url }}'
+                image: "{{ snapshot_url }}"
                 persistent: true
-                clickAction: '{{ snapshot_url }}'
+                clickAction: "{{ snapshot_url }}"
                 notification_icon: "mdi:garage-alert"
                 channel: "Garage Security"
                 importance: "high"
@@ -515,270 +433,6 @@
                   uri: "{{ snapshot_url }}"
                 - action: "DISMISS_GARAGE"
                   title: "Dismiss"
-    - stop: "Fallback notification sent (door opened, no person detected)"
-  
-  - variables:
-      detection_start_time: "{{ now().timestamp() }}"
-      detection_timeout: "00:05:00"
-      base_url: "{{ states('input_text.baseurl') }}"
-      current_face_value: "{{ states('sensor.garage_last_recognized_face') }}"
-      face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
-      garage_door_last_changed: "{{ states.cover.garage_doors.last_changed }}"
-
-      # Frigate event data (available when trigger.id == 'frigate-event')
-      frigate_event: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json }}{% else %}{% endif %}"
-      frigate_event_id: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.id }}{% else %}{% endif %}"
-      frigate_review_id: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.id }}{% else %}{% endif %}"
-      frigate_detections: "{% if trigger.id == 'frigate-event' %}{{ trigger.payload_json.after.data.detections }}{% else %}[]{% endif %}"
-      
-      # Get all detection IDs for comprehensive snapshot selection
-      detection_ids: >-
-        {% if trigger.id == 'frigate-event' and trigger.payload_json.after.data.detections|length > 0 %}
-          {{ trigger.payload_json.after.data.detections }}
-        {% else %}
-          []
-        {% endif %}
-      
-      # Select primary detection ID (first in list or use review ID)
-      frigate_detection_id: >-
-        {% if trigger.id == 'frigate-event' and trigger.payload_json.after.data.detections|length > 0 %}
-          {{ trigger.payload_json.after.data.detections[0] }}
-        {% elif trigger.id == 'frigate-event' %}
-          {{ trigger.payload_json.after.id }}
-        {% else %}
-          
-        {% endif %}
-
-  # Only proceed if the garage door was opened within the last 5 minutes
-  - condition: template
-    value_template: >
-      {% set door_changed = as_timestamp(states.cover.garage_doors.last_changed) %}
-      {{ (now().timestamp() - door_changed) < 300 }}
-  
-  # Enhanced face recognition check - handle recent changes and wait for updates
-  - if:
-    - condition: template
-      value_template: >
-        {{ face_last_changed is not none and 
-           (detection_start_time - as_timestamp(face_last_changed)) < 120 and
-           current_face_value and (current_face_value | string | lower) not in ['none', 'unavailable', 'unknown', ''] }}
-    then:
-    # Face was recognized recently, use current value
-    - variables:
-        face_detected: true
-        recognized_face: "{{ current_face_value }}"
-    else:
-    # Face not recently recognized, wait for door-open triggers
-    - if:
-      - condition: template
-        value_template: "{{ trigger.id == 'door-open' }}"
-      then:
-      - wait_for_trigger:
-        - trigger: state
-          entity_id: sensor.garage_last_recognized_face
-          from: "{{ current_face_value }}"
-        timeout: '00:00:10'
-        continue_on_timeout: true
-      - variables:
-          face_detected: '{{ wait.trigger is not none }}'
-          recognized_face: >-
-            {% if wait.trigger is not none %}
-              {{ wait.trigger.to_state.state }}
-            {% else %}
-              {{ current_face_value }}
-            {% endif %}
-    - if:
-      - condition: template
-        value_template: "{{ trigger.id != 'door-open' }}"
-      then:
-      - variables:
-          face_detected: false
-          recognized_face: "{{ current_face_value }}"
-  
-  # Build comprehensive person identification and media URLs
-  - variables:
-      # Check current face recognition value
-      current_face_check: "{{ states('sensor.garage_last_recognized_face') }}"
-      face_check_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
-      
-      # Build people text with multi-person support
-      people_text: >-
-        {% set face_val = current_face_check | string | lower %}
-        {% if current_face_check and face_val not in ['none', 'unavailable', 'unknown', ''] and
-              (detection_start_time - as_timestamp(face_check_last_changed)) < 30 %}
-          {{ current_face_check }}
-        {% else %}
-          Person
-        {% endif %}
-      
-      detection_time: '{{ now().strftime(''%I:%M %p'') }}'
-      
-      # Enhanced snapshot URL selection - prioritize best quality snapshots
-      snapshot_url: >-
-        {% if frigate_detection_id %}
-          {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/snapshot.jpg
-        {% elif frigate_event_id %}
-          {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/snapshot.jpg
-        {% elif recognized_face and (recognized_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] %}
-          {{ base_url }}/api/camera_proxy/image.garage_person
-        {% else %}
-          {{ base_url }}/api/camera_proxy/camera.garage
-        {% endif %}
-      
-      # Video URL with proper fallback chain
-      video_url: >-
-        {% if frigate_detection_id %}
-          {{ base_url }}/api/frigate/notifications/{{ frigate_detection_id }}/garage/clip.mp4
-        {% elif frigate_event_id %}
-          {{ base_url }}/api/frigate/notifications/{{ frigate_event_id }}/garage/clip.mp4
-        {% else %}
-          
-        {% endif %}
-      
-      # Create consistent session tag for notification updates
-      notification_tag: >-
-        {% if frigate_event_id %}
-          garage_event_{{ frigate_event_id }}
-        {% elif frigate_detection_id %}
-          garage_event_{{ frigate_detection_id }}
-        {% else %}
-          garage_door_{{ garage_door_last_changed | as_timestamp | int }}
-        {% endif %}
-  
-  # Send notifications with consistent session tagging to prevent duplicates
-  - parallel:
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: input_boolean.notify_fpm_andy
-          state: 'on'
-        - condition: or
-          conditions:
-          # Both away during day OR bedtime is on OR external armed
-          - condition: and
-            conditions:
-            - condition: template
-              value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
-            - condition: state
-              entity_id: input_boolean.bedtime
-              state: 'off'
-          - condition: state
-            entity_id: input_boolean.bedtime
-            state: 'on'
-          - condition: state
-            entity_id: input_boolean.external_armed_mode
-            state: 'on'
-        sequence:
-        - action: notify.mobile_app_salmob1
-          data:
-            title: "🚪 Garage Entry Detected"
-            message: "{{ people_text }} detected at {{ detection_time }}."
-            data:
-              image: '{{ snapshot_url }}'
-              persistent: true
-              clickAction: '{{ video_url if video_url else snapshot_url }}'
-              notification_icon: "mdi:garage"
-              channel: "Garage Security"
-              importance: "high"
-              tag: "{{ notification_tag }}"
-              group: "garage_security"
-              actions: >-
-                {% if video_url %}
-                  [
-                    {
-                      "action": "URI",
-                      "title": "View Clip",
-                      "uri": "{{ video_url }}"
-                    },
-                    {
-                      "action": "URI",
-                      "title": "View Snapshot",
-                      "uri": "{{ snapshot_url }}"
-                    },
-                    {
-                      "action": "DISMISS_GARAGE",
-                      "title": "Dismiss"
-                    }
-                  ]
-                {% else %}
-                  [
-                    {
-                      "action": "URI",
-                      "title": "View Snapshot",
-                      "uri": "{{ snapshot_url }}"
-                    },
-                    {
-                      "action": "DISMISS_GARAGE",
-                      "title": "Dismiss"
-                    }
-                  ]
-                {% endif %}
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: input_boolean.notify_fpm_katie
-          state: 'on'
-        - condition: or
-          conditions:
-          # Both away during day OR bedtime is on OR external armed
-          - condition: and
-            conditions:
-            - condition: template
-              value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
-            - condition: state
-              entity_id: input_boolean.bedtime
-              state: 'off'
-          - condition: state
-            entity_id: input_boolean.bedtime
-            state: 'on'
-          - condition: state
-            entity_id: input_boolean.external_armed_mode
-            state: 'on'
-        sequence:
-        - action: notify.mobile_app_salmob2
-          data:
-            title: "🚪 Garage Entry Detected"
-            message: "{{ people_text }} detected at {{ detection_time }}."
-            data:
-              image: '{{ snapshot_url }}'
-              persistent: true
-              clickAction: '{{ video_url if video_url else snapshot_url }}'
-              notification_icon: "mdi:garage"
-              channel: "Garage Security"
-              importance: "high"
-              tag: "{{ notification_tag }}"
-              group: "garage_security"
-              actions: >-
-                {% if video_url %}
-                  [
-                    {
-                      "action": "URI",
-                      "title": "View Clip",
-                      "uri": "{{ video_url }}"
-                    },
-                    {
-                      "action": "URI",
-                      "title": "View Snapshot",
-                      "uri": "{{ snapshot_url }}"
-                    },
-                    {
-                      "action": "DISMISS_GARAGE",
-                      "title": "Dismiss"
-                    }
-                  ]
-                {% else %}
-                  [
-                    {
-                      "action": "URI",
-                      "title": "View Snapshot",
-                      "uri": "{{ snapshot_url }}"
-                    },
-                    {
-                      "action": "DISMISS_GARAGE",
-                      "title": "Dismiss"
-                    }
-                  ]
-                {% endif %}
   mode: single
   max_exceeded: silent
 - id: af0c4a0821ad44af8e99ac7e98e28964
