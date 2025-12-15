@@ -33,3 +33,7 @@ maggie_absent:
   name: Maggie Absent
 guest_mode:
   name: Guest Mode
+github_operation_error:
+  name: GitHub Operation Error
+  icon: mdi:alert-circle
+  initial: false

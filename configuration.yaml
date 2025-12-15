@@ -7,14 +7,23 @@ homeassistant:
 automation: !include automations.yaml
 binary_sensor: !include binary_sensors.yaml
 input_boolean: !include input_booleans.yaml
+input_text: !include input_text.yaml
 light: !include lights.yml
 notify: !include notify.yaml
 scene: !include scenes.yaml
 script: !include scripts.yaml
 sensor: !include sensors.yaml
+template: !include templates.yaml
 command_line: !include command_line.yaml
 zone: !include zones.yaml
 python_script:
+
+shell_command:
+  git_pull_config: 'cd /config && git pull origin develop-ha'
+  git_status_config: 'cd /config && git status && git log --oneline -5'
+  git_stage_entity_registry: 'cd /config && git add .'
+  git_commit_entity_registry: 'cd /config && git commit -m "Update snapshot files"'
+  git_push_entity_registry: 'cd /config && git push https://salmeister:${GITHUB_TOKEN}@github.com/salmeister/home-assistant-config.git develop-ha'
 
 tts:
   - platform: google_translate
@@ -61,7 +70,6 @@ logger:
 #  #username: hass
 #  #password: !secret influxdb_psswd
 #  #max_retries: 3
-  
 
 # View all events in a logbook
 logbook:

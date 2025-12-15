@@ -373,3 +373,79 @@ notify_parents_with_picture:
             priority: high
             image: '{{ cameraURL }}'
   mode: single
+
+git_sync_changes:
+  alias: Git Sync Changes
+  sequence:
+  # Step 1: Check for updates (sensor handles this automatically)
+  # Step 2: Begin sync process
+  - service: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.github_operation_error
+  # Step 3: Create sync in progress notification
+  - service: persistent_notification.create
+    data:
+      title: "🔄 Git Sync"
+      message: "Syncing configuration changes with GitHub repository..."
+      notification_id: "git_sync_status"
+  - service: shell_command.git_pull_config
+  - delay: '00:00:10'
+  # Step 4: Notify git pull result
+  - service: persistent_notification.create
+    data:
+      title: "📥 Git Pull Complete"
+      message: "Git pull completed. Validating configuration..."
+      notification_id: "git_sync_status"
+  # Step 5: Update github_config_updates_available sensor state
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.github_config_updates_available
+  - delay: '00:00:02'
+  # Step 6: Check config - stop if error, proceed if success
+  - service: homeassistant.check_config
+  - delay: '00:00:05'
+  - service: persistent_notification.create
+    data:
+      title: "✅ Configuration Valid"
+      message: "Configuration validation passed. Updating entity registry..."
+      notification_id: "git_sync_status"
+  # Step 7: Update entity registry
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.config_snapshots_changes_available
+  - delay: '00:00:05'
+  # Step 8: Conditional stage, commit, push if changes detected
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ states('sensor.config_snapshots_changes_available') | int == 2 }}"
+      sequence:
+      - service: persistent_notification.create
+        data:
+          title: "📤 Pushing Changes"
+          message: "Entity registry changes detected. Staging, committing and pushing to GitHub..."
+          notification_id: "git_sync_status"
+      - service: shell_command.git_stage_entity_registry
+      - delay: '00:00:02'
+      - service: shell_command.git_commit_entity_registry
+      - delay: '00:00:02'
+      - service: shell_command.git_push_entity_registry
+      - delay: '00:00:05'
+      # Step 9: Final notification - with changes pushed
+      - service: persistent_notification.create
+        data:
+          title: "✅ Git Sync Complete"
+          message: "Configuration successfully synced with GitHub. Entity registry changes committed and pushed back to repository. Next step, reload YAML."
+          notification_id: "git_sync_status"
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.config_snapshots_changes_available
+    default:
+    # Step 9: Final notification - no entity registry changes
+    - service: persistent_notification.create
+      data:
+        title: "✅ Git Sync Complete"
+        message: "Configuration successfully synced with GitHub. No entity registry changes detected. Next step, reload YAML."
+        notification_id: "git_sync_status"
+  mode: single
+  

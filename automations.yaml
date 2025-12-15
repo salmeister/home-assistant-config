@@ -7,13 +7,6 @@
   actions:
   - entity_id: scene.Dawn
     action: scene.turn_on
-  - delay:
-      hours: 0
-      minutes: 10
-      seconds: 0
-      milliseconds: 0
-  - entity_id: switch.fish_tank_light
-    action: switch.turn_on
 - id: 34d19e4e28744d10bf2eeba67c8c9652
   alias: Dust Settings
   triggers:
@@ -82,12 +75,49 @@
           message: It is getting dark and the garage door is still open.
           target:
           - kitchen
-          - basement
-          - entryway
         action: notify.google_assistant_sdk
+      - parallel:
+        - choose:
+          - conditions:
+            - condition: state
+              entity_id: input_boolean.notify_fpm_andy
+              state: 'on'
+            sequence:
+            - data:
+                title: Garage Door Open
+                message: It's getting dark and the garage door is still open.
+                data:
+                  tag: garage_open_dark
+                  persistent: true
+                  actions:
+                  - action: close_garage_door
+                    title: Close Garage
+                  - action: ignore_garage_notification
+                    title: Ignore
+              action: notify.mobile_app_salmob1
+        - choose:
+          - conditions:
+            - condition: state
+              entity_id: input_boolean.notify_fpm_katie
+              state: 'on'
+            sequence:
+            - data:
+                title: Garage Door Open
+                message: It's getting dark and the garage door is still open.
+                data:
+                  tag: garage_open_dark
+                  persistent: true
+                  actions:
+                  - action: close_garage_door
+                    title: Close Garage
+                  - action: ignore_garage_notification
+                    title: Ignore
+              action: notify.mobile_app_salmob2
     alias: Notify Garage Open
 - id: b903ec6aacd748959d03f2b1d38f2e2d
-  alias: Garage Door Opened
+  alias: Garage Door Basic Controls
+  description: Handle immediate physical responses when garage door opens - lights,
+    status indicators, location updates
   triggers:
   - entity_id:
     - cover.garage_doors
@@ -134,77 +164,277 @@
         sequence:
         - entity_id: switch.garage_lights
           action: switch.turn_on
-        - delay: 00:05:00
-        - entity_id: switch.garage_lights
-          action: switch.turn_off
       alias: Garage Light
-    - alias: Send Notification
-      choose:
-      - conditions:
-        - condition: or
-          conditions:
-          - condition: state
-            entity_id: input_boolean.external_armed_mode
-            state: 'on'
-          - condition: and
-            conditions:
-            - condition: template
-              value_template: '{{states(''person.andy'') != ''home''}}'
-            - condition: template
-              value_template: '{{states(''person.katie'') != ''home''}}'
-            alias: Parents Not Home
-        sequence:
-        - data: {}
-          target:
-            entity_id: switch.garage_detect
-          action: switch.turn_on
-        - wait_for_trigger:
-          - entity_id:
-            - binary_sensor.garage_person_occupancy
-            to: 'on'
-            trigger: state
-          timeout:
-            hours: 0
-            minutes: 5
-            seconds: 0
-            milliseconds: 0
-          continue_on_timeout: true
-          alias: Wait up to 5 minutes for a person
-        - alias: Send Notification
-          choose:
-          - conditions:
-            - condition: state
-              entity_id: binary_sensor.garage_person_occupancy
-              state: 'off'
-            sequence:
-            - data:
-                message: The garage door opened but no person detected after 5 minutes
-                cameraURL: /api/camera_proxy/camera.garage
-              action: script.notify_parents_with_picture
-            alias: Person never detected
-          - conditions:
-            - condition: state
-              entity_id: binary_sensor.garage_person_occupancy
-              state: 'on'
-            sequence:
-            - delay:
-                hours: 0
-                minutes: 0
-                seconds: 3
-                milliseconds: 0
-            - data:
-                message: The garage door opened
-                cameraURL: /api/image_proxy/image.garage_person
-              action: script.notify_parents_with_picture
-            alias: Person detected
-          default: []
+- id: 48f92e3c7d1a4b8e9f5a2c8d9e7f6a1b
+  alias: Enhanced Garage Door Open Security Notification
+  description: >
+    Notify when garage door opens. Waits for person detection and attempts face recognition.
+    Flow: Door opens → Wait for person → Check face → Notify (recognized/person/door only)
+  triggers:
+  - entity_id: cover.garage_doors
+    from: closed
+    to: opening
+    trigger: state
+  - entity_id: cover.garage_doors
+    from: closed
+    to: open
+    trigger: state
+  conditions:
+  - condition: or
+    conditions:
+    # Both Andy AND Katie are away during the day
+    - condition: and
+      conditions:
+      - condition: template
+        value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+      - condition: state
+        entity_id: input_boolean.bedtime
+        state: 'off'
+    # Bedtime is on - can notify either person even if they're home
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_boolean.bedtime
+        state: 'on'
+      - condition: or
+        conditions:
         - condition: state
-          entity_id: input_boolean.full_armed_mode
-          state: 'off'
-        - data: {}
-          target:
-            entity_id: switch.garage_detect
-          action: switch.turn_off
+          entity_id: input_boolean.notify_fpm_andy
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.notify_fpm_katie
+          state: 'on'
+    # External armed mode override
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_boolean.external_armed_mode
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: input_boolean.notify_fpm_andy
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.notify_fpm_katie
+          state: 'on'
+  actions:
+  # Initialize variables
+  - variables:
+      base_url: "{{ states('input_text.baseurl') }}"
+      door_open_time: "{{ now().timestamp() }}"
+      notification_tag: "garage_door_{{ now().timestamp() | int }}"
+  
+  # Step 1: Wait up to 4 minutes for person to enter the Interior Garage zone
+  # This zone is near the camera for optimal face recognition accuracy.
+  # Allows time for: parking, checking phone, gathering items, exiting vehicle.
+  - wait_for_trigger:
+    - platform: state
+      entity_id: binary_sensor.interior_garage_person_occupancy
+      to: 'on'
+    timeout:
+      minutes: 4
+    continue_on_timeout: true
+  
+  # Step 2: Check if person was detected in the zone
+  - if:
+    - condition: template
+      value_template: "{{ wait.trigger is not none }}"
+    then:
+    # Person detected in Interior Garage zone - wait for face recognition to process
+    # The interior zone provides a closer view for more accurate face matching
+    - delay:
+        seconds: 5
+    
+    # Check for recognized face
+    - variables:
+        current_face: "{{ states('sensor.garage_last_recognized_face') }}"
+        face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
+        face_is_valid: >-
+          {{ current_face and 
+             (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
+             (now().timestamp() - as_timestamp(face_last_changed)) < 60 }}
+        person_name: >-
+          {% if current_face and (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
+                (now().timestamp() - as_timestamp(face_last_changed)) < 60 %}
+            {{ current_face }}
+          {% else %}
+            Person
+          {% endif %}
+        detection_time: "{{ now().strftime('%I:%M %p') }}"
+        snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
+    
+    # Send notification with person (recognized or not)
+    - parallel:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_andy
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob1
+            data:
+              title: "🚪 Garage Entry Detected"
+              message: "{{ person_name }} entered the garage at {{ detection_time }}."
+              data:
+                image: "{{ snapshot_url }}"
+                persistent: true
+                clickAction: "{{ snapshot_url }}"
+                notification_icon: "mdi:garage"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_katie
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob2
+            data:
+              title: "🚪 Garage Entry Detected"
+              message: "{{ person_name }} entered the garage at {{ detection_time }}."
+              data:
+                image: "{{ snapshot_url }}"
+                persistent: true
+                clickAction: "{{ snapshot_url }}"
+                notification_icon: "mdi:garage"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+    else:
+    # No person detected after timeout - send door-opened-only notification
+    - variables:
+        detection_time: "{{ now().strftime('%I:%M %p') }}"
+        snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
+    
+    - parallel:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_andy
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob1
+            data:
+              title: "🚪 Garage Door Opened"
+              message: "Garage door opened at {{ detection_time }}. No person detected."
+              data:
+                image: "{{ snapshot_url }}"
+                persistent: true
+                clickAction: "{{ snapshot_url }}"
+                notification_icon: "mdi:garage-alert"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.notify_fpm_katie
+            state: 'on'
+          - condition: or
+            conditions:
+            - condition: and
+              conditions:
+              - condition: template
+                value_template: '{{ states("person.andy") != "home" and states("person.katie") != "home" }}'
+              - condition: state
+                entity_id: input_boolean.bedtime
+                state: 'off'
+            - condition: state
+              entity_id: input_boolean.bedtime
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.external_armed_mode
+              state: 'on'
+          sequence:
+          - action: notify.mobile_app_salmob2
+            data:
+              title: "🚪 Garage Door Opened"
+              message: "Garage door opened at {{ detection_time }}. No person detected."
+              data:
+                image: "{{ snapshot_url }}"
+                persistent: true
+                clickAction: "{{ snapshot_url }}"
+                notification_icon: "mdi:garage-alert"
+                channel: "Garage Security"
+                importance: "high"
+                tag: "{{ notification_tag }}"
+                group: "garage_security"
+                actions:
+                - action: "URI"
+                  title: "View Camera"
+                  uri: "{{ snapshot_url }}"
+                - action: "DISMISS_GARAGE"
+                  title: "Dismiss"
+  mode: single
+  max_exceeded: silent
 - id: af0c4a0821ad44af8e99ac7e98e28964
   alias: Garage Door Left Open While Home Alone
   triggers:
@@ -245,15 +475,6 @@
     trigger: time
   actions:
   - parallel:
-    - choose:
-      - conditions:
-        - condition: state
-          entity_id: switch.fish_tank_light
-          state: 'on'
-        sequence:
-        - entity_id: switch.fish_tank_light
-          action: switch.turn_off
-      alias: Turn Off Aquarium
     - choose:
       - conditions:
         - condition: state
@@ -613,16 +834,55 @@
   - event: start
     trigger: homeassistant
   actions:
-  - entity_id: input_boolean.bedtime
-    action: "{% set minutes = ((now().strftime('%H') | int) * 60) + (now().strftime('%M')
-      | int) %} {% if (360 <= minutes < 1410) and (is_state('sensor.dayoftheweek',
-      'Friday')) %}\n  input_boolean.turn_off\n{% elif (480 <= minutes < 1410) and
-      (is_state('sensor.dayoftheweek', 'Saturday')) %}\n  input_boolean.turn_off \n{%
-      elif (480 <= minutes < 1350) and (is_state('sensor.dayoftheweek', 'Sunday'))
-      %}\n  input_boolean.turn_off \n{% elif (360 <= minutes < 1350) and ((is_state('sensor.dayoftheweek',
-      'Monday')) or (is_state('sensor.dayoftheweek', 'Tuesday')) or (is_state('sensor.dayoftheweek',
-      'Wednesday')) or (is_state('sensor.dayoftheweek', 'Thursday'))) %}\n  input_boolean.turn_off
-      \n{% else %}\n  input_boolean.turn_on\n{% endif %}\n"
+  - variables:
+      minutes: '{{ ((now().strftime(''%H'') | int) * 60) + (now().strftime(''%M'')
+        | int) }}'
+      day_of_week: '{{ states(''sensor.dayoftheweek'') }}'
+  - choose:
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: '{{ (360 <= minutes | int < 1410) }}'
+        - condition: template
+          value_template: '{{ day_of_week == ''Friday'' }}'
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: '{{ (480 <= minutes | int < 1410) }}'
+        - condition: template
+          value_template: '{{ day_of_week == ''Saturday'' }}'
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: '{{ (480 <= minutes | int < 1350) }}'
+        - condition: template
+          value_template: '{{ day_of_week == ''Sunday'' }}'
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: and
+        conditions:
+        - condition: template
+          value_template: '{{ (360 <= minutes | int < 1350) }}'
+        - condition: template
+          value_template: '{{ day_of_week in [''Monday'', ''Tuesday'', ''Wednesday'',
+            ''Thursday''] }}'
+      sequence:
+      - entity_id: input_boolean.bedtime
+        action: input_boolean.turn_off
+    default:
+    - entity_id: input_boolean.bedtime
+      action: input_boolean.turn_on
 - id: c7208b98b0e9474a97ccbe9bd71d8473
   alias: Crock-Pot On
   triggers:
@@ -661,15 +921,6 @@
       minutes: 5
       seconds: 0
       milliseconds: 0
-  - action: homeassistant.update_entity
-    data:
-      entity_id:
-      - sensor.plhs_lunch_0
-      - sensor.plhs_lunch_1
-      - sensor.plhs_lunch_2
-      - sensor.plhs_lunch_3
-      - sensor.plhs_lunch_4
-      - sensor.plhs_lunch_5
 - id: b1181b134261492db210649c6bd52831
   alias: Dogs Already Fed Check
   triggers:
@@ -902,7 +1153,7 @@
   triggers:
   - type: opened
     device_id: 310cbb462be7d0c4fffd3314321c711c
-    entity_id: ce2b6e85fd594e1990af0bfbd940f8bd
+    entity_id: binary_sensor.left_liquor_cabinet_contact
     domain: binary_sensor
     trigger: device
   - type: opened
@@ -911,6 +1162,9 @@
     domain: binary_sensor
     trigger: device
   conditions:
+  - condition: template
+    value_template: '{{ (now() - states.sensor.uptime.last_changed).total_seconds()
+      > 300 }}'
   - condition: not
     conditions:
     - condition: zone
@@ -1214,7 +1468,7 @@
       camera: camera.kitchen
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       alert_once: true
       update_thumbnail: true
@@ -1445,7 +1699,7 @@
       camera:
       - camera.front_porch
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       alert_once: true
       update_thumbnail: true
@@ -1504,7 +1758,7 @@
       camera: camera.driveway
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       zone_filter: true
       zones:
@@ -1522,7 +1776,7 @@
       camera: camera.front_porch
       notify_device: ecca2a5c378d7feaa416ec4ae00b1a4e
       notify_group: parent_mobile_devices
-      base_url: https://ha.salmeister.com
+      base_url: "{{ states('input_text.baseurl') }}"
       critical: 'false'
       alert_once: true
       update_thumbnail: true
@@ -1622,8 +1876,7 @@
       - service: light.turn_on
         data: {}
         target:
-          entity_id:
-          - light.basement_tv_lower_lights
+          entity_id: light.basement_tv_lower_lights
       already_on_already_bright_1x: []
       already_on_not_bright_1x: []
       on_2x: []
@@ -1631,8 +1884,7 @@
       - service: light.turn_off
         data: {}
         target:
-          entity_id:
-          - light.basement_tv_lower_lights
+          entity_id: light.basement_tv_lower_lights
       off_2x: []
 - id: '1659646178142'
   alias: 'Bar Lights: Zooz Zen76 Control Smart Light Configuration'
@@ -2320,7 +2572,7 @@
   mode: parallel
 - id: '1674942127235'
   alias: Garage Door Closed
-  description: ''
+  description: Reset back entry light from red to warm white when garage closes
   triggers:
   - entity_id:
     - cover.garage_doors
@@ -2333,9 +2585,17 @@
     from: open
     trigger: state
   conditions:
-  - condition: template
-    value_template: '{{ states.light.back_entry.attributes.rgb_color == ''(255,0,0)''
-      }}'
+  - condition: state
+    entity_id: light.back_entry
+    state: 'on'
+  - condition: or
+    conditions:
+    - condition: template
+      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [250,
+        0, 0] }}'
+    - condition: template
+      value_template: '{{ state_attr(''light.back_entry'', ''rgb_color'') == [255,
+        0, 0] }}'
   actions:
   - data: {}
     target:
@@ -2816,9 +3076,7 @@
           \         {%- for battery in battery_levels -%}\n            <li>{{ battery.type
           | upper }} - {{ battery.name }}: {{ battery.value }}%</li>\n          {%-
           else -%}\n            <li>No devices with low battery levels found.</li>\n
-          \         {%- endfor -%}\n          </ul>\n          <p>\n            Review
-          more at:\n            <a href=\"intent://lovelace/batteries#Intent;scheme=homeassistant;package=io.homeassistant.companion.android;end;fallback_url=https://ha.salmeister.com/lovelace/batteries\">Home
-          Assistant</a>\n          </p>\n        </div>\n      </div>\n    </div>\n
+          \         {%- endfor -%}\n          </ul>\n</div>\n      </div>\n    </div>\n
           \ </body>\n</html>\n"
     action: notify.gmail_email_andy
   mode: single
@@ -2882,4 +3140,49 @@
           entity_id: switch.piano_room_lamp
         action: switch.toggle
     default: []
+  mode: single
+- id: garage_lights_auto_off
+  alias: Auto Turn Off Garage Lights When Empty
+  description: Turn off garage lights when no person is detected for 15 minutes and
+    lights are on
+  triggers:
+  - entity_id: binary_sensor.garage_person_occupancy
+    from: 'on'
+    to: 'off'
+    trigger: state
+    for: 00:15:00
+  conditions:
+  - condition: state
+    entity_id: switch.garage_lights
+    state: 'on'
+  actions:
+  - entity_id: switch.garage_lights
+    action: switch.turn_off
+  mode: single
+- id: washing_machine_dryer_reminder
+  alias: Washing Machine Dryer Reminder
+  description: Notify Andy when washing machine is done but dryer door hasn't been opened after 10 minutes
+  triggers:
+  - entity_id: sensor.washer_washer_job_state
+    to: complete
+    trigger: state
+  conditions: []
+  actions:
+  - delay: 00:10:00
+  - condition: state
+    entity_id: binary_sensor.dryer_door_window_door_is_open
+    state: 'off'
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.notify_fpm_andy
+        state: 'on'
+      sequence:
+      - data:
+          title: Laundry Alert
+          message: "Washing machine is done, dryer time!"
+          data:
+            tag: washer_dryer_reminder
+            persistent: false
+        action: notify.mobile_app_salmob1
   mode: single

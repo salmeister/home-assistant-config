@@ -65,3 +65,6 @@ notebooks
 
 # Specific keeps
 !.gitkeep
+
+# Entity registry snapshot (manually updated)
+!entity_registry_snapshot.json

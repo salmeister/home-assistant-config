@@ -1,0 +1,231 @@
+# Modern template entities (migrated from legacy format - December 2025)
+# Reference: https://www.home-assistant.io/integrations/template/#legacy-template-deprecation-migration-guide
+
+# Sensor templates
+- sensor:
+    - name: "External Light Level"
+      default_entity_id: sensor.external_light_level
+      state: "{{ states('sensor.external_light_level') }}"
+      attributes:
+        elevation: "{{ state_attr('sensor.external_light_level', 'elevation') }}"
+        cloud_coverage: "{{ state_attr('sensor.external_light_level', 'cloud_coverage') }}"
+
+    - name: "Next Alarm"
+      default_entity_id: sensor.next_alarm
+      state: >-
+        {% if is_state('device_tracker.salmob1', 'home') %}
+          {% if is_state('device_tracker.salmob2', 'home') %}
+            {{ [states('sensor.salmob1_next_alarm'), states('sensor.salmob2_next_alarm')] | min }}
+          {% else %}
+            {{ states('sensor.salmob1_next_alarm') }}
+          {% endif %}
+        {% elif is_state('device_tracker.salmob2', 'home') %}
+          {{ states('sensor.salmob2_next_alarm') }}
+        {% else %}
+          'No one home'
+        {% endif %}
+      attributes:
+        alarm_time: >-
+          {% set next_alarm = states('sensor.next_alarm') %}
+          {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+            {% set alarm_time = as_timestamp(next_alarm) | timestamp_custom('%H:%M') %}
+          {% else %}
+            {% set alarm_time = 'N/A' %}
+          {% endif %}
+          {{ alarm_time }}
+        minutes_left: >-
+          {% set next_alarm = states('sensor.next_alarm') %}
+          {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+            {% set minutes_left = ((as_timestamp(next_alarm) | int - now() | as_timestamp | int) / 60) | int %}
+          {% else %}
+            {% set minutes_left = 0 %}
+          {% endif %}
+          {{ minutes_left }}
+        text_time_left: >-
+          {% set next_alarm = states('sensor.next_alarm') %}
+          {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+            {% set time = ((as_timestamp(next_alarm) | int - now() | as_timestamp | int) / 60) | int %}
+            {% set hours = (time // 60) | string %}
+            {% set minutes = (time % 60) | string %}
+            {% set text_time_left = hours ~ ' hours ' ~ minutes ~ ' minutes' %}
+          {% else %}
+            {% set text_time_left = 'N/A' %}
+          {% endif %}
+          {{ text_time_left }}
+        text_whose_alarm: >-
+          {% set next_alarm = states('sensor.next_alarm') %}
+          {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+            {% set salmob1_alarm = states('sensor.salmob1_next_alarm') %}
+            {% set salmob2_alarm = states('sensor.salmob2_next_alarm') %}
+            {% if salmob1_alarm == salmob2_alarm %}
+              {% set whose_alarm = 'Same alarm' %}
+            {% elif as_timestamp(salmob1_alarm) | int == as_timestamp(next_alarm) | int %}
+              {% set whose_alarm = 'Andy\'s Phone' %}
+            {% elif as_timestamp(salmob2_alarm) | int == as_timestamp(next_alarm) | int %}
+              {% set whose_alarm = 'Katie\'s Phone' %}
+            {% else %}
+              {% set whose_alarm = 'ERROR' %}
+            {% endif %}
+          {% else %}
+            {% set whose_alarm = 'N/A' %}
+          {% endif %}
+          {{ whose_alarm }}
+        next_alarm_localtime: >-
+          {% set next_alarm = states('sensor.next_alarm') %}
+          {% if next_alarm not in ['unavailable', 'unknown', 'No one home'] %}
+            {% set local_time = as_timestamp(next_alarm) | timestamp_custom('%A %H:%M') %}
+          {% else %}
+            {% set local_time = 'N/A' %}
+          {% endif %}
+          {{ local_time }}
+
+    - name: "Outdoor Temp"
+      default_entity_id: sensor.outdoor_temp
+      state: "{{ states.weather.kfcm_daynight.attributes.temperature }}"
+      unit_of_measurement: °F
+      icon: mdi:thermometer
+
+    - name: "Main Temp"
+      default_entity_id: sensor.main_temp_offset
+      unique_id: 7a29f6a5b8844900888636146c183183
+      state: "{{ (states('sensor.laundry_water_leak_air_temperature') | float + 3) | round(1) }}"
+      unit_of_measurement: °F
+      icon: mdi:thermometer
+
+# Date sensors - HTML encoded versions
+- sensor:
+    - name: "Date HTML"
+      default_entity_id: sensor.date_html
+      state: "{{ as_timestamp(states('sensor.date')) | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
+
+    - name: "Date Plus One HTML"
+      default_entity_id: sensor.date_plus_one_html
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 86400) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
+
+    - name: "Date Plus Two HTML"
+      default_entity_id: sensor.date_plus_two_html
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 172800) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
+
+    - name: "Date Plus Three HTML"
+      default_entity_id: sensor.date_plus_three_html
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 259200) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
+
+    - name: "Date Plus Four HTML"
+      default_entity_id: sensor.date_plus_four_html
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 345600) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
+
+    - name: "Date Plus Five HTML"
+      default_entity_id: sensor.date_plus_five_html
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%m/%d/%Y',true) | replace('/','%2F')}}"
+
+# Date sensors - formatted dates
+- sensor:
+    - name: "My Date"
+      default_entity_id: sensor.my_date
+      state: "{{ as_timestamp(states('sensor.date')) | timestamp_custom('%m/%d/%Y',true)}}"
+
+    - name: "Date Plus One"
+      default_entity_id: sensor.date_plus_one
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 86400) | int | timestamp_custom('%m/%d/%Y',true)}}"
+
+    - name: "Date Plus Two"
+      default_entity_id: sensor.date_plus_two
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 172800) | int | timestamp_custom('%m/%d/%Y',true)}}"
+
+    - name: "Date Plus Three"
+      default_entity_id: sensor.date_plus_three
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 259200) | int | timestamp_custom('%m/%d/%Y',true)}}"
+
+    - name: "Date Plus Four"
+      default_entity_id: sensor.date_plus_four
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 345600) | int | timestamp_custom('%m/%d/%Y',true)}}"
+
+    - name: "Date Plus Five"
+      default_entity_id: sensor.date_plus_five
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%m/%d/%Y',true)}}"
+
+# Day of week sensors
+- sensor:
+    - name: "Day of the Week"
+      default_entity_id: sensor.dayoftheweek
+      state: "{{ as_timestamp(states('sensor.date')) | timestamp_custom('%A',true)}}"
+
+    - name: "Day of the Week Plus One"
+      default_entity_id: sensor.dayoftheweek_plus_one
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 86400) | int | timestamp_custom('%A',true)}}"
+
+    - name: "Day of the Week Plus Two"
+      default_entity_id: sensor.dayoftheweek_plus_two
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 172800) | int | timestamp_custom('%A',true)}}"
+
+    - name: "Day of the Week Plus Three"
+      default_entity_id: sensor.dayoftheweek_plus_three
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 259200) | int | timestamp_custom('%A',true)}}"
+
+    - name: "Day of the Week Plus Four"
+      default_entity_id: sensor.dayoftheweek_plus_four
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 345600) | int | timestamp_custom('%A',true)}}"
+
+    - name: "Day of the Week Plus Five"
+      default_entity_id: sensor.dayoftheweek_plus_five
+      state: "{{ (as_timestamp(strptime(states('sensor.date'),'%Y-%m-%d')) + 432000) | int | timestamp_custom('%A',true)}}"
+
+# Binary sensor templates
+- binary_sensor:
+    - name: "School Day"
+      default_entity_id: binary_sensor.school_day
+      state: >-
+        {% if not is_state('sensor.schoolcafe_blue_line_today', none) %}
+          {% if not is_state('sensor.schoolcafe_blue_line_today', '') %}
+            {% if not is_state('sensor.schoolcafe_blue_line_today', 'No items available') %}
+              {% if not is_state('sensor.schoolcafe_blue_line_today', 'No School') %}
+              on
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+    - name: "School Night"
+      default_entity_id: binary_sensor.school_night
+      state: >-
+        {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', none) %}
+          {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', '') %}
+            {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', 'No items available') %}
+              {% if not is_state('sensor.schoolcafe_blue_line_tomorrow', 'No School') %}
+              on
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+    - name: "Full House"
+      default_entity_id: binary_sensor.full_house
+      icon: >-
+        {% if is_state('binary_sensor.full_house','on') %}
+          hass:home-account
+        {% else %}
+          hass:home-outline
+        {% endif %}
+      state: >
+        {{ (is_state('input_boolean.andy_absent', 'on') or is_state('person.andy','home'))
+          and (is_state('input_boolean.katie_absent', 'on') or is_state('person.katie','home'))
+          and (is_state('input_boolean.karlee_absent', 'on') or is_state('person.karlee','home'))
+          and (is_state('input_boolean.cam_absent', 'on') or is_state('person.cam','home'))
+          and (is_state('input_boolean.maggie_absent', 'on') or is_state('person.maggie','home'))
+        }}
+
+    - name: "Empty House"
+      default_entity_id: binary_sensor.empty_house
+      icon: >-
+        {% if is_state('binary_sensor.empty_house','on') %}
+          hass:home-outline
+        {% else %}
+          hass:home-account
+        {% endif %}
+      state: >
+        {{ not is_state('person.andy','home')
+          and not is_state('person.katie','home')
+          and not is_state('person.karlee','home')
+          and not is_state('person.cam','home')
+          and not is_state('person.maggie','home')
+        }}
