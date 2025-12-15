@@ -13,6 +13,7 @@ notify: !include notify.yaml
 scene: !include scenes.yaml
 script: !include scripts.yaml
 sensor: !include sensors.yaml
+template: !include templates.yaml
 command_line: !include command_line.yaml
 zone: !include zones.yaml
 python_script:
