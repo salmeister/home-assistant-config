@@ -246,7 +246,7 @@
     - delay:
         seconds: 5
     
-    # Check for recognized face
+    # Check for recognized face and build media URLs
     - variables:
         current_face: "{{ states('sensor.garage_last_recognized_face') }}"
         face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
@@ -262,7 +262,13 @@
             Person
           {% endif %}
         detection_time: "{{ now().strftime('%I:%M %p') }}"
-        snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
+        # Use Frigate's person detection snapshot for clearest image of person
+        # This gets the latest person detection thumbnail from the garage camera
+        snapshot_url: "{{ base_url }}/api/frigate/notifications/garage/person/thumbnail.jpg?format=android"
+        # Fallback to camera proxy if Frigate snapshot fails
+        fallback_snapshot: "{{ base_url }}/api/camera_proxy/camera.garage"
+        # Video clip of the interior_garage zone detection event
+        clip_url: "{{ base_url }}/api/frigate/notifications/garage/interior_garage/clip.mp4"
     
     # Send notification with person (recognized or not)
     - parallel:
@@ -294,7 +300,7 @@
               data:
                 image: "{{ snapshot_url }}"
                 persistent: true
-                clickAction: "{{ snapshot_url }}"
+                clickAction: "{{ clip_url }}"
                 notification_icon: "mdi:garage"
                 channel: "Garage Security"
                 importance: "high"
@@ -302,7 +308,10 @@
                 group: "garage_security"
                 actions:
                 - action: "URI"
-                  title: "View Camera"
+                  title: "View Clip"
+                  uri: "{{ clip_url }}"
+                - action: "URI"
+                  title: "View Snapshot"
                   uri: "{{ snapshot_url }}"
                 - action: "DISMISS_GARAGE"
                   title: "Dismiss"
@@ -334,7 +343,7 @@
               data:
                 image: "{{ snapshot_url }}"
                 persistent: true
-                clickAction: "{{ snapshot_url }}"
+                clickAction: "{{ clip_url }}"
                 notification_icon: "mdi:garage"
                 channel: "Garage Security"
                 importance: "high"
@@ -342,7 +351,10 @@
                 group: "garage_security"
                 actions:
                 - action: "URI"
-                  title: "View Camera"
+                  title: "View Clip"
+                  uri: "{{ clip_url }}"
+                - action: "URI"
+                  title: "View Snapshot"
                   uri: "{{ snapshot_url }}"
                 - action: "DISMISS_GARAGE"
                   title: "Dismiss"
@@ -350,6 +362,7 @@
     # No person detected after timeout - send door-opened-only notification
     - variables:
         detection_time: "{{ now().strftime('%I:%M %p') }}"
+        # Use live camera snapshot when no person was detected
         snapshot_url: "{{ base_url }}/api/camera_proxy/camera.garage"
     
     - parallel:
