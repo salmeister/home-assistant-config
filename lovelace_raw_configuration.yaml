@@ -1422,26 +1422,6 @@
                   }
                 ]
               }
-            },
-            {
-              "cards": [
-                {
-                  "show_state": true,
-                  "show_name": true,
-                  "camera_view": "auto",
-                  "entity": "camera.13_150th",
-                  "type": "picture-entity"
-                },
-                {
-                  "show_state": true,
-                  "show_name": true,
-                  "camera_view": "auto",
-                  "entity": "camera.13_main",
-                  "type": "picture-entity"
-                }
-              ],
-              "title": "Prior Lake",
-              "type": "vertical-stack"
             }
           ]
         },

@@ -188,6 +188,7 @@
         icon_template: mdi:thermometer
         friendly_name: 'Outdoor Temp'
 
+
   - platform: template
     sensors:
       main_temp_offset:
