@@ -229,3 +229,150 @@
           and not is_state('person.cam','home')
           and not is_state('person.maggie','home')
         }}
+
+# Frigate MQTT trigger-based sensors for capturing event IDs
+# These sensors listen to frigate/events MQTT topic and store the latest event ID
+# for use in notifications with proper Frigate API URLs
+- trigger:
+    - platform: mqtt
+      topic: frigate/events
+  sensor:
+    - name: "Garage Person Event"
+      unique_id: garage_person_event_sensor
+      state: >-
+        {% set payload = trigger.payload_json %}
+        {% if payload is defined and payload.after is defined %}
+          {% set after = payload.after %}
+          {% if after.camera == 'garage' and after.label == 'person' %}
+            {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+              {{ after.id }}
+            {% else %}
+              {{ this.state if this.state is defined else 'unknown' }}
+            {% endif %}
+          {% else %}
+            {{ this.state if this.state is defined else 'unknown' }}
+          {% endif %}
+        {% else %}
+          {{ this.state if this.state is defined else 'unknown' }}
+        {% endif %}
+      attributes:
+        camera: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.camera }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'camera') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'camera') }}
+            {% endif %}
+          {% endif %}
+        label: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.label }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'label') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'label') }}
+            {% endif %}
+          {% endif %}
+        sub_label: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {% if after.sub_label is defined and after.sub_label is not none %}
+                  {% if after.sub_label is iterable and after.sub_label is not string %}
+                    {{ after.sub_label[0] if after.sub_label | length > 0 else none }}
+                  {% else %}
+                    {{ after.sub_label }}
+                  {% endif %}
+                {% else %}
+                  {{ none }}
+                {% endif %}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'sub_label') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'sub_label') }}
+            {% endif %}
+          {% endif %}
+        zones: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.entered_zones | default([]) | join(', ') }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'zones') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'zones') }}
+            {% endif %}
+          {% endif %}
+        has_clip: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.has_clip | default(false) }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'has_clip') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'has_clip') }}
+            {% endif %}
+          {% endif %}
+        has_snapshot: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.has_snapshot | default(false) }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'has_snapshot') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'has_snapshot') }}
+            {% endif %}
+          {% endif %}
+        event_type: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ payload.type | default('unknown') }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'event_type') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'event_type') }}
+            {% endif %}
+          {% endif %}
+        last_updated: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ now().isoformat() }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'last_updated') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'last_updated') }}
+            {% endif %}
+          {% endif %}

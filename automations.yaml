@@ -169,7 +169,8 @@
   alias: Enhanced Garage Door Open Security Notification
   description: >
     Notify when garage door opens. Waits for person detection and attempts face recognition.
-    Flow: Door opens → Wait for person → Check face → Notify (recognized/person/door only)
+    Uses Frigate event ID from MQTT sensor (sensor.garage_person_event) for proper API URLs.
+    Flow: Door opens → Wait for person → Get event ID → Check face → Notify with image/clip
   triggers:
   - entity_id: cover.garage_doors
     from: closed
@@ -241,34 +242,60 @@
     - condition: template
       value_template: "{{ wait.trigger is not none }}"
     then:
-    # Person detected in Interior Garage zone - wait for face recognition to process
+    # Person detected in Interior Garage zone - wait for Frigate event and face recognition to process
     # The interior zone provides a closer view for more accurate face matching
     - delay:
         seconds: 5
     
-    # Check for recognized face and build media URLs
+    # Get event ID from MQTT sensor and check for recognized face
     - variables:
+        # Get the Frigate event ID from the MQTT-triggered template sensor
+        event_id: "{{ states('sensor.garage_person_event') }}"
+        event_sub_label: "{{ state_attr('sensor.garage_person_event', 'sub_label') }}"
+        event_last_updated: "{{ state_attr('sensor.garage_person_event', 'last_updated') }}"
+        # Check if the event is recent (within last 2 minutes)
+        event_is_recent: >-
+          {% if event_last_updated and event_last_updated not in ['unknown', 'unavailable', '', none] %}
+            {{ (now().timestamp() - as_timestamp(event_last_updated)) < 120 }}
+          {% else %}
+            false
+          {% endif %}
+        # Also check face recognition sensor as backup
         current_face: "{{ states('sensor.garage_last_recognized_face') }}"
         face_last_changed: "{{ states.sensor.garage_last_recognized_face.last_changed }}"
         face_is_valid: >-
           {{ current_face and 
              (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
-             (now().timestamp() - as_timestamp(face_last_changed)) < 60 }}
+             (now().timestamp() - as_timestamp(face_last_changed)) < 120 }}
+        # Determine person name: prefer sub_label from event, then face sensor, then generic
         person_name: >-
-          {% if current_face and (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
-                (now().timestamp() - as_timestamp(face_last_changed)) < 60 %}
+          {% if event_sub_label and (event_sub_label | string | lower) not in ['none', 'unavailable', 'unknown', ''] %}
+            {{ event_sub_label }}
+          {% elif current_face and (current_face | string | lower) not in ['none', 'unavailable', 'unknown', ''] and
+                (now().timestamp() - as_timestamp(face_last_changed)) < 120 %}
             {{ current_face }}
           {% else %}
             Person
           {% endif %}
         detection_time: "{{ now().strftime('%I:%M %p') }}"
-        # Use Frigate's person detection snapshot for clearest image of person
-        # This gets the latest person detection thumbnail from the garage camera
-        snapshot_url: "{{ base_url }}/api/frigate/notifications/garage/person/thumbnail.jpg?format=android"
-        # Fallback to camera proxy if Frigate snapshot fails
-        fallback_snapshot: "{{ base_url }}/api/camera_proxy/camera.garage"
-        # Video clip of the interior_garage zone detection event
-        clip_url: "{{ base_url }}/api/frigate/notifications/garage/interior_garage/clip.mp4"
+        # Build proper Frigate API URLs using event ID
+        # If we have a valid recent event ID, use it for high-quality snapshot and clip
+        # Otherwise fall back to camera proxy for live image
+        snapshot_url: >-
+          {% if event_id and event_id not in ['unknown', 'unavailable', ''] and event_is_recent %}
+            {{ base_url }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg?format=android
+          {% else %}
+            {{ base_url }}/api/camera_proxy/camera.garage
+          {% endif %}
+        clip_url: >-
+          {% if event_id and event_id not in ['unknown', 'unavailable', ''] and event_is_recent %}
+            {{ base_url }}/api/frigate/notifications/{{ event_id }}/clip.mp4
+          {% else %}
+            {{ base_url }}/api/frigate/notifications/garage/clip.mp4
+          {% endif %}
+        # Flag to indicate if we have a valid Frigate event with clip
+        has_valid_event: >-
+          {{ event_id and event_id not in ['unknown', 'unavailable', ''] and event_is_recent }}
     
     # Send notification with person (recognized or not)
     - parallel:
@@ -310,9 +337,6 @@
                 - action: "URI"
                   title: "View Clip"
                   uri: "{{ clip_url }}"
-                - action: "URI"
-                  title: "View Snapshot"
-                  uri: "{{ snapshot_url }}"
                 - action: "DISMISS_GARAGE"
                   title: "Dismiss"
       - choose:
@@ -353,9 +377,6 @@
                 - action: "URI"
                   title: "View Clip"
                   uri: "{{ clip_url }}"
-                - action: "URI"
-                  title: "View Snapshot"
-                  uri: "{{ snapshot_url }}"
                 - action: "DISMISS_GARAGE"
                   title: "Dismiss"
     else:
