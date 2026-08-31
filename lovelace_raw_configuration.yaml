@@ -289,28 +289,41 @@
                         {
                           "type": "tile",
                           "entity": "weather.kfcm_daynight",
-                          "vertical": true,
+                          "name": "Outside ➔",
                           "state_content": [
                             "state",
                             "temperature"
                           ],
-                          "name": "Outside ➔",
+                          "vertical": true,
                           "tap_action": {
                             "action": "navigate",
                             "navigation_path": "/lovelace/weather"
-                          }
+                          },
+                          "features_position": "bottom"
                         },
                         {
                           "type": "tile",
-                          "entity": "sensor.main_temp_offset",
+                          "entity": "sensor.dishwasher_temp_air_temperature",
+                          "name": "Main",
                           "vertical": true,
-                          "name": "Main"
+                          "features_position": "bottom",
+                          "features": [
+                            {
+                              "type": "trend-graph"
+                            }
+                          ]
                         },
                         {
                           "type": "tile",
                           "entity": "sensor.water_valve_air_temperature",
                           "name": "Basement",
-                          "vertical": true
+                          "vertical": true,
+                          "features_position": "bottom",
+                          "features": [
+                            {
+                              "type": "trend-graph"
+                            }
+                          ]
                         }
                       ]
                     }
