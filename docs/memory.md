@@ -2,9 +2,15 @@
 
 **Purpose**: This file serves as persistent memory for GitHub Copilot to maintain context across conversations and development sessions.
 
-**Last Updated**: December 29, 2025  
+**Last Updated**: August 31, 2026  
 **Current Branch**: develop-ha  
 **Repository**: salmeister/home-assistant-config
+
+## Recent Updates (August 31, 2026)
+- ✅ Removed leftover `http:` YAML block from `configuration.yaml` after HA 2026.8 UI migration (repair: HTTP YAML ignored)
+- ✅ HTTP reverse-proxy settings (`use_x_forwarded_for`, `trusted_proxies` / docker_net) now live in Settings > System > Network
+- ✅ Replaced deprecated `notify.gmail_email_andy` action with `notify.send_message` (Water Softener Low) and `smtp.send_message` (Low Battery Email HTML)
+- 📋 SMTP YAML in `notify.yaml` is still in use; HA may later migrate SMTP to UI config. Recipients remain `notify.gmail_email_andy` / `notify.gmail_email_katie`
 
 ## Recent Updates (December 29, 2025)
 - ✅ **FRIGATE EVENT ID INTEGRATION**: Added MQTT trigger-based template sensor for capturing Frigate event IDs

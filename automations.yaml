@@ -768,10 +768,12 @@
     entity_id: sensor.water_softener_salt_level
     below: 35
   actions:
-  - data:
+  - action: notify.send_message
+    target:
+      entity_id: notify.gmail_email_andy
+    data:
       message: Time to go buy 4 bags of water softener salt.
       title: Water softener salt is low.
-    action: notify.gmail_email_andy
 - id: e7f95523f1054b7488368f9d2928dbb4
   alias: Sump Level
   triggers:
@@ -3059,11 +3061,13 @@
         true), \"value\": states(entity_id), \"type\": entity_id.split('.')[0]}] -%}\n
         \   {%- set ns.battery_info = battery_info -%}\n  {%- endif -%}\n{%- endfor
         -%} {{ ns.battery_info }}\n"
-  - data:
+  - action: smtp.send_message
+    target:
+      entity_id: notify.gmail_email_andy
+    data:
       title: HA Battery Level Warning
-      message: ''
-      data:
-        html: "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+      message: Low battery devices detected. See the HTML body for details.
+      html: "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
           <html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n  <head>\n    <meta
           charset=\"UTF-8\">\n    <meta http-equiv=\"Content-Type\" content=\"text/html;
           charset=UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,
@@ -3085,7 +3089,6 @@
           else -%}\n            <li>No devices with low battery levels found.</li>\n
           \         {%- endfor -%}\n          </ul>\n</div>\n      </div>\n    </div>\n
           \ </body>\n</html>\n"
-    action: notify.gmail_email_andy
   mode: single
 - id: '1747060007889'
   alias: 'Porch Door: ZEN32 (Z-Wave JS)'

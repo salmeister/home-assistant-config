@@ -29,11 +29,6 @@ tts:
   - platform: google_translate
     service_name: google_say
 
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - !secret docker_net
-
 recorder:
   purge_keep_days: 30
   exclude:
