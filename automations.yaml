@@ -770,7 +770,7 @@
   actions:
   - action: notify.send_message
     target:
-      entity_id: notify.gmail_email_andy
+      entity_id: notify.salmeister_andy_salmela
     data:
       message: Time to go buy 4 bags of water softener salt.
       title: Water softener salt is low.
@@ -3063,7 +3063,7 @@
         -%} {{ ns.battery_info }}\n"
   - action: smtp.send_message
     target:
-      entity_id: notify.gmail_email_andy
+      entity_id: notify.salmeister_andy_salmela
     data:
       title: HA Battery Level Warning
       message: Low battery devices detected. See the HTML body for details.
