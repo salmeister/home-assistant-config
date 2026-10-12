@@ -399,7 +399,7 @@ sync_config_to_github:
         notification_id: git_sync_status
 
 git_sync_changes:
-  alias: Git Sync Changes
+  alias: Pull config from GitHub
   mode: single
   sequence:
   - action: input_boolean.turn_off
