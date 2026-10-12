@@ -225,7 +225,7 @@
       door_open_time: '{{ now().timestamp() }}'
       notification_tag: garage_door_{{ now().timestamp() | int }}
   - wait_for_trigger:
-    - platform: state
+    - trigger: state
       entity_id: binary_sensor.interior_garage_person_occupancy
       to: 'on'
     timeout:
@@ -1598,28 +1598,28 @@
     input:
       zooz_switch: 55a4c6305fd65cf4a02b1e2223f1985a
       scene_1:
-      - service: light.toggle
+      - action: light.toggle
         data: {}
         target:
           entity_id: light.basement_main_upper_lights
       scene_2:
-      - service: light.toggle
+      - action: light.toggle
         data: {}
         target:
           entity_id: light.basement_main_lower_lights
       scene_4:
-      - service: script.turn_on
+      - action: script.turn_on
         data: {}
         target:
           entity_id: script.turn_off_basement_lights
       scene_5: []
       scene_3:
-      - service: light.turn_on
+      - action: light.turn_on
         data: {}
         target:
           entity_id:
           - light.all_basement_downlights
-      - service: switch.turn_on
+      - action: switch.turn_on
         data: {}
         target:
           entity_id:
@@ -1629,11 +1629,11 @@
       scene_33: []
       scene_43: []
       scene_1h:
-      - service: script.basement_lights_to_warm_modify_active_lights
+      - action: script.basement_lights_to_warm_modify_active_lights
         metadata: {}
         data: {}
       scene_2h:
-      - service: script.basement_lights_to_cool_modify_active_lights
+      - action: script.basement_lights_to_cool_modify_active_lights
         metadata: {}
         data: {}
 - id: '1658436009563'
@@ -1882,7 +1882,7 @@
       node_id: 71
       target_light: light.basement_tv_lower_lights
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         data: {}
         target:
           entity_id: light.basement_tv_lower_lights
@@ -1890,7 +1890,7 @@
       already_on_not_bright_1x: []
       on_2x: []
       off_1x:
-      - service: light.turn_off
+      - action: light.turn_off
         data: {}
         target:
           entity_id: light.basement_tv_lower_lights
@@ -1904,7 +1904,7 @@
       node_id: 75
       target_light: light.bar_lights
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         data: {}
         target:
           entity_id: light.bar_lights
@@ -1913,7 +1913,7 @@
       on_2x: []
       on_3x: []
       off_1x:
-      - service: light.turn_off
+      - action: light.turn_off
         data: {}
         target:
           entity_id: light.bar_lights
@@ -1928,32 +1928,32 @@
       node_id: 68
       target_light: light.basement_main_lights
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         data: {}
         target:
           entity_id: light.basement_main_lights
       already_on_already_bright_1x:
-      - service: script.turn_on
+      - action: script.turn_on
         data: {}
         target:
           entity_id: script.basement_main_to_dim_modify_active_lights
       already_on_not_bright_1x:
-      - service: script.turn_on
+      - action: script.turn_on
         data: {}
         target:
           entity_id: script.basement_main_to_bright_modify_active_lights
       on_2x:
-      - service: script.turn_on
+      - action: script.turn_on
         data: {}
         target:
           entity_id: script.basement_main_step_up_brightness_modify_active_lights
       off_1x:
-      - service: light.turn_off
+      - action: light.turn_off
         data: {}
         target:
           entity_id: light.basement_main_lights
       off_2x:
-      - service: script.turn_on
+      - action: script.turn_on
         data: {}
         target:
           entity_id: script.basement_main_step_up_brightness_modify_active_lights_2
@@ -1984,7 +1984,7 @@
       node_id: 52
       target_light: light.porch_fan
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         data:
           brightness_pct: 100
         target:
@@ -2176,12 +2176,12 @@
       node_id: 90
       target_light: light.basement_hall
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         data: {}
         target:
           entity_id: light.basement_hall
       off_1x:
-      - service: light.turn_off
+      - action: light.turn_off
         data: {}
         target:
           entity_id: light.basement_hall
@@ -2823,7 +2823,7 @@
     input:
       zooz_switch: e93643bd31e7c4ef387035ed48ac331d
       scene_5:
-      - service: light.toggle
+      - action: light.toggle
         metadata: {}
         data: {}
         target:
@@ -2831,25 +2831,25 @@
           - light.living_room
           - light.fireplace_lights
       scene_1:
-      - service: light.toggle
+      - action: light.toggle
         metadata: {}
         data: {}
         target:
           entity_id: light.fireplace_lights
       scene_2:
-      - service: light.toggle
+      - action: light.toggle
         metadata: {}
         data: {}
         target:
           entity_id: light.living_room
       scene_3:
-      - service: light.toggle
+      - action: light.toggle
         metadata: {}
         data: {}
         target:
           entity_id: light.living_room_north_row
       scene_4:
-      - service: light.toggle
+      - action: light.toggle
         metadata: {}
         data: {}
         target:
@@ -2863,13 +2863,13 @@
       node_id: 53
       target_light: light.table_lights
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         metadata: {}
         data: {}
         target:
           entity_id: light.table_lights
       off_1x:
-      - service: light.turn_off
+      - action: light.turn_off
         metadata: {}
         data: {}
         target:
@@ -2883,14 +2883,14 @@
       node_id: 102
       target_light: light.basement_tv_upper_lights
       on_1x:
-      - service: light.turn_on
+      - action: light.turn_on
         metadata: {}
         data: {}
         target:
           entity_id:
           - light.basement_tv_upper_lights
       off_1x:
-      - service: light.turn_off
+      - action: light.turn_off
         metadata: {}
         data: {}
         target:
@@ -3201,7 +3201,7 @@
   alias: Morning Briefing - Moss
   description: Triggers Moss morning briefing 15 min after Andy alarm on weekdays
   triggers:
-  - platform: state
+  - trigger: state
     entity_id: sensor.salmob1_next_alarm
     to: unavailable
   conditions:
@@ -3217,4 +3217,28 @@
   - target:
       entity_id: input_boolean.moss_morning_briefing_trigger
     action: input_boolean.turn_on
+  mode: single
+- id: nightly_git_sync_push
+  alias: Nightly Git sync push
+  description: Push allowlisted configuration to GitHub once a night
+  triggers:
+  - trigger: time
+    at: '03:17:00'
+  actions:
+  - action: shell_command.git_sync_push
+    response_variable: git_push
+  - if:
+    - condition: template
+      value_template: "{{ git_push.returncode | int(1) != 0 }}"
+    then:
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.github_operation_error
+    - action: persistent_notification.create
+      data:
+        title: Nightly Git sync failed
+        message: >-
+          git_sync_push exited {{ git_push.returncode | default('unknown') }}.
+          {{ git_push.stderr | default('') }}
+        notification_id: git_sync_nightly
   mode: single

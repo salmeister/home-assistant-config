@@ -6,18 +6,11 @@
   - sensor:
       name: GitHub Config Updates Available
       unique_id: 'github_config_updates_available'
-      command: 'cd /config && git fetch origin develop-ha >/dev/null 2>&1 && git rev-list HEAD...origin/develop-ha --count'
+      command: 'cd /config && GIT_SSH_COMMAND="ssh -i /config/.ssh/ha_deploy_key -o UserKnownHostsFile=/config/.ssh/known_hosts -o IdentitiesOnly=yes" git fetch git@github.com:salmeister/home-assistant-config.git develop-ha >/dev/null 2>&1 && git rev-list HEAD...FETCH_HEAD --count'
       scan_interval: 14400  # Every 4 hours
       command_timeout: 30
       value_template: '{{ value | int }}'
       unit_of_measurement: 'commits'
-  - sensor:
-      name: Config Snapshots Changes Available
-      unique_id: 'config_snapshots_changes_available'
-      command: 'cd /config && ./scripts/update-config-snapshots.sh >/dev/null 2>&1; echo $?'
-      scan_interval: 86400
-      command_timeout: 15
-      value_template: '{{ value | int }}'
   - sensor:
       name: Frigate Healthcheck
       command: !secret frigate_healthcheck_command

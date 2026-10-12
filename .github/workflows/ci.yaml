@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: scripts/gitleaks.toml
+
+  yamllint:
+    name: yamllint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install yamllint
+        run: pip install yamllint
+      - name: Lint YAML
+        run: yamllint .
+
+  home-assistant:
+    name: Home Assistant config check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Prepare files that stay off git
+        run: |
+          cp zones_example.yaml zones.yaml
+          python3 - <<'PY'
+          import json
+          json.dump(
+              {
+                  "type": "service_account",
+                  "project_id": "dummy-project",
+                  "private_key_id": "dummy",
+                  "private_key": "dummy-not-a-real-key",
+                  "client_email": "dummy@example.com",
+                  "client_id": "0",
+                  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                  "token_uri": "https://oauth2.googleapis.com/token",
+              },
+              open("service_account.json", "w"),
+          )
+          PY
+      - name: Check Home Assistant configuration
+        uses: frenck/action-home-assistant@v1
+        with:
+          secrets: secrets_example.yaml
+          version: stable

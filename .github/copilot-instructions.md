@@ -18,25 +18,8 @@ This is a comprehensive Home Assistant configuration repository featuring advanc
 
 This prevents repetitive work, maintains continuity, and leverages previous insights.
 
-### 2. Always Review Entity Registry
-**ESSENTIAL**: After reading memory, review the `entity_registry_snapshot.json` file to understand:
-- All available sensors, switches, lights, and other entities
-- Area assignments for each entity (kitchen, garage, basement, etc.)
-- Entity states, capabilities, and device relationships
-- Platform integrations (Z-Wave, Frigate, Rachio, etc.)
-
-```bash
-# Always start with this command after reading memory
-cat entity_registry_snapshot.json | jq '.data.entities[] | {entity_id, area_id, original_name, platform}'
-
-# Filter by specific area
-cat entity_registry_snapshot.json | jq '.data.entities[] | select(.area_id == "garage")'
-
-# Find entities by platform
-cat entity_registry_snapshot.json | jq '.data.entities[] | select(.platform == "zwave_js")'
-```
-
-This file is updated regularly using `scripts/update-config-snapshots.sh` and contains the authoritative source of truth for all Home Assistant entities and their locations.
+### 2. Do not publish the entity registry or Lovelace storage
+`entity_registry_snapshot.json` and `lovelace_raw_configuration.yaml` are not in git. They hold MAC addresses and household data. Read entities from the YAML configuration and from `docs/memory.md`. Do not copy `.storage` files back into the repository. Git sync is documented in `docs/git-sync.md`.
 
 ### 3. Memory Management System
 **REQUIRED**: This repository includes a memory system for maintaining context across interactions:
@@ -60,7 +43,7 @@ This file is updated regularly using `scripts/update-config-snapshots.sh` and co
 - `scripts.yaml` - Reusable action scripts and notifications
 - `sensors.yaml` - Custom sensors and device monitoring
 - `scenes.yaml` - Predefined lighting and security states
-- `entity_registry_snapshot.json` - **CRITICAL**: Complete entity inventory with areas
+- `docs/git-sync.md` - SSH deploy-key sync. Do not publish `.storage` snapshots
 
 ### Specialized Directories
 - `blueprints/` - Community and custom automation blueprints
@@ -90,7 +73,7 @@ Key areas in the home based on entity assignments:
 - **Voice Control**: Google Assistant integration
 - **Visual Indicators**: Back entry light status changes
 
-**Key Entities** (verify in entity_registry_snapshot.json):
+**Key Entities** (names only; the entity registry snapshot is not published):
 - Garage door sensors and controls
 - Frigate camera entities for garage
 - Person detection binary sensors
@@ -429,7 +412,7 @@ condition:
 ## Troubleshooting Guidelines
 
 ### Common Issues
-1. **Entity Not Found**: Always check entity_registry_snapshot.json for current entities
+1. **Entity Not Found**: Check the YAML configuration and Developer Tools. The entity registry snapshot is not published
 2. **Area Mismatch**: Verify area assignments match actual home layout
 3. **Platform Conflicts**: Consider integration-specific limitations
 4. **Mobile Notifications**: Verify device IDs and notification permissions
@@ -461,8 +444,7 @@ condition:
 
 ### Configuration Management
 - **Git-based version control** with `develop-ha` branch strategy
-- **Automated GitHub sync** via UI buttons and shell commands (see README.md)
-- **Entity registry snapshots** using `scripts/update-config-snapshots.sh`
+- **Automated GitHub sync** via SSH (`docs/git-sync.md`). No personal access token
 - **Backup strategies** for critical configurations
 - **Branch protection**: Test on `develop-ha`, merge to `main` for stable releases
 
@@ -475,7 +457,7 @@ condition:
 ## Repository Maintenance
 
 ### Regular Tasks
-1. **Update entity registry** after device changes: `bash scripts/update-config-snapshots.sh`
+1. **Do not commit** `entity_registry_snapshot.json`, Lovelace storage, or `secrets.yaml`
 2. **Review and clean up** `docs/memory.md` to maintain context freshness
 3. **Test critical automations** monthly, especially garage door and security systems
 4. **Update documentation** for major changes, especially integration references
