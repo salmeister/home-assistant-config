@@ -427,19 +427,9 @@ git_sync_changes:
           {{ git_pull.stderr | default('') }}
         notification_id: git_sync_status
     else:
-    # check_config raises on an invalid configuration and does not return
-    # response data. A nested sequence records success only when it returns.
-    - variables:
-        config_valid: false
     - continue_on_error: true
       sequence:
       - action: homeassistant.check_config
-      - variables:
-          config_valid: true
-    - if:
-      - condition: template
-        value_template: "{{ config_valid }}"
-      then:
       - action: automation.reload
       - action: scene.reload
       - action: persistent_notification.create
@@ -450,14 +440,14 @@ git_sync_changes:
             reloaded.
           notification_id: git_sync_status
       - action: script.reload
-      else:
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.github_operation_error
-      - action: persistent_notification.create
-        data:
-          title: Configuration invalid
-          message: >-
-            Pulled configuration failed the config check. Automations, scripts,
-            and scenes were not reloaded.
-          notification_id: git_sync_status
+      - stop: Configuration is valid and git sync is complete.
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.github_operation_error
+    - action: persistent_notification.create
+      data:
+        title: Configuration invalid
+        message: >-
+          Pulled configuration failed the config check. Automations, scripts,
+          and scenes were not reloaded.
+        notification_id: git_sync_status

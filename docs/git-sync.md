@@ -28,8 +28,22 @@ GitHub → this repository → Settings → Deploy keys → Add deploy key. Past
 personal access token.
 
 ```bash
-ssh-keyscan github.com > /config/.ssh/known_hosts
+known_hosts_tmp="$(mktemp)"
+trap 'rm -f "$known_hosts_tmp"' EXIT
+ssh-keyscan -t ed25519 github.com > "$known_hosts_tmp"
+fingerprint="$(ssh-keygen -lf "$known_hosts_tmp" -E sha256 | awk '{print $2}')"
+if [ "$fingerprint" != "SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU" ]; then
+  echo "GitHub SSH host key fingerprint did not match; refusing to trust it." >&2
+  exit 1
+fi
+install -m 600 "$known_hosts_tmp" /config/.ssh/known_hosts
+rm "$known_hosts_tmp"
+trap - EXIT
 ```
+
+The fingerprint above is GitHub's published ED25519 host key fingerprint.
+Check [GitHub's SSH key fingerprints](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints)
+if GitHub rotates its host key.
 
 Point the config remote at SSH. This replaces an HTTPS remote, including one
 that embedded a token:
@@ -112,9 +126,11 @@ The config extends the default gitleaks rules and also flags:
 
 If gitleaks reports a finding it resets the index and exits 2. Nothing is
 committed. If nothing is staged, the script exits 0. A local commit that
-never reached `origin/develop-ha` is pushed first, so a failed push is
-retried without creating an empty commit. Otherwise it commits with the
-message `[ha-ui] <files>` and pushes `develop-ha` over SSH.
+never reached `origin/develop-ha` is checked before it is pushed. Immediately
+before either push, the script checks every outgoing commit for paths outside
+the publishing allowlist and scans the outgoing Git history with gitleaks.
+Otherwise it commits with the message `[ha-ui] <files>` and pushes
+`develop-ha` over SSH.
 
 `scripts/ha-git-sync.sh pull` runs `git fetch origin develop-ha` and
 `git pull --ff-only origin develop-ha`. A diverged branch fails instead of

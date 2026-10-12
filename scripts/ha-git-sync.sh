@@ -77,6 +77,48 @@ scan_staged() {
   exit "${leak_rc}"
 }
 
+path_is_allowed() {
+  case "$1" in
+    .gitignore|.yamllint|README.md|configuration.yaml|automations.yaml|scripts.yaml|scenes.yaml|sensors.yaml|binary_sensors.yaml|templates.yaml|command_line.yaml|input_booleans.yaml|input_text.yaml|lights.yml|notify.yaml|secrets_example.yaml|zones_example.yaml)
+      return 0
+      ;;
+    .github/*|blueprints/*|packages/*|python_scripts/*|scripts/*|docs/*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+validate_outbound() {
+  local commit path leak_rc
+  git fetch origin "${BRANCH}"
+
+  while IFS= read -r commit; do
+    while IFS= read -r -d '' path; do
+      if ! path_is_allowed "${path}"; then
+        echo "outgoing commit ${commit} contains unpublished path: ${path}" >&2
+        exit 2
+      fi
+    done < <(git diff-tree --root --no-commit-id --name-only --no-renames -r -z "${commit}")
+  done < <(git rev-list --reverse "origin/${BRANCH}..HEAD")
+
+  set +e
+  /config/bin/gitleaks git --log-opts="origin/${BRANCH}..HEAD" --redact --no-banner --config "${REPO_DIR}/scripts/gitleaks.toml"
+  leak_rc=$?
+  set -e
+  if [[ "${leak_rc}" -eq 0 ]]; then
+    return 0
+  fi
+  if [[ "${leak_rc}" -eq 1 ]]; then
+    echo "gitleaks found a secret in outgoing commits; refusing to push" >&2
+    exit 2
+  fi
+  echo "gitleaks failed with exit ${leak_rc}; refusing to push" >&2
+  exit "${leak_rc}"
+}
+
 mode="${1:-}"
 if [[ $# -ne 1 ]]; then
   usage
@@ -95,6 +137,7 @@ case "${mode}" in
       # publish that commit; otherwise exit 0 without making a new one.
       if git rev-parse --verify --quiet "refs/remotes/origin/${BRANCH}" >/dev/null \
         && [[ "$(git rev-list --count "origin/${BRANCH}..HEAD")" != "0" ]]; then
+        validate_outbound
         git push origin "HEAD:${BRANCH}"
       fi
       exit 0
@@ -105,6 +148,7 @@ case "${mode}" in
       files="${files:+${files} }${path}"
     done < <(git diff --cached --name-only)
     git commit -m "[ha-ui] ${files}"
+    validate_outbound
     git push origin "HEAD:${BRANCH}"
     ;;
   pull)
