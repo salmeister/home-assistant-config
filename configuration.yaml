@@ -19,11 +19,8 @@ zone: !include zones.yaml
 python_script:
 
 shell_command:
-  git_pull_config: 'cd /config && git pull origin develop-ha'
-  git_status_config: 'cd /config && git status && git log --oneline -5'
-  git_stage_entity_registry: 'cd /config && git add .'
-  git_commit_entity_registry: 'cd /config && git commit -m "Update snapshot files"'
-  git_push_entity_registry: 'cd /config && git push https://salmeister:${GITHUB_TOKEN}@github.com/salmeister/home-assistant-config.git develop-ha'
+  git_sync_push: /config/scripts/ha-git-sync.sh push
+  git_sync_pull: /config/scripts/ha-git-sync.sh pull
 
 tts:
   - platform: google_translate
@@ -45,26 +42,6 @@ logger:
   default: info
   logs:
     homeassistant.components.http.ban: warning
-
-#influxdb:
-#  api_version: 2
-#  ssl: false
-#  host: !secret local_ip
-#  port: 8086
-#  token: !secret influxdb_token
-#  organization: salmeister
-#  bucket: homeassistant
-#  tags:
-#    source: HomeAssistant
-#  tags_attributes:
-#    - friendly_name
-#  default_measurement: units
-#  ignore_attributes:
-#    - icon
-#  #database: homeassistant
-#  #username: hass
-#  #password: !secret influxdb_psswd
-#  #max_retries: 3
 
 # View all events in a logbook
 logbook:

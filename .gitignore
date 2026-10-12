@@ -1,19 +1,79 @@
-# Generic ignores
-*.mp3
-*.mp4
-*.backup
-*.log
+# Default deny. Anything new at the repo root stays unpublished until it is
+# added to the allowlist below. Home Assistant runtime files, secrets, and
+# household data must not be committed to this public repository.
+
+/*
+
+# Allowlisted configuration
+!/.gitignore
+!/.github/
+!/.yamllint
+!/README.md
+!/configuration.yaml
+!/automations.yaml
+!/scripts.yaml
+!/scenes.yaml
+!/sensors.yaml
+!/binary_sensors.yaml
+!/templates.yaml
+!/command_line.yaml
+!/input_booleans.yaml
+!/input_text.yaml
+!/lights.yml
+!/notify.yaml
+!/secrets_example.yaml
+!/zones_example.yaml
+!/blueprints/
+!/packages/
+!/python_scripts/
+!/scripts/
+!/docs/
+
+# Extra deny. These stay ignored even inside an allowlisted directory.
+secrets.yaml
+secrets.yml
+zones.yaml
+.storage/
 *.db
 *.db-shm
 *.db-wal
+service_account.json
+*.log
+*.log.*
+home-assistant.log
+home-assistant.log.*
+.HA_VERSION
+.ha_run.lock
+entity_registry_snapshot.json
+lovelace_raw_configuration.yaml
+known_devices.yaml
+ip_bans.yaml
+.uuid
 *.pyc
+__pycache__/
+*.backup
+*.mp3
+*.mp4
 ._*
-__pycache__
-
-# Directory (contents) ignores
-.cloud
-.storage
-deps
+node-red/flows_cred.json
+.config_entries.json
+.homekit.state
+.ios.conf
+.spotify-token-cache
+.tradfri_psk.conf
+html5_push_registrations.conf
+options.xml
+OZW_Log.txt
+pyozw.sqlite
+webostv.conf
+zwcfg_*
+zwscene.xml
+esphome/secrets.yaml
+esphome/secrets.yml
+aircast.xml
+airsonos.xml
+.cloud/
+deps/
 custom_components/
 www/
 image/
@@ -22,49 +82,9 @@ _trash/
 .local/
 backups/
 lsiopy/
-
-# Specific file ignores
-home-assistant.log
-home-assistant.log.*
-.HA_VERSION
-node-red/flows_cred.json
-.config_entries.json
-.homekit.state
-.ios.conf
-.spotify-token-cache
-.tradfri_psk.conf
-.uuid
-core
-html5_push_registrations.conf
-ip_bans.yaml
-known_devices.yaml
-options.xml
-OZW_Log.txt
-pyozw.sqlite
-secrets.yaml
-secrets.yml
-service_account.json
-webostv.conf
-zones.yaml
-zwcfg_*
-zwscene.xml
-
-# ESPHome ignores
-esphome/secrets.yaml
-esphome/secrets.yml
-
-# Ignore add-on files
-aircast.xml
-airsonos.xml
-notebooks
-
-# Ignore files created by IDE's
-.vscode
-.theia
+.vscode/
+.theia/
 .Trash*
-
-# Specific keeps
-!.gitkeep
-
-# Entity registry snapshot (manually updated)
-!entity_registry_snapshot.json
+.ssh/
+bin/
+core

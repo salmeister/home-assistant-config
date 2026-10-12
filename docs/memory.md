@@ -6,6 +6,10 @@
 **Current Branch**: develop-ha  
 **Repository**: salmeister/home-assistant-config
 
+## Recent Updates (October 12, 2026)
+- Git sync is SSH-only. See `docs/git-sync.md`.
+- `entity_registry_snapshot.json`, `lovelace_raw_configuration.yaml`, `.HA_VERSION`, and `.ha_run.lock` are no longer published. They hold MAC addresses and household data.
+
 ## Recent Updates (August 31, 2026)
 - ✅ Removed leftover `http:` YAML block from `configuration.yaml` after HA 2026.8 UI migration (repair: HTTP YAML ignored)
 - ✅ HTTP reverse-proxy settings (`use_x_forwarded_for`, `trusted_proxies` / docker_net) now live in Settings > System > Network
@@ -87,7 +91,7 @@ This repository is public. Copilot and contributors must never add or suggest co
 - Quick pre‑commit self‑check:
 	- Ensure all credentials and coordinates use `!secret`.
 	- Grep mentally for risky terms: "password", "token", "api_key", "secret", "webhook", "bearer", "authorization", "latitude", "longitude".
-	- Verify `entity_registry_snapshot.json` does not expose device serials, tokens, or sensitive identifiers when updated.
+	- Do not commit `entity_registry_snapshot.json` or Lovelace storage. They hold MAC addresses and household data and are gitignored.
 - Optional protections to consider (not required): local secret scanners (e.g., `detect-secrets`, `git-secrets`) and enabling GitHub Secret Scanning/Push Protection.
 
 ## Current Context
@@ -193,8 +197,8 @@ Based on entity_registry_snapshot.json review:
 - Documentation in docs/ directory
 
 ### Entity Management
-- entity_registry_snapshot.json as authoritative source
-- Regular updates to maintain accuracy
+- Entity registry snapshot is local only and is not published
+- Use YAML configuration and this memory file for entity context
 - Area assignments drive automation logic
 - Platform-specific considerations for different integrations
 

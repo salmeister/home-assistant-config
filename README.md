@@ -188,73 +188,13 @@ Found something useful? Have improvements?
 
 ### GitHub Configuration Management
 
-This setup includes automated GitHub configuration management for seamless updates:
+Sync uses an SSH deploy key and `scripts/ha-git-sync.sh`. Setup, the nightly
+push, and the pull button are documented in [`docs/git-sync.md`](docs/git-sync.md).
+Do not put a personal access token in the container or in shell commands.
 
-#### 🔄 Automated Sync Features
-- **One-Click Updates**: Pull latest configuration from GitHub via UI button
-- **Automatic Reload**: Configuration automatically reloaded after sync
-- **Status Notifications**: Mobile alerts when sync completes
-- **Safety Toggle**: Enable/disable sync functionality via input boolean
-
-#### 🔧 Setup Instructions
-
-1. **Repository Access** (Choose one method):
-
-   **Option A: SSH Key Authentication (Recommended)**
-   ```bash
-   # Generate SSH key on Home Assistant
-   ssh-keygen -t rsa -b 4096 -C "homeassistant@yourdomain.com"
-   
-   # Add public key to GitHub repository settings
-   cat ~/.ssh/id_rsa.pub
-   ```
-
-   **Option B: Personal Access Token**
-   ```bash
-   # Create secrets.yaml with GitHub credentials
-   github_token: "ghp_your_personal_access_token_here"
-   
-   # Update shell commands to use token
-   git_pull_config: 'cd /config && git pull https://github_token@github.com/yourusername/repo.git develop-ha'
-   ```
-
-2. **Initial Repository Clone**:
-   ```bash
-   # Remove default config and clone repository
-   cd /config
-   rm -rf * .*
-   git clone git@github.com:salmeister/home-assistant-config.git .
-   ```
-
-3. **Configure Git Settings**:
-   ```bash
-   git config user.name "Home Assistant"
-   git config user.email "homeassistant@yourdomain.com"
-   git config pull.rebase false
-   ```
-
-4. **Restart Home Assistant** to load the new configuration
-
-#### 📱 Usage
-
-- **UI Button**: Navigate to Home → System → GitHub Configuration Management
-- **Pull Config**: Click to download latest changes from GitHub
-- **Git Status**: Check repository status and recent commits
-- **Sync Toggle**: Enable/disable automatic sync functionality
-
-#### 🔒 Security Considerations
-
-- **SSH Keys**: Use SSH key authentication for secure, passwordless access
-- **Access Tokens**: If using tokens, store in `secrets.yaml` (not committed to repository)
-- **Repository Permissions**: Ensure GitHub repository has appropriate access controls
-- **Backup Strategy**: Always backup working configurations before major updates
-
-#### 🚨 Troubleshooting
-
-- **Sync Failures**: Check Home Assistant logs for Git error messages
-- **Permission Issues**: Verify SSH key or token permissions
-- **Merge Conflicts**: Manual intervention required for conflicting changes
-- **Network Issues**: Ensure Home Assistant has internet access
+`entity_registry_snapshot.json`, `lovelace_raw_configuration.yaml`,
+`.HA_VERSION`, and `.ha_run.lock` hold MAC addresses and household data and are
+no longer published. They remain on the Home Assistant host and are gitignored.
 
 ## �🙏 Acknowledgments
 
@@ -281,49 +221,10 @@ This is a public repository. Do not store sensitive information here.
 - Before committing, scan changes for risky terms like: password, token, api_key, secret, webhook, bearer, authorization, latitude, longitude.
 - See `docs/memory.md` → Security & privacy guardrails for examples and redaction guidance.
 
-## 🧾 Entity Registry Snapshot (update-config-snapshots.sh)
+## Unpublished household files
 
-Use this helper to create/update `entity_registry_snapshot.json` from Home Assistant’s live entity registry. This is useful for documentation and development context.
-
-### Where to run it
-- Run directly on the machine that runs Home Assistant, where the `/config` folder (and its `.storage` subfolder) exists.
-- If you run HA in Docker, execute the script inside the running container so it can read `/config/.storage/core.entity_registry`.
-
-### What it does
-- Copies `.storage/core.entity_registry` to `entity_registry_snapshot.json` in the repo root.
-- If `jq` is available, it prints the number of entities.
-- Sets file permissions to 644.
-
-### Steps
-1) Enter the Home Assistant environment (pick one):
-   - Docker (from your Windows PowerShell):
-     ```powershell
-     # Replace 'homeassistant' if your container name differs
-     docker exec -it homeassistant bash
-     ```
-   - HA OS/Supervised: Open a shell where `/config` is your HA config directory.
-
-2) Run the script from the HA config’s scripts folder:
-   ```bash
-   cd /config/scripts
-   bash update-config-snapshots.sh
-   ```
-
-   Notes:
-   - The script assumes it is run from `/config/scripts` and writes to `../entity_registry_snapshot.json` (repo root).
-   - `jq` is optional; if present, an entity count will be displayed.
-
-3) Review the snapshot for privacy
-   - Ensure no sensitive data is exposed (tokens, webhook URLs, precise coordinates, device serials). See Security & Privacy guidance above.
-
-4) Commit and sync the updated snapshot to your branch
-   ```bash
-   cd /config
-   git add entity_registry_snapshot.json
-   git commit -m "chore: update entity registry snapshot"
-   # Push to your working branch (e.g., develop-ha)
-   git push origin $(git rev-parse --abbrev-ref HEAD)
-   ```
-
-   If `git` isn’t available in your HA environment, copy the updated `entity_registry_snapshot.json` to your development machine and commit/push from there.
+`entity_registry_snapshot.json`, `lovelace_raw_configuration.yaml`,
+`.HA_VERSION`, and `.ha_run.lock` hold MAC addresses and household data and are
+no longer published. Do not add them back to git. See
+[`docs/git-sync.md`](docs/git-sync.md).
 
