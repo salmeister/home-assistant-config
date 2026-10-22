@@ -2186,151 +2186,126 @@
         target:
           entity_id: light.basement_hall
 - id: '1674567806494'
-  alias: Andy Phone Usage
-  description: ''
+  alias: Phone Screen Time Alerts
+  description: 'Notify each person at 3/4/5/6 hours of daily screen time. Kids at
+    5h+ also notify parents. Replaces the four per-person Phone Usage automations.'
   triggers:
-  - entity_id:
-    - sensor.andy_daily_phone_usage
+  - trigger: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
     above: 3
-    trigger: numeric_state
-  - entity_id: sensor.andy_daily_phone_usage
+    id: andy
+  - trigger: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
     above: 4
-    trigger: numeric_state
-  - entity_id: sensor.andy_daily_phone_usage
+    id: andy
+  - trigger: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
     above: 5
-    trigger: numeric_state
-  - entity_id: sensor.andy_daily_phone_usage
+    id: andy
+  - trigger: numeric_state
+    entity_id: sensor.andy_daily_phone_usage
     above: 6
-    trigger: numeric_state
-  conditions: []
-  actions:
-  - data:
-      title: You have used {{ trigger.above }} hours of screen time today
-      message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
-        }}% of your day
-    action: notify.mobile_app_salmob1
-  mode: single
-- id: '1674571394391'
-  alias: Katie Phone Usage
-  description: ''
-  triggers:
-  - entity_id:
-    - sensor.katie_daily_phone_usage
+    id: andy
+  - trigger: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
     above: 3
-    trigger: numeric_state
-  - entity_id: sensor.katie_daily_phone_usage
+    id: katie
+  - trigger: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
     above: 4
-    trigger: numeric_state
-  - entity_id: sensor.katie_daily_phone_usage
+    id: katie
+  - trigger: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
     above: 5
-    trigger: numeric_state
-  - entity_id: sensor.katie_daily_phone_usage
+    id: katie
+  - trigger: numeric_state
+    entity_id: sensor.katie_daily_phone_usage
     above: 6
-    trigger: numeric_state
-  conditions: []
-  actions:
-  - data:
-      title: You have used {{ trigger.above }} hours of screen time today
-      message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
-        }}% of your day
-    action: notify.mobile_app_salmob2
-  mode: single
-- id: '1674571487939'
-  alias: Cam Phone Usage
-  description: ''
-  triggers:
-  - entity_id:
-    - sensor.cam_daily_phone_usage
+    id: katie
+  - trigger: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
     above: 3
-    trigger: numeric_state
-  - entity_id: sensor.cam_daily_phone_usage
+    id: cam
+  - trigger: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
     above: 4
-    trigger: numeric_state
-  - entity_id: sensor.cam_daily_phone_usage
+    id: cam
+  - trigger: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
     above: 5
-    trigger: numeric_state
-  - entity_id: sensor.cam_daily_phone_usage
+    id: cam
+  - trigger: numeric_state
+    entity_id: sensor.cam_daily_phone_usage
     above: 6
-    trigger: numeric_state
-  conditions: []
-  actions:
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.above < 5 }}'
-      sequence:
-      - data:
-          title: You have used {{ trigger.above }} hours of screen time today
-          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
-            }}% of your day
-        action: notify.mobile_app_salmob4
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.above > 4 }}'
-      sequence:
-      - data:
-          title: You have used {{ trigger.above }} hours of screen time today
-          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
-            }}% of your day
-        action: notify.mobile_app_salmob4
-      - data:
-          message: Cam has used {{ trigger.above }} hours of screen time today
-        action: notify.mobile_app_salmob1
-      - data:
-          message: Cam has used {{ trigger.above }} hours of screen time today
-        action: notify.mobile_app_salmob2
-  mode: single
-- id: '1674571487940'
-  alias: Maggie Phone Usage
-  description: ''
-  triggers:
-  - entity_id:
-    - sensor.maggie_daily_phone_usage
+    id: cam
+  - trigger: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
     above: 3
-    trigger: numeric_state
-  - entity_id: sensor.maggie_daily_phone_usage
+    id: maggie
+  - trigger: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
     above: 4
-    trigger: numeric_state
-  - entity_id: sensor.maggie_daily_phone_usage
+    id: maggie
+  - trigger: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
     above: 5
-    trigger: numeric_state
-  - entity_id: sensor.maggie_daily_phone_usage
+    id: maggie
+  - trigger: numeric_state
+    entity_id: sensor.maggie_daily_phone_usage
     above: 6
-    trigger: numeric_state
-  conditions: []
+    id: maggie
+  variables:
+    phones:
+      andy: notify.mobile_app_salmob1
+      katie: notify.mobile_app_salmob2
+      cam: notify.mobile_app_salmob4
+      maggie: notify.mobile_app_salmob5
+    parent_alert_kids:
+    - maggie
+    person: '{{ trigger.id }}'
+    hours: '{{ trigger.above | int }}'
+    total: '{{ trigger.to_state.state | float(0) }}'
+  conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.from_state is not none and trigger.to_state is not none
+         and trigger.from_state.state not in ['unknown', 'unavailable']
+         and trigger.from_state.state | is_number
+         and trigger.to_state.state | is_number
+         and trigger.to_state.state | float > trigger.from_state.state | float }}
   actions:
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.above < 5 }}'
-      sequence:
-      - data:
-          title: You have used {{ trigger.above }} hours of screen time today
-          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
-            }}% of your day
-        action: notify.mobile_app_salmob5
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.above > 4 }}'
-      sequence:
-      - data:
-          title: You have used {{ trigger.above }} hours of screen time today
-          message: That is roughly {{ (((trigger.above / 16) | float) * 100) | round(0)
-            }}% of your day
-        action: notify.mobile_app_salmob5
-      - data:
-          message: Maggie has used {{ trigger.above }} hours of screen time today
-        action: notify.mobile_app_salmob1
-      - data:
-          message: Maggie has used {{ trigger.above }} hours of screen time today
-        action: notify.mobile_app_salmob2
-  mode: single
+  - action: '{{ phones[person] }}'
+    data:
+      title: 'Screen time: {{ hours }} hours today'
+      message: >-
+        That is roughly {{ (hours / 16 * 100) | round(0) | int }}% of your
+        waking day ({{ '%.1f' | format(total | float) }}h so far)
+      data:
+        tag: screen_time_{{ person }}
+  - if:
+    - condition: template
+      value_template: '{{ person in parent_alert_kids and hours >= 5 }}'
+    then:
+    - action: notify.mobile_app_salmob1
+      data:
+        message: '{{ person | title }} has used {{ hours }} hours of screen time
+          today'
+        data:
+          tag: screen_time_{{ person }}_parent
+    - action: notify.mobile_app_salmob2
+      data:
+        message: '{{ person | title }} has used {{ hours }} hours of screen time
+          today'
+        data:
+          tag: screen_time_{{ person }}_parent
+  mode: queued
+  max: 10
 - id: '1674575682770'
   alias: Cam School Night Phone Usage
   description: ''
   triggers:
   - entity_id:
-    - binary_sensor.salmob4_interactive
+    - binary_sensor.salmob4_screen_on
     to: 'on'
     from: 'off'
     for:
@@ -2346,12 +2321,6 @@
     after: '22:00:00'
   actions:
   - data:
-      message: Cam is using his phone late on a school night
-    action: notify.mobile_app_salmob1
-  - data:
-      message: Cam is using his phone late on a school night
-    action: notify.mobile_app_salmob2
-  - data:
       message: It is pretty late to be using your phone on a school night
     action: notify.mobile_app_salmob4
   mode: single
@@ -2360,7 +2329,7 @@
   description: ''
   triggers:
   - entity_id:
-    - binary_sensor.salmob5_interactive
+    - binary_sensor.salmob5_screen_on
     to: 'on'
     from: 'off'
     for:
