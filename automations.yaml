@@ -2300,30 +2300,6 @@
           tag: screen_time_{{ person }}_parent
   mode: queued
   max: 10
-- id: '1674575682770'
-  alias: Cam School Night Phone Usage
-  description: ''
-  triggers:
-  - entity_id:
-    - binary_sensor.salmob4_screen_on
-    to: 'on'
-    from: 'off'
-    for:
-      hours: 0
-      minutes: 3
-      seconds: 0
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: binary_sensor.school_night
-    state: 'on'
-  - condition: time
-    after: '22:00:00'
-  actions:
-  - data:
-      message: It is pretty late to be using your phone on a school night
-    action: notify.mobile_app_salmob4
-  mode: single
 - id: '1674575682777'
   alias: Maggie School Night Phone Usage
   description: ''
