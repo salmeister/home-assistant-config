@@ -376,3 +376,117 @@
               {{ state_attr('sensor.garage_person_event', 'last_updated') }}
             {% endif %}
           {% endif %}
+
+# Phone "Screen On" sensors (used by the Daily/Monthly Phone Usage history_stats sensors)
+# binary_sensor.salmobN_interactive gets stuck 'on' when an Android phone powers off,
+# which inflates screen time. These follow the interactive sensor but turn off when:
+#   - the companion app's Last Update Trigger sensor reports ACTION_SHUTDOWN, or
+#   - the phone hasn't reported to HA for 30+ minutes (dead battery / forced reboot).
+# If sensor.salmobN_last_update_trigger isn't enabled yet, they simply follow interactive.
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob1_interactive
+    - platform: state
+      entity_id: sensor.salmob1_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob1 Screen On"
+      unique_id: salmob1_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob1_interactive %}
+        {% set t = states.sensor.salmob1_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob1_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob1_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
+
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob2_interactive
+    - platform: state
+      entity_id: sensor.salmob2_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob2 Screen On"
+      unique_id: salmob2_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob2_interactive %}
+        {% set t = states.sensor.salmob2_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob2_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob2_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
+
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob4_interactive
+    - platform: state
+      entity_id: sensor.salmob4_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob4 Screen On"
+      unique_id: salmob4_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob4_interactive %}
+        {% set t = states.sensor.salmob4_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob4_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob4_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
+
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob5_interactive
+    - platform: state
+      entity_id: sensor.salmob5_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob5 Screen On"
+      unique_id: salmob5_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob5_interactive %}
+        {% set t = states.sensor.salmob5_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob5_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob5_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
