@@ -130,7 +130,7 @@
   - platform: history_stats
     unique_id: 2593538384867
     name: Andy Daily Phone Usage
-    entity_id: binary_sensor.salmob1_interactive
+    entity_id: binary_sensor.salmob1_screen_on
     state: 'on'
     type: time
     start: "{{ now().replace(hour=0, minute=0, second=0) }}"
@@ -139,7 +139,7 @@
   - platform: history_stats
     unique_id: 9237677928357
     name: Andy Monthly Phone Usage
-    entity_id: binary_sensor.salmob1_interactive
+    entity_id: binary_sensor.salmob1_screen_on
     state: 'on'
     type: time
     end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
@@ -149,7 +149,7 @@
   - platform: history_stats
     unique_id: 4666657398792
     name: Katie Daily Phone Usage
-    entity_id: binary_sensor.salmob2_interactive
+    entity_id: binary_sensor.salmob2_screen_on
     state: 'on'
     type: time
     start: "{{ now().replace(hour=0, minute=0, second=0) }}"
@@ -158,7 +158,7 @@
   - platform: history_stats
     unique_id: 2669894878483
     name: Katie Monthly Phone Usage
-    entity_id: binary_sensor.salmob2_interactive
+    entity_id: binary_sensor.salmob2_screen_on
     state: 'on'
     type: time
     end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
@@ -168,7 +168,7 @@
   - platform: history_stats
     unique_id: 3789773592893
     name: Cam Daily Phone Usage
-    entity_id: binary_sensor.salmob4_interactive
+    entity_id: binary_sensor.salmob4_screen_on
     state: 'on'
     type: time
     start: "{{ now().replace(hour=0, minute=0, second=0) }}"
@@ -177,7 +177,7 @@
   - platform: history_stats
     unique_id: 5567737466887
     name: Cam Monthly Phone Usage
-    entity_id: binary_sensor.salmob4_interactive
+    entity_id: binary_sensor.salmob4_screen_on
     state: 'on'
     type: time
     end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
@@ -187,7 +187,7 @@
   - platform: history_stats
     unique_id: 6847358567369
     name: Maggie Daily Phone Usage
-    entity_id: binary_sensor.salmob5_interactive
+    entity_id: binary_sensor.salmob5_screen_on
     state: 'on'
     type: time
     start: "{{ now().replace(hour=0, minute=0, second=0) }}"
@@ -196,7 +196,7 @@
   - platform: history_stats
     unique_id: 3388553578645
     name: Maggie Monthly Phone Usage
-    entity_id: binary_sensor.salmob5_interactive
+    entity_id: binary_sensor.salmob5_screen_on
     state: 'on'
     type: time
     end: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
