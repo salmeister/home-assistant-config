@@ -2265,6 +2265,18 @@
     person: '{{ trigger.id }}'
     hours: '{{ trigger.above | int }}'
     total: '{{ trigger.to_state.state | float(0) }}'
+    icons:
+      3: "📱"
+      4: "⏰"
+      5: "⚠️"
+      6: "🚨"
+    nudges:
+      3: Time to think about a break.
+      4: Maybe get up and do something else.
+      5: That is a lot. Put the phone down for a while.
+      6: Seriously, put it down.
+    icon: '{{ icons[hours] | default("📱") }}'
+    nudge: '{{ nudges[hours] | default("") }}'
   conditions:
   - condition: template
     value_template: >-
@@ -2276,28 +2288,34 @@
   actions:
   - action: '{{ phones[person] }}'
     data:
-      title: 'Screen time: {{ hours }} hours today'
+      title: '{{ icon }} {{ hours }} hours of screen time today'
       message: >-
-        That is roughly {{ (hours / 16 * 100) | round(0) | int }}% of your
-        waking day ({{ '%.1f' | format(total | float) }}h so far)
+        {{ '%.1f' | format(total | float) }}h so far, about
+        {{ (hours / 16 * 100) | round(0) | int }}% of your waking day.
+        {{ nudge }}
       data:
         tag: screen_time_{{ person }}
+        group: screen_time
+        importance: '{{ "high" if hours >= 5 else "default" }}'
   - if:
     - condition: template
       value_template: '{{ person in parent_alert_kids and hours >= 5 }}'
     then:
-    - action: notify.mobile_app_salmob1
-      data:
-        message: '{{ person | title }} has used {{ hours }} hours of screen time
-          today'
-        data:
-          tag: screen_time_{{ person }}_parent
-    - action: notify.mobile_app_salmob2
-      data:
-        message: '{{ person | title }} has used {{ hours }} hours of screen time
-          today'
-        data:
-          tag: screen_time_{{ person }}_parent
+    - repeat:
+        for_each:
+        - notify.mobile_app_salmob1
+        - notify.mobile_app_salmob2
+        sequence:
+        - action: '{{ repeat.item }}'
+          data:
+            title: '{{ icon }} {{ person | title }}: {{ hours }} hours of screen time'
+            message: >-
+              {{ person | title }} is at {{ '%.1f' | format(total | float) }}h
+              today.
+            data:
+              tag: screen_time_{{ person }}_parent
+              group: screen_time
+              importance: high
   mode: queued
   max: 10
 - id: '1674575682777'
@@ -2321,13 +2339,24 @@
     after: '22:00:00'
   actions:
   - data:
-      message: Maggie is using her phone late on a school night
+      title: "🌙 Late phone use"
+      message: Maggie is on her phone late on a school night.
+      data:
+        tag: school_night_maggie_parent
+        importance: high
     action: notify.mobile_app_salmob1
   - data:
-      message: Maggie is using her phone late on a school night
+      title: "🌙 Late phone use"
+      message: Maggie is on her phone late on a school night.
+      data:
+        tag: school_night_maggie_parent
+        importance: high
     action: notify.mobile_app_salmob2
   - data:
-      message: It is pretty late to be using your phone on a school night
+      title: "🌙 It is late"
+      message: It is pretty late to be on your phone on a school night.
+      data:
+        tag: school_night_maggie
     action: notify.mobile_app_salmob5
   mode: single
 - id: '1674847821608'
