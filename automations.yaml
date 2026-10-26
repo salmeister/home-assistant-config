@@ -2187,8 +2187,8 @@
           entity_id: light.basement_hall
 - id: '1674567806494'
   alias: Phone Screen Time Alerts
-  description: 'Notify each person at 3/4/5/6 hours of daily screen time. Kids at
-    5h+ also notify parents. Replaces the four per-person Phone Usage automations.'
+  description: Notify each person at 3/4/5/6 hours of daily screen time. Kids at 5h+
+    also notify parents. Replaces the four per-person Phone Usage automations.
   triggers:
   - trigger: numeric_state
     entity_id: sensor.andy_daily_phone_usage
@@ -2266,33 +2266,29 @@
     hours: '{{ trigger.above | int }}'
     total: '{{ trigger.to_state.state | float(0) }}'
     icons:
-      3: "📱"
-      4: "⏰"
-      5: "⚠️"
-      6: "🚨"
+      3: "\U0001F4F1"
+      4: ⏰
+      5: ⚠️
+      6: "\U0001F6A8"
     nudges:
       3: Time to think about a break.
       4: Maybe get up and do something else.
       5: That is a lot. Put the phone down for a while.
       6: Seriously, put it down.
-    icon: '{{ icons[hours] | default("📱") }}'
+    icon: "{{ icons[hours] | default(\"\U0001F4F1\") }}"
     nudge: '{{ nudges[hours] | default("") }}'
   conditions:
   - condition: template
-    value_template: >-
-      {{ trigger.from_state is not none and trigger.to_state is not none
-         and trigger.from_state.state not in ['unknown', 'unavailable']
-         and trigger.from_state.state | is_number
-         and trigger.to_state.state | is_number
-         and trigger.to_state.state | float > trigger.from_state.state | float }}
+    value_template: "{{ trigger.from_state is not none and trigger.to_state is not
+      none\n   and trigger.from_state.state not in ['unknown', 'unavailable']\n   and
+      trigger.from_state.state | is_number\n   and trigger.to_state.state | is_number\n
+      \  and trigger.to_state.state | float > trigger.from_state.state | float }}"
   actions:
   - action: '{{ phones[person] }}'
     data:
       title: '{{ icon }} {{ hours }} hours of screen time today'
-      message: >-
-        {{ '%.1f' | format(total | float) }}h so far, about
-        {{ (hours / 16 * 100) | round(0) | int }}% of your waking day.
-        {{ nudge }}
+      message: '{{ ''%.1f'' | format(total | float) }}h so far, about {{ (hours /
+        16 * 100) | round(0) | int }}% of your waking day. {{ nudge }}'
       data:
         tag: screen_time_{{ person }}
         group: screen_time
@@ -2309,9 +2305,8 @@
         - action: '{{ repeat.item }}'
           data:
             title: '{{ icon }} {{ person | title }}: {{ hours }} hours of screen time'
-            message: >-
-              {{ person | title }} is at {{ '%.1f' | format(total | float) }}h
-              today.
+            message: '{{ person | title }} is at {{ ''%.1f'' | format(total | float)
+              }}h today.'
             data:
               tag: screen_time_{{ person }}_parent
               group: screen_time
@@ -2339,21 +2334,21 @@
     after: '22:00:00'
   actions:
   - data:
-      title: "🌙 Late phone use"
+      title: "\U0001F319 Late phone use"
       message: Maggie is on her phone late on a school night.
       data:
         tag: school_night_maggie_parent
         importance: high
     action: notify.mobile_app_salmob1
   - data:
-      title: "🌙 Late phone use"
+      title: "\U0001F319 Late phone use"
       message: Maggie is on her phone late on a school night.
       data:
         tag: school_night_maggie_parent
         importance: high
     action: notify.mobile_app_salmob2
   - data:
-      title: "🌙 It is late"
+      title: "\U0001F319 It is late"
       message: It is pretty late to be on your phone on a school night.
       data:
         tag: school_night_maggie
@@ -2964,27 +2959,26 @@
       title: HA Battery Level Warning
       message: Low battery devices detected. See the HTML body for details.
       html: "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
-          <html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n  <head>\n    <meta
-          charset=\"UTF-8\">\n    <meta http-equiv=\"Content-Type\" content=\"text/html;
-          charset=UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,
-          initial-scale=1.0\">\n    <title>Battery Alert</title>\n    <link rel=\"stylesheet\"
-          href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css\">\n
-          \   <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css\">\n
-          \   <style type=\"text/css\">\n      @font-face {\n        font-family:
-          'Open Sans';\n        font-style: normal;\n        font-weight: 300;\n        src:
-          local('Open Sans Light'), local('OpenSans-Light'), url(http://fonts.gstatic.com/s/opensans/v13/DXI1ORHCpsQm3Vp6mXoaTZS3E-kSBmtLoNJPDtbj2Pk.ttf)
-          format('truetype');\n      }\n      h1,h2,h3,h4,h5,h6 {\n        font-family:'Open
-          Sans',Arial,sans-serif;\n        font-weight:400;\n        margin:10px 0\n
-          \     }\n    </style>\n  </head>\n  <body>\n    <div class=\"jumbotron jumbotron-fluid\"
-          style=\"background-color: #f00a2d; color: white;\">\n      <div class=\"container
-          py-0\">\n        <h1>Low Battery Alert</h1>\n      </div>\n    </div>\n
-          \   <div class=\"container-fluid\">\n      <div class=\"row\">\n        <div
-          class=\"col-xs-12\">\n          <h3>Devices with Low Battery:</h3>\n          <ul>\n
-          \         {%- for battery in battery_levels -%}\n            <li>{{ battery.type
-          | upper }} - {{ battery.name }}: {{ battery.value }}%</li>\n          {%-
-          else -%}\n            <li>No devices with low battery levels found.</li>\n
-          \         {%- endfor -%}\n          </ul>\n</div>\n      </div>\n    </div>\n
-          \ </body>\n</html>\n"
+        <html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n  <head>\n    <meta
+        charset=\"UTF-8\">\n    <meta http-equiv=\"Content-Type\" content=\"text/html;
+        charset=UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,
+        initial-scale=1.0\">\n    <title>Battery Alert</title>\n    <link rel=\"stylesheet\"
+        href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css\">\n
+        \   <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css\">\n
+        \   <style type=\"text/css\">\n      @font-face {\n        font-family: 'Open
+        Sans';\n        font-style: normal;\n        font-weight: 300;\n        src:
+        local('Open Sans Light'), local('OpenSans-Light'), url(http://fonts.gstatic.com/s/opensans/v13/DXI1ORHCpsQm3Vp6mXoaTZS3E-kSBmtLoNJPDtbj2Pk.ttf)
+        format('truetype');\n      }\n      h1,h2,h3,h4,h5,h6 {\n        font-family:'Open
+        Sans',Arial,sans-serif;\n        font-weight:400;\n        margin:10px 0\n
+        \     }\n    </style>\n  </head>\n  <body>\n    <div class=\"jumbotron jumbotron-fluid\"
+        style=\"background-color: #f00a2d; color: white;\">\n      <div class=\"container
+        py-0\">\n        <h1>Low Battery Alert</h1>\n      </div>\n    </div>\n    <div
+        class=\"container-fluid\">\n      <div class=\"row\">\n        <div class=\"col-xs-12\">\n
+        \         <h3>Devices with Low Battery:</h3>\n          <ul>\n          {%-
+        for battery in battery_levels -%}\n            <li>{{ battery.type | upper
+        }} - {{ battery.name }}: {{ battery.value }}%</li>\n          {%- else -%}\n
+        \           <li>No devices with low battery levels found.</li>\n          {%-
+        endfor -%}\n          </ul>\n</div>\n      </div>\n    </div>\n  </body>\n</html>\n"
   mode: single
 - id: '1747060007889'
   alias: 'Porch Door: ZEN32 (Z-Wave JS)'
@@ -3065,34 +3059,6 @@
   - entity_id: switch.garage_lights
     action: switch.turn_off
   mode: single
-- id: washing_machine_dryer_reminder
-  alias: Washing Machine Dryer Reminder
-  description: Notify Andy when washing machine is done but dryer door hasn't been
-    opened after 10 minutes
-  triggers:
-  - entity_id: sensor.washer_washer_job_state
-    to: complete
-    trigger: state
-  conditions: []
-  actions:
-  - delay: 00:10:00
-  - condition: state
-    entity_id: binary_sensor.dryer_door_window_door_is_open
-    state: 'off'
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_boolean.notify_fpm_andy
-        state: 'on'
-      sequence:
-      - data:
-          title: Laundry Alert
-          message: Washing machine is done, dryer time!
-          data:
-            tag: washer_dryer_reminder
-            persistent: false
-        action: notify.mobile_app_salmob1
-  mode: single
 - id: moss_morning_briefing
   alias: Morning Briefing - Moss
   description: Triggers Moss morning briefing 15 min after Andy alarm on weekdays
@@ -3119,13 +3085,13 @@
   description: Push allowlisted configuration to GitHub once a night
   triggers:
   - trigger: time
-    at: '03:17:00'
+    at: 03:17:00
   actions:
   - action: shell_command.git_sync_push
     response_variable: git_push
   - if:
     - condition: template
-      value_template: "{{ git_push.returncode | int(1) != 0 }}"
+      value_template: '{{ git_push.returncode | int(1) != 0 }}'
     then:
     - action: input_boolean.turn_on
       target:
@@ -3133,8 +3099,7 @@
     - action: persistent_notification.create
       data:
         title: Nightly Git sync failed
-        message: >-
-          git_sync_push exited {{ git_push.returncode | default('unknown') }}.
-          {{ git_push.stderr | default('') }}
+        message: git_sync_push exited {{ git_push.returncode | default('unknown')
+          }}. {{ git_push.stderr | default('') }}
         notification_id: git_sync_nightly
   mode: single
