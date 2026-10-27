@@ -28,6 +28,7 @@
 !/python_scripts/
 !/scripts/
 !/docs/
+!/www/
 
 # Extra deny. These stay ignored even inside an allowlisted directory.
 secrets.yaml
@@ -75,7 +76,8 @@ airsonos.xml
 .cloud/
 deps/
 custom_components/
-www/
+www/*
+!/www/phone_usage_6h.jpg
 image/
 _trash/
 .cache/

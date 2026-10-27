@@ -2293,6 +2293,7 @@
         tag: screen_time_{{ person }}
         group: screen_time
         importance: '{{ "high" if hours >= 5 else "default" }}'
+        image: '{{ "/local/phone_usage_6h.jpg" if hours >= 6 else "" }}'
   - if:
     - condition: template
       value_template: '{{ person in parent_alert_kids and hours >= 5 }}'
