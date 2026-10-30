@@ -362,7 +362,6 @@
       xy_color:
       rgbw_color:
       effect:
-      ip_address: 192.168.30.199
       icon: mdi:led-strip
       friendly_name: Bar LED Lights
       supported_features: 36

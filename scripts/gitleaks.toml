@@ -1,0 +1,39 @@
+title = "home-assistant-config"
+
+# Extend the built-in rules, then add checks for values that show up in
+# Home Assistant YAML but are not generic API tokens.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "ha-wifi-or-ota-password"
+description = "Wi-Fi or OTA password set to a literal value instead of !secret"
+regex = '''(?i)(?:wifi[ _-]?password|ota_password)\s*:\s*['"]?[^\s#'"]+'''
+keywords = ["password"]
+[[rules.allowlists]]
+description = "YAML !secret tags are references, not literal passwords"
+regexTarget = "line"
+regexes = ['''(?i)(?:wifi[ _-]?password|ota_password)\s*:\s*!secret\b''']
+
+[[rules]]
+id = "ha-healthchecks-ping-url"
+description = "Healthchecks ping URL with a check UUID"
+regex = '''(?i)https?://healthchecks\.[a-z0-9.-]+/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+keywords = ["healthchecks."]
+
+[[rules]]
+id = "ha-hc-ping-url"
+description = "hc-ping.com URL with a check UUID"
+regex = '''(?i)https?://hc-ping\.com/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+keywords = ["hc-ping.com"]
+
+[[rules]]
+id = "ha-private-192-168"
+description = "Private 192.168 IPv4 address"
+regex = '''\b192\.168\.\d{1,3}\.\d{1,3}\b'''
+keywords = ["192.168."]
+
+[[rules]]
+id = "ha-mac-address"
+description = "MAC address"
+regex = '''\b[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}\b'''

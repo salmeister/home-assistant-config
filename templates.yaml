@@ -229,3 +229,271 @@
           and not is_state('person.cam','home')
           and not is_state('person.maggie','home')
         }}
+
+# Frigate MQTT trigger-based sensors for capturing event IDs
+# These sensors listen to frigate/events MQTT topic and store the latest event ID
+# for use in notifications with proper Frigate API URLs
+- trigger:
+    - platform: mqtt
+      topic: frigate/events
+  sensor:
+    - name: "Garage Person Event"
+      unique_id: garage_person_event_sensor
+      state: >-
+        {% set payload = trigger.payload_json %}
+        {% if payload is defined and payload.after is defined %}
+          {% set after = payload.after %}
+          {% if after.camera == 'garage' and after.label == 'person' %}
+            {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+              {{ after.id }}
+            {% else %}
+              {{ this.state if this.state is defined else 'unknown' }}
+            {% endif %}
+          {% else %}
+            {{ this.state if this.state is defined else 'unknown' }}
+          {% endif %}
+        {% else %}
+          {{ this.state if this.state is defined else 'unknown' }}
+        {% endif %}
+      attributes:
+        camera: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.camera }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'camera') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'camera') }}
+            {% endif %}
+          {% endif %}
+        label: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.label }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'label') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'label') }}
+            {% endif %}
+          {% endif %}
+        sub_label: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {% if after.sub_label is defined and after.sub_label is not none %}
+                  {% if after.sub_label is iterable and after.sub_label is not string %}
+                    {{ after.sub_label[0] if after.sub_label | length > 0 else none }}
+                  {% else %}
+                    {{ after.sub_label }}
+                  {% endif %}
+                {% else %}
+                  {{ none }}
+                {% endif %}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'sub_label') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'sub_label') }}
+            {% endif %}
+          {% endif %}
+        zones: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.entered_zones | default([]) | join(', ') }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'zones') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'zones') }}
+            {% endif %}
+          {% endif %}
+        has_clip: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.has_clip | default(false) }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'has_clip') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'has_clip') }}
+            {% endif %}
+          {% endif %}
+        has_snapshot: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ after.has_snapshot | default(false) }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'has_snapshot') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'has_snapshot') }}
+            {% endif %}
+          {% endif %}
+        event_type: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ payload.type | default('unknown') }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'event_type') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'event_type') }}
+            {% endif %}
+          {% endif %}
+        last_updated: >-
+          {% set payload = trigger.payload_json %}
+          {% if payload is defined and payload.after is defined %}
+            {% set after = payload.after %}
+            {% if after.camera == 'garage' and after.label == 'person' %}
+              {% if 'interior_garage' in after.current_zones or 'interior_garage' in after.entered_zones %}
+                {{ now().isoformat() }}
+              {% else %}
+                {{ state_attr('sensor.garage_person_event', 'last_updated') }}
+              {% endif %}
+            {% else %}
+              {{ state_attr('sensor.garage_person_event', 'last_updated') }}
+            {% endif %}
+          {% endif %}
+
+# Phone "Screen On" sensors (used by the Daily/Monthly Phone Usage history_stats sensors)
+# binary_sensor.salmobN_interactive gets stuck 'on' when an Android phone powers off,
+# which inflates screen time. These follow the interactive sensor but turn off when:
+#   - the foreground app is the Pixel launcher or System UI (home/lock screen),
+#   - the companion app's Last Update Trigger sensor reports ACTION_SHUTDOWN, or
+#   - the phone hasn't reported to HA for 30+ minutes (dead battery / forced reboot).
+# If last_used_app / last_update_trigger aren't enabled, those checks are skipped.
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob1_interactive
+    - platform: state
+      entity_id: sensor.salmob1_last_used_app
+    - platform: state
+      entity_id: sensor.salmob1_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob1 Screen On"
+      unique_id: salmob1_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob1_interactive %}
+        {% set t = states.sensor.salmob1_last_update_trigger %}
+        {% set app = states('sensor.salmob1_last_used_app') %}
+        {% set excluded = ['com.google.android.apps.nexuslauncher', 'com.android.systemui'] %}
+        {% if not is_state('binary_sensor.salmob1_interactive', 'on') %}
+          false
+        {% elif app in excluded %}
+          false
+        {% elif t is none or not has_value('sensor.salmob1_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
+
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob2_interactive
+    - platform: state
+      entity_id: sensor.salmob2_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob2 Screen On"
+      unique_id: salmob2_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob2_interactive %}
+        {% set t = states.sensor.salmob2_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob2_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob2_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
+
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob4_interactive
+    - platform: state
+      entity_id: sensor.salmob4_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob4 Screen On"
+      unique_id: salmob4_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob4_interactive %}
+        {% set t = states.sensor.salmob4_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob4_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob4_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}
+
+- trigger:
+    - platform: state
+      entity_id: binary_sensor.salmob5_interactive
+    - platform: state
+      entity_id: sensor.salmob5_last_update_trigger
+      to:
+        - android.intent.action.ACTION_SHUTDOWN
+        - android.intent.action.BOOT_COMPLETED
+    - platform: time_pattern
+      minutes: "/5"
+  binary_sensor:
+    - name: "salmob5 Screen On"
+      unique_id: salmob5_screen_on
+      state: >-
+        {% set i = states.binary_sensor.salmob5_interactive %}
+        {% set t = states.sensor.salmob5_last_update_trigger %}
+        {% if not is_state('binary_sensor.salmob5_interactive', 'on') %}
+          false
+        {% elif t is none or not has_value('sensor.salmob5_last_update_trigger') %}
+          true
+        {% elif t.state == 'android.intent.action.ACTION_SHUTDOWN' %}
+          false
+        {% else %}
+          {% set seen = [i.last_reported | default(i.last_updated), t.last_reported | default(t.last_updated)] | max %}
+          {{ (now() - seen).total_seconds() < 1800 }}
+        {% endif %}

@@ -1,7 +1,7 @@
 kitchen_closed:
   alias: Kitchen Closed
   sequence:
-  - service: scene.turn_on
+  - action: scene.turn_on
     entity_id:
     - scene.kitchen_closed
 school_lunches:
@@ -46,7 +46,7 @@ house_shutdown:
 dog_last_fed:
   alias: Dogs Last Fed
   sequence:
-  - service: notify.google_assistant_sdk
+  - action: notify.google_assistant_sdk
     data:
       message: The dogs were last fed at {{ states('input_datetime.dogs_last_fed')
         }}
@@ -55,7 +55,7 @@ dog_last_fed:
 turn_off_basement_lights:
   alias: Turn Off Basement Lights
   sequence:
-  - service: light.turn_off
+  - action: light.turn_off
     data: {}
     target:
       entity_id:
@@ -65,7 +65,7 @@ turn_off_basement_lights:
       - light.bar_lights
       - light.bar_led_lights
       - light.bar_tv_led_lights
-  - service: switch.turn_off
+  - action: switch.turn_off
     data: {}
     target:
       entity_id: switch.basement_peninsula_lights
@@ -74,7 +74,7 @@ turn_off_basement_lights:
       minutes: 2
       seconds: 0
       milliseconds: 0
-  - service: switch.turn_off
+  - action: switch.turn_off
     data: {}
     target:
       entity_id: switch.basement_stairs
@@ -221,14 +221,14 @@ basement_color_loop:
 basement_zwave_to_physical:
   mode: single
   sequence:
-  - service: light.turn_on
+  - action: light.turn_on
     data: {}
     target:
       entity_id:
       - light.all_basement_downlights
       - light.basement_bedroom_closet
       - light.basement_stairs_closet
-  - service: zwave_js.set_config_parameter
+  - action: zwave_js.set_config_parameter
     target:
       entity_id:
       - switch.basement_bar_area_lights
@@ -238,14 +238,14 @@ basement_zwave_to_physical:
     data:
       parameter: 12
       value: 1
-  - service: zwave_js.set_config_parameter
+  - action: zwave_js.set_config_parameter
     target:
       entity_id:
       - switch.basement_tv_room_lights
     data:
       parameter: 19
       value: 1
-  - service: automation.turn_off
+  - action: automation.turn_off
     data: {}
     target:
       entity_id:
@@ -258,7 +258,7 @@ basement_zwave_to_physical:
       - automation.basement_tv_room_lights
       - automation.basement_bedroom_closet_contact_sensor_toggle_lights
       - automation.basement_stairs_contact_sensor_toggle_lights
-  - service: switch.turn_off
+  - action: switch.turn_off
     data: {}
     target:
       entity_id:
@@ -270,7 +270,7 @@ basement_zwave_to_physical:
 basement_zwave_to_virtual:
   mode: single
   sequence:
-  - service: switch.turn_on
+  - action: switch.turn_on
     data: {}
     target:
       entity_id:
@@ -279,7 +279,7 @@ basement_zwave_to_virtual:
       - switch.basement_main_lights
       - switch.basement_tv_side_lights
       - switch.basement_tv_room_lights
-  - service: automation.turn_on
+  - action: automation.turn_on
     data: {}
     target:
       entity_id:
@@ -292,7 +292,7 @@ basement_zwave_to_virtual:
       - automation.basement_tv_room_lights
       - automation.basement_bedroom_closet_contact_sensor_toggle_lights
       - automation.basement_stairs_contact_sensor_toggle_lights
-  - service: zwave_js.set_config_parameter
+  - action: zwave_js.set_config_parameter
     target:
       entity_id:
       - switch.basement_bar_area_lights
@@ -302,14 +302,14 @@ basement_zwave_to_virtual:
     data:
       parameter: 12
       value: 0
-  - service: zwave_js.set_config_parameter
+  - action: zwave_js.set_config_parameter
     target:
       entity_id:
       - switch.basement_tv_room_lights
     data:
       parameter: 19
       value: 0
-  - service: light.turn_off
+  - action: light.turn_off
     data: {}
     target:
       entity_id:
@@ -319,7 +319,7 @@ basement_zwave_to_virtual:
 cam_color_loop:
   alias: Cam Color Loop
   sequence:
-  - service: light.turn_on
+  - action: light.turn_on
     data:
       effect: colorloop
     target:
@@ -328,7 +328,7 @@ cam_color_loop:
 cam_color_strobe:
   alias: Cam Color Strobe
   sequence:
-  - service: light.turn_on
+  - action: light.turn_on
     data:
       effect: colorstrobe
     target:
@@ -337,7 +337,7 @@ cam_color_strobe:
 cam_color_jump:
   alias: Cam Color Jump
   sequence:
-  - service: light.turn_on
+  - action: light.turn_on
     data:
       effect: colorjump
     target:
@@ -352,7 +352,7 @@ notify_parents_with_picture:
         entity_id: input_boolean.notify_fpm_andy
         state: 'on'
       sequence:
-      - service: notify.mobile_app_salmob1
+      - action: notify.mobile_app_salmob1
         data:
           message: '{{ message }}'
           data:
@@ -365,7 +365,7 @@ notify_parents_with_picture:
         entity_id: input_boolean.notify_fpm_katie
         state: 'on'
       sequence:
-      - service: notify.mobile_app_salmob2
+      - action: notify.mobile_app_salmob2
         data:
           message: '{{ message }}'
           data:
@@ -374,78 +374,80 @@ notify_parents_with_picture:
             image: '{{ cameraURL }}'
   mode: single
 
-git_sync_changes:
-  alias: Git Sync Changes
+sync_config_to_github:
+  alias: Sync config to GitHub now
+  mode: single
   sequence:
-  # Step 1: Check for updates (sensor handles this automatically)
-  # Step 2: Begin sync process
-  - service: input_boolean.turn_off
+  - action: shell_command.git_sync_push
+    response_variable: git_push
+  - if:
+    - condition: template
+      value_template: "{{ git_push.returncode | int(1) == 0 }}"
+    then:
+    - action: persistent_notification.create
+      data:
+        title: Git sync
+        message: Configuration pushed to GitHub.
+        notification_id: git_sync_status
+    else:
+    - action: persistent_notification.create
+      data:
+        title: Git sync failed
+        message: >-
+          git_sync_push exited {{ git_push.returncode | default('unknown') }}.
+          {{ git_push.stderr | default('') }}
+        notification_id: git_sync_status
+
+git_sync_changes:
+  alias: Pull config from GitHub
+  mode: single
+  sequence:
+  - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.github_operation_error
-  # Step 3: Create sync in progress notification
-  - service: persistent_notification.create
+  - action: persistent_notification.create
     data:
-      title: "🔄 Git Sync"
-      message: "Syncing configuration changes with GitHub repository..."
-      notification_id: "git_sync_status"
-  - service: shell_command.git_pull_config
-  - delay: '00:00:10'
-  # Step 4: Notify git pull result
-  - service: persistent_notification.create
-    data:
-      title: "📥 Git Pull Complete"
-      message: "Git pull completed. Validating configuration..."
-      notification_id: "git_sync_status"
-  # Step 5: Update github_config_updates_available sensor state
-  - service: homeassistant.update_entity
-    target:
-      entity_id: sensor.github_config_updates_available
-  - delay: '00:00:02'
-  # Step 6: Check config - stop if error, proceed if success
-  - service: homeassistant.check_config
-  - delay: '00:00:05'
-  - service: persistent_notification.create
-    data:
-      title: "✅ Configuration Valid"
-      message: "Configuration validation passed. Updating entity registry..."
-      notification_id: "git_sync_status"
-  # Step 7: Update entity registry
-  - service: homeassistant.update_entity
-    target:
-      entity_id: sensor.config_snapshots_changes_available
-  - delay: '00:00:05'
-  # Step 8: Conditional stage, commit, push if changes detected
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ states('sensor.config_snapshots_changes_available') | int == 2 }}"
-      sequence:
-      - service: persistent_notification.create
-        data:
-          title: "📤 Pushing Changes"
-          message: "Entity registry changes detected. Staging, committing and pushing to GitHub..."
-          notification_id: "git_sync_status"
-      - service: shell_command.git_stage_entity_registry
-      - delay: '00:00:02'
-      - service: shell_command.git_commit_entity_registry
-      - delay: '00:00:02'
-      - service: shell_command.git_push_entity_registry
-      - delay: '00:00:05'
-      # Step 9: Final notification - with changes pushed
-      - service: persistent_notification.create
-        data:
-          title: "✅ Git Sync Complete"
-          message: "Configuration successfully synced with GitHub. Entity registry changes committed and pushed back to repository. Next step, reload YAML."
-          notification_id: "git_sync_status"
-      - service: homeassistant.update_entity
-        target:
-          entity_id: sensor.config_snapshots_changes_available
-    default:
-    # Step 9: Final notification - no entity registry changes
-    - service: persistent_notification.create
+      title: Git sync
+      message: Pulling configuration from GitHub.
+      notification_id: git_sync_status
+  - action: shell_command.git_sync_pull
+    response_variable: git_pull
+  - if:
+    - condition: template
+      value_template: "{{ git_pull.returncode | int(1) != 0 }}"
+    then:
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.github_operation_error
+    - action: persistent_notification.create
       data:
-        title: "✅ Git Sync Complete"
-        message: "Configuration successfully synced with GitHub. No entity registry changes detected. Next step, reload YAML."
-        notification_id: "git_sync_status"
-  mode: single
-  
+        title: Git pull failed
+        message: >-
+          git_sync_pull exited {{ git_pull.returncode | default('unknown') }}.
+          {{ git_pull.stderr | default('') }}
+        notification_id: git_sync_status
+    else:
+    - continue_on_error: true
+      sequence:
+      - action: homeassistant.check_config
+      - action: automation.reload
+      - action: scene.reload
+      - action: persistent_notification.create
+        data:
+          title: Git sync complete
+          message: >-
+            Configuration is valid. Automations, scripts, and scenes were
+            reloaded.
+          notification_id: git_sync_status
+      - action: script.reload
+      - stop: Configuration is valid and git sync is complete.
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.github_operation_error
+    - action: persistent_notification.create
+      data:
+        title: Configuration invalid
+        message: >-
+          Pulled configuration failed the config check. Automations, scripts,
+          and scenes were not reloaded.
+        notification_id: git_sync_status

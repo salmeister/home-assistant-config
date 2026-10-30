@@ -2,9 +2,38 @@
 
 **Purpose**: This file serves as persistent memory for GitHub Copilot to maintain context across conversations and development sessions.
 
-**Last Updated**: October 23, 2025  
+**Last Updated**: August 31, 2026  
 **Current Branch**: develop-ha  
 **Repository**: salmeister/home-assistant-config
+
+## Recent Updates (October 12, 2026)
+- Git sync is SSH-only. See `docs/git-sync.md`.
+- `entity_registry_snapshot.json`, `lovelace_raw_configuration.yaml`, `.HA_VERSION`, and `.ha_run.lock` are no longer published. They hold MAC addresses and household data.
+
+## Recent Updates (August 31, 2026)
+- ✅ Removed leftover `http:` YAML block from `configuration.yaml` after HA 2026.8 UI migration (repair: HTTP YAML ignored)
+- ✅ HTTP reverse-proxy settings (`use_x_forwarded_for`, `trusted_proxies` / docker_net) now live in Settings > System > Network
+- ✅ Replaced deprecated `notify.gmail_email_andy` action with `notify.send_message` (Water Softener Low) and `smtp.send_message` (Low Battery Email HTML)
+- 📋 SMTP YAML in `notify.yaml` is still in use; HA may later migrate SMTP to UI config. Recipients remain `notify.gmail_email_andy` / `notify.gmail_email_katie`
+
+## Recent Updates (December 29, 2025)
+- ✅ **FRIGATE EVENT ID INTEGRATION**: Added MQTT trigger-based template sensor for capturing Frigate event IDs
+- ✅ Created `sensor.garage_person_event` in templates.yaml - captures event ID when person detected in interior_garage zone
+- ✅ Updated Enhanced Garage Door Open Security Notification automation to use proper Frigate API URLs
+- ✅ Notifications now display inline images using `/api/frigate/notifications/<event_id>/snapshot.jpg`
+- ✅ View Clip button links to actual event clip using `/api/frigate/notifications/<event_id>/clip.mp4`
+- ✅ Removed redundant "View Snapshot" action button (image displays directly in notification)
+- ✅ Added sub_label support from Frigate events for recognized person names
+- ✅ Fallback to camera proxy when no valid Frigate event available
+
+### Technical Details
+- **New Sensor**: `sensor.garage_person_event` (MQTT trigger-based template sensor)
+  - Listens to `frigate/events` MQTT topic
+  - Filters for: camera=garage, label=person, zone=interior_garage
+  - Stores: event_id (state), camera, label, sub_label, zones, has_clip, has_snapshot, event_type, last_updated
+  - Uses `this.state` pattern to preserve state when non-matching events occur
+- **API URL Pattern**: `/api/frigate/notifications/<event_id>/snapshot.jpg` and `/clip.mp4`
+- **Validity Check**: Events must be within 2 minutes to be considered recent
 
 ## Recent Updates (October 24, 2025)
 - ✅ **MAJOR IMPROVEMENT**: Zone-based garage door notification system implemented
@@ -62,7 +91,7 @@ This repository is public. Copilot and contributors must never add or suggest co
 - Quick pre‑commit self‑check:
 	- Ensure all credentials and coordinates use `!secret`.
 	- Grep mentally for risky terms: "password", "token", "api_key", "secret", "webhook", "bearer", "authorization", "latitude", "longitude".
-	- Verify `entity_registry_snapshot.json` does not expose device serials, tokens, or sensitive identifiers when updated.
+	- Do not commit `entity_registry_snapshot.json` or Lovelace storage. They hold MAC addresses and household data and are gitignored.
 - Optional protections to consider (not required): local secret scanners (e.g., `detect-secrets`, `git-secrets`) and enabling GitHub Secret Scanning/Push Protection.
 
 ## Current Context
@@ -168,8 +197,8 @@ Based on entity_registry_snapshot.json review:
 - Documentation in docs/ directory
 
 ### Entity Management
-- entity_registry_snapshot.json as authoritative source
-- Regular updates to maintain accuracy
+- Entity registry snapshot is local only and is not published
+- Use YAML configuration and this memory file for entity context
 - Area assignments drive automation logic
 - Platform-specific considerations for different integrations
 
