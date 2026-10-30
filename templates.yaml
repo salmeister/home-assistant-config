@@ -380,12 +380,15 @@
 # Phone "Screen On" sensors (used by the Daily/Monthly Phone Usage history_stats sensors)
 # binary_sensor.salmobN_interactive gets stuck 'on' when an Android phone powers off,
 # which inflates screen time. These follow the interactive sensor but turn off when:
+#   - the foreground app is the Pixel launcher or System UI (home/lock screen),
 #   - the companion app's Last Update Trigger sensor reports ACTION_SHUTDOWN, or
 #   - the phone hasn't reported to HA for 30+ minutes (dead battery / forced reboot).
-# If sensor.salmobN_last_update_trigger isn't enabled yet, they simply follow interactive.
+# If last_used_app / last_update_trigger aren't enabled, those checks are skipped.
 - trigger:
     - platform: state
       entity_id: binary_sensor.salmob1_interactive
+    - platform: state
+      entity_id: sensor.salmob1_last_used_app
     - platform: state
       entity_id: sensor.salmob1_last_update_trigger
       to:
@@ -399,7 +402,11 @@
       state: >-
         {% set i = states.binary_sensor.salmob1_interactive %}
         {% set t = states.sensor.salmob1_last_update_trigger %}
+        {% set app = states('sensor.salmob1_last_used_app') %}
+        {% set excluded = ['com.google.android.apps.nexuslauncher', 'com.android.systemui'] %}
         {% if not is_state('binary_sensor.salmob1_interactive', 'on') %}
+          false
+        {% elif app in excluded %}
           false
         {% elif t is none or not has_value('sensor.salmob1_last_update_trigger') %}
           true
