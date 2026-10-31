@@ -403,7 +403,10 @@
         {% set i = states.binary_sensor.salmob1_interactive %}
         {% set t = states.sensor.salmob1_last_update_trigger %}
         {% set app = states('sensor.salmob1_last_used_app') %}
-        {% set excluded = ['com.google.android.apps.nexuslauncher', 'com.android.systemui'] %}
+        {% set excluded = ['com.google.android.apps.nexuslauncher',
+                   'com.android.systemui',
+                   'com.google.android.dialer',
+                   'com.google.android.apps.maps'] %}
         {% if not is_state('binary_sensor.salmob1_interactive', 'on') %}
           false
         {% elif app in excluded %}
